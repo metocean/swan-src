@@ -1,0 +1,103 @@
+        SUBROUTINE PASS_OUT_SWAN (COMPDA,KGRPNT,XCGRID,YCGRID)
+ 
+!
+      USE OUTP_DATA                                                       40.31
+      USE M_PARALL  
+      USE PASS                                                            40.31
+!      
+
+      USE timecomm                                              
+               
+      USE ocpcomm4                                              
+      USE swcomm1                                               
+      USE swcomm2                                               
+      USE swcomm3                                               
+      USE swcomm4
+      
+      REAL COMPDA(MCGRD,MCMVAR),XCGRID(MXC,MYC),YCGRID(MXC,MYC)
+      integer IX,IY, INDX,KGRPNT(MXC,MYC)
+      
+      PRINT*,'Passing variables out of SWAN'
+
+
+! JABIN  [  7] within array SWMATR
+! JABLK  [  8] within array SWMATR
+! JAOLD  [ 12] within array SWMATR
+! JASTD2 [   ] new air-sea temp. diff. within array COMPDA
+! JASTD3 [   ] last read air-sea temp. diff. within array COMPDA
+! JBTIME [   ] ??
+! JCDRAG [  1] drag coefficient within array COMPDA,
+!              set by command WCAP JANS ...
+! JDHS   [  6] wave height correction within array COMPDA
+!              (difference in Hs between last two iterations)
+! JDIS0  [  7] within array SWMATR
+! JDIS1  [  8] within array SWMATR
+! JDISS  [  2] dissipation within array COMPDA
+! JDPSAV [  1] saved depth (for setup) within array COMPDA
+! JDP1   [  7] old depth within array COMPDA
+! JDP2   [  8] new depth within array COMPDA
+! JDP3   [ 15] last read depth within array COMPDA
+! JDTM   [ 20] wave period correction within array COMPDA
+!              (difference in average wave period between last two iterations)
+! JFRC2  [   ] friction coefficient within array COMPDA
+!              set by command READ FR ...
+! JFRC3  [   ] friction coefficient within array COMPDA
+!              set by command READ FR ...
+! JHS    [  1] significant wave height Hs within array COMPDA
+! JHSIBC [ 25] significant wave height from boundary condition in array COMPDA
+! JLEAK  [ 21] "leak" within array COMPDA
+!              (refractive energy tranport over sector boundaries)
+! JLEK1  [  9] within array SWMATR
+! JMAT5  [  5] within array SWMATR
+! JMAT6  [  6] within array SWMATR
+! JMATD  [  1] within array SWMATR
+! JMATL  [  3] within array SWMATR
+! JMATR  [  2] within array SWMATR
+! JMATU  [  4] within array SWMATR
+! JP4D   [  7] within array SWTSDA, quadruplet interactions
+! JP4S   [  6] within array SWTSDA, quadruplet interactions
+! JPBOT  [ 28] bottom wave period within array COMPDA
+! JPBTFR [  4] within array SWTSDA, bottom friction
+! JPTRI  [  8] within array SWTSDA, triad interactions
+! JPWBRK [  5] within array SWTSDA, surf breaking
+! JPWCAP [  3] within array SWTSDA, white capping
+! JPWNDA [  1] within array SWTSDA, wind source term part A
+! JPWNDB [  2] within array SWTSDA, wind source term part B
+! JQB    [  4] fraction of breaking waves within array COMPDA
+! JSETUP [  1] setup values within array COMPDA
+! JSTP   [  5] steepness within array COMPDA
+! JTAUW  [  1] TauW within array COMPDA,
+!              set by command WCAP JANS ...
+! JUBOT  [  3] bottom orbital velocity within array COMPDA
+! JURSEL [ 27] Ursell number as used in Triad computation
+! JUSTAR [  1] friction velocity within array COMPDA,
+!              set by command WCAP JANS ...
+! JVX1   [  9] x of old current velocity within array COMPDA
+! JVX2   [ 11] x of new current velocity within array COMPDA
+! JVX3   [ 13] x of last read current velocity within array COMPDA
+! JVY1   [ 10] y of old current velocity within array COMPDA
+! JVY2   [ 12] y of new current velocity within array COMPDA
+! JVY3   [ 14] y of last read current velocity within array COMPDA
+! JWLV1  [ 22] old water level within array COMPDA
+! JWLV2  [ 24] new water level within array COMPDA
+! JWLV3  [ 23] last read water level within array COMPDA
+! JWX2   [ 16] x of new wind velocity within array COMPDA
+! JWX3   [ 18] x of last read wind velocity within array COMPDA
+! JWY2   [ 17] y of new wind velocity within array COMPDA
+! JWY3   [ 19] y of last read wind velocity within array COMPDA
+! JZEL   [  1] roughness within array COMPDA,
+
+         DO IX=1,MXC
+         DO IY=1,MYC
+          INDX=KGRPNT(IX,IY)
+          IF(INDX.GT.1)THEN
+            Pass_Diss(ix,iy)=compda(indx,JDISS)
+            Pass_ubott(ix,iy)=compda(indx,JUBOT)
+            Pass_Height(ix,iy)=compda(indx,JHS)
+            Pass_theta(ix,iy)=atan2(Pass_Fy,Pass_Fy)
+          ENDIF
+         ENDDO
+         ENDDO
+                   
+      RETURN
+      END
