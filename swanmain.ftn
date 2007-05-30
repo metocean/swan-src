@@ -115,10 +115,11 @@
       CALL SWINITMPI                                                      40.30
       IF (STPNOW()) GOTO 999                                              40.30
 
-!NCOM      endif  
+!NCOM      else  
 
 !     --- start SWAN run
-!NCOM      print*, 'Run SWAN loop, num of calls',istep+1
+!NCOM      print*, 'Run SWAN loop, num of calls',istep
+!NCOM      endif
       CALL SWMAIN                                                         
 !NCOM      print*,'Out of SWAN loop'
                                                                
@@ -394,10 +395,11 @@
 
 ! master program change -fyshi
 !NCOM        if(Master_Start.eq.1)then
-                CALL SWREAD (COMPUT)                                              40.31 30.90
+                CALL SWREAD (COMPUT)
+!NCOM           return
 !NCOM        else
 ! master_time_ctr was modified from SWREAD in swanpre1.f -fyshi
-!NCOM        CALL MASTER_TIME_CTR(COMPUT)
+!NCOM           CALL MASTER_TIME_CTR(COMPUT)
 !NCOM        endif
         
 !TIMG        CALL SWTSTO(3)                                                    40.23
