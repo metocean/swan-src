@@ -125,7 +125,7 @@ c -- control parameters
 
        real(SZ) N_Interval_CallWave,
      &     N_Interval_CallCirc,N_Interval_CallSedi,
-     &     N_Delay_CallSedi,N_Interval_Output,
+     &     N_Delay_CallSedi,N_Interval_Output,N_speedup_sedi,
      &     WaveSpectral_Data_Interval   
        real(SZ) Total_Time, Master_dt,Time_Master,Time_Wave_Counter
        logical Grid_Mast_Wave_Same, Grid_Mast_Circ_Same,
@@ -183,6 +183,8 @@ c -- file names
      &              f_name13,f_name14,
      &              f_name15,f_name16
 
+c -- intra wave phase
+      real(SZ), ALLOCATABLE :: phase_ang(:)
 
 c -- allocate pass variables
        CONTAINS
@@ -229,7 +231,7 @@ c -- wave module
      &      Pass_C(Nx_Wave,Ny_Wave),
      &      Intp_U_Wave(Nx_Wave,Ny_Wave), Intp_V_Wave(Nx_Wave,Ny_Wave),
      &      Intp_eta_Wave(Nx_Wave,Ny_Wave),
-     &      Pass_uw(nx_wave,nu_wave,100),
+     &      Pass_uw(nx_wave,ny_wave,nphase),
      &      Pass_ibrk(Nx_Wave,Ny_Wave) )
 
 c -- circulation module:
@@ -297,6 +299,9 @@ c -- coordinate systems, depth and ...
      &      Y_Sedi(Nx_Sedi,Ny_Sedi),
      &      X_Mast(Nx_Mast,Ny_Mast),Y_Mast(Nx_Mast,Ny_Mast),
      &      Depth_Mast(Nx_Mast,Ny_Mast) )
+     
+c -- phase angle
+        allocate ( phase_ang(nphase))
 
 
         return

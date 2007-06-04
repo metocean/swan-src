@@ -634,7 +634,7 @@
 !
  900  CONTINUE
 
-!NCOM       call pass_out_swan(COMPDA,KGRPNT,XCGRID,YCGRID)
+!NCOM       call PASS_OUT_SWAN(COMPDA,KGRPNT,XCGRID,YCGRID,AC2,SPCDIR,SPCSIG)
 !NCOM       return
 !
 !TIMG      CALL SWTSTO(1)                                                      40.23
