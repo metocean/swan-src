@@ -30,7 +30,7 @@
 !  calculate time variables: TINIC, TFINC, TIMCO, RDTIM, MTC, ITMOPT -fyshi
 !                       and RUNMADE COMPUT -fyshi
 
-        MasterDT= Master_dt*N_Interval_CallWave
+        MasterDT= Master_dt*N_Interval_CallWave*N_Speedup_Sedi
 
         RUNMADE=.TRUE.
         COMPUT='COMP'

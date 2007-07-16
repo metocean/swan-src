@@ -626,7 +626,7 @@
 !     MOUTPA [   5]  number of output parameters
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 53, MOUTPA=5)                                   40.51 40.21 40.41
+      PARAMETER (NMOVAR = 55, MOUTPA=5)                                   40.51 40.21 40.41
 !
 !  7. Local variables
 !

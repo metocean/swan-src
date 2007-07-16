@@ -66,7 +66,8 @@
          DO IY=1,MYC
           INDX=KGRPNT(IX,IY)
           IF(INDX.GT.1)THEN
-         COMPDA(INDX,JWLV2)=Intp_eta_Wave(IX,IY)
+          COMPDA(INDX,JDP1)=Depth_Wave(IX,IY)
+          COMPDA(INDX,JWLV2)=Intp_eta_Wave(IX,IY)
           COMPDA(INDX,JVX2)=Intp_U_Wave(IX,IY)*COS(ANG(IX,IY))
      &                     +Intp_V_Wave(IX,IY)*SIN(ANG(IX,IY))
           COMPDA(INDX,JVY2)=Intp_V_Wave(IX,IY)*COS(ANG(IX,IY))

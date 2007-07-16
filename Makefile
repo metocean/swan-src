@@ -64,15 +64,30 @@ config:
 install:
 	@perl platform.pl
 
+ncom_debug:   
+	@perl switch.pl $(swch) -ncom *.ftn
+	$(MAKE) SWAN_OBJS="sizes.$(EXTO) pass.$(EXTO) interp.$(EXTO) $(SWAN_OBJS) master_time_ctr.$(EXTO) pass_in_swan.$(EXTO) pass_out_swan.$(EXTO)" \
+		FOR=$(F90_SER) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_SER) /Z7 /c" \
+                INCS="$(INCS_SER)" ncom.lib
+	link /lib sizes.$(EXTO) pass.$(EXTO) interp.$(EXTO) $(SWAN_OBJS) master_time_ctr.$(EXTO) pass_in_swan.$(EXTO) pass_out_swan.$(EXTO) \
+		/OUT:swan_ncom_db.lib
+
 ncom:   
 	@perl switch.pl $(swch) -ncom *.ftn
 	$(MAKE) SWAN_OBJS="sizes.$(EXTO) pass.$(EXTO) interp.$(EXTO) $(SWAN_OBJS) master_time_ctr.$(EXTO) pass_in_swan.$(EXTO) pass_out_swan.$(EXTO)" \
-		FOR=$(F90_SER) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_SER)" \
-                INCS="$(INCS_SER)" LIBS="$(LIBS_SER)" swan_nearcom.$(EXTO)
+		FOR=$(F90_SER) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_SER) /optimize:5 /c" \
+                INCS="$(INCS_SER)" ncom.lib
+	link /lib sizes.$(EXTO) pass.$(EXTO) interp.$(EXTO) $(SWAN_OBJS) master_time_ctr.$(EXTO) pass_in_swan.$(EXTO) pass_out_swan.$(EXTO) \
+		/OUT:swan_ncom.lib
 
 ser:
 	@perl switch.pl $(swch) *.ftn
 	$(MAKE) FOR=$(F90_SER) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_SER)" \
+                INCS="$(INCS_SER)" LIBS="$(LIBS_SER)" $(SWAN_EXE)
+
+ser_debug:
+	@perl switch.pl $(swch) *.ftn
+	$(MAKE) FOR=$(F90_SER) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_SER)  /Z7 /link:debug" \
                 INCS="$(INCS_SER)" LIBS="$(LIBS_SER)" $(SWAN_EXE)
 
 omp:
@@ -95,8 +110,8 @@ doc:
 $(SWAN_EXE): $(SWAN_OBJS)
 	$(FOR) $(SWAN_OBJS) $(FFLAGS) $(OUT)$(SWAN_EXE) $(INCS) $(LIBS)
 
-swan_nearcom.$(EXTO): $(SWAN_OBJS)
-	$(FOR) $(SWAN_OBJS) $(FFLAGS) /dll $(OUT)swan_nearcom.dll $(INCS) $(LIBS)
+ncom.lib: $(SWAN_OBJS)
+	$(FOR) $(SWAN_OBJS) $(FFLAGS) $(INCS)
 
 .f.o:
 	$(FOR) $< -c $(FFLAGS) $(INCS)

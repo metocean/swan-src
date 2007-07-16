@@ -118,7 +118,7 @@
 !NCOM      else  
 
 !     --- start SWAN run
-!NCOM      print*, 'Run SWAN loop, num of calls',istep
+!NCOM      print*, 'Run SWAN loop ',int((istep-1)/N_Interval_CallWave)
 !NCOM      endif
       CALL SWMAIN                                                         
 !NCOM      print*,'Out of SWAN loop'
@@ -1977,6 +1977,30 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 100.
       OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 54                                                         40.51
+      OVKEYW(IVTYPE) = 'DPM'
+      OVSNAM(IVTYPE) = 'Dpm'
+      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 55                                                         40.51
+      OVKEYW(IVTYPE) = 'DPMSEA'
+      OVSNAM(IVTYPE) = 'Dpm_sea'
+      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
 !
 !     various parameters for computation of output quantities             40.00
 !

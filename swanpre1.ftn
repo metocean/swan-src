@@ -840,10 +840,9 @@
         ENDIF
         
 !NCOM        MasterDT=Master_dt*N_Interval_CallWave
-!NCOM        TFINC = TINIC + MasterDT
-!NCOM        MTC = NINT ((TFINC - TINIC)/DT)                                 30.50
-!NCOM        IF (MOD(TINIC-TFINC,DT).GT.0.01*DT .AND.
-!NCOM     &            MOD(TINIC-TFINC,DT).LT.0.99*DT)
+!NCOM        MTC = NINT (MasterDT/DT)                                 
+!NCOM        IF (MOD(MasterDT,DT).GT.0.01*DT .AND.
+!NCOM     &            MOD(MasterDT,DT).LT.0.99*DT)
 !NCOM     &           CALL MSGERR (1,
 !NCOM     &           'DT is not a fraction of the computational period')
 !NCOM        TIMCO = TINIC
