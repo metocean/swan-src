@@ -672,7 +672,7 @@
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
-     &       IVTYPE.eq.54 .OR. IVTYPE.eq.55 .OR.
+     &       IVTYPE.eq.54 .OR. IVTYPE.eq.55 .OR. IVTYPE.eq.56 .OR.
      &       IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR. IVTYPE.EQ.44      )      40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
 !
@@ -2180,7 +2180,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=21)                                               40.51 40.41 40.00
+      PARAMETER  (NVOTP=22)                                               40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -2195,7 +2195,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 54, 55/                         MSL 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 54, 55, 56/                     MSL 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -3008,6 +3008,36 @@ c          print*,isigm,SPCSIG(isigm)
            ELSE
               VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
+        ENDIF
+        
+        !
+!       spectral bandwidth
+!
+        IVTYPE = 56
+        IF (OQPROC(IVTYPE)) THEN
+          ETOT = 0.
+          EM2=0.
+          EM4=0.
+          DO ID=1, MDC
+            DO IS=2,MSC
+              DS=SPCSIG(IS)-SPCSIG(IS-1)                                  30.72
+              EAD = 0.5*(SPCSIG(IS)*ACLOC(ID,IS)+                         30.72
+     &                   SPCSIG(IS-1)*ACLOC(ID,IS-1))*DS*DDIR             30.72
+              ETOT = ETOT + EAD
+              SIG1=0.5*(SPCSIG(IS)+SPCSIG(IS-1))
+              EM2=EM2+SIG1*SIG1*EAD
+              EM4=EM4+SIG1**4*EAD
+           ENDDO
+          ENDDO
+          IF (ETOT .GE. 0.) THEN                                          30.00
+            VOQ(IP,VOQR(IVTYPE)) = SQRT(1-EM2**2/(ETOT*EM4))
+          ELSE
+!            VOQ(IP,VOQR(IVTYPE)) = 0.
+            VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+          ENDIF
+          IF (ITEST.GE.100) THEN                                          40.00
+            WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
+          ENDIF
         ENDIF
 !
         GOTO 800

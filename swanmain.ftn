@@ -2002,6 +2002,18 @@
       OVHEXP(IVTYPE) = 360.
       OVEXCV(IVTYPE) = -999.
 !
+      IVTYPE = 56                                                         40.51
+      OVKEYW(IVTYPE) = 'SWE'
+      OVSNAM(IVTYPE) = 'SWe'
+      OVLNAM(IVTYPE) = 'Spectral bandwidth'
+      OVUNIT(IVTYPE) = ' '
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
 !     various parameters for computation of output quantities             40.00
 !
 !     reference time for TSEC
