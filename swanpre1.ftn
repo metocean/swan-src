@@ -53,7 +53,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -266,7 +266,6 @@
 !     ITMP2     auxiliary integer                                         40.31
 !     ITMP3     auxiliary integer                                         40.31
 !     ITMP4     auxiliary integer                                         40.31
-!     KDIF      Fraction of energy that is reflected in a diffuse way     40.28
 !     LREF      Indicates whether reflection is active (#0.) or not (=0.) 40.09
 !     LREFDIFF  Indicates whether scattered reflection is active (#0.)    40.18
 !               or not (=0.)                                              40.18
@@ -274,8 +273,7 @@
 !               active (#0.) or not (=0.)                                 40.28
 !     MORE      Indicates whether more entries of a loop need to be       40.17
 !               performed                                                 40.17
-!     POWD      Power of cosine in diffusive reflecion                    40.28
-!     POWS      Power of cosine in scattered reflecion                    40.18
+!     POWN      user defined power of redistribution function             40.18
 !     RLAMBDA   Dummy array containing lambda values for quadruplets      40.17
 !
       INTEGER, SAVE     :: INCNUM(1:MXINCL) = 0                           40.03
@@ -289,9 +287,7 @@
       LOGICAL, SAVE     :: LOBST = .FALSE.                                40.31
 !
       INTEGER        :: LREF, LREFDIFF, LRFRD                             40.31
-      REAL           :: KDIF                                              40.28
-      REAL           :: POWD                                              40.28
-      REAL           :: POWS, DUM                                         40.31 40.18
+      REAL           :: POWN, DUM                                         40.31 40.18
       REAL           :: FD1, FD2, FD3, FD4                                40.31 40.28
       REAL, ALLOCATABLE :: RLAMBDA(:)                                     40.17
       
@@ -877,9 +873,9 @@
 ! OBSTacle   <                                 >             &
 !             |  DAM    [hgt] [alpha] [beta]  |
 !                                                                         40.18
-!                        | -> RSPEC                    |                  40.18
-!      ( REFLec [reflc] <                              > )   &
-!                        |    RDIFF [POWS][POWD][Kdif] |                  40.18
+!                        | -> RSPEC        |                              40.18
+!      ( REFLec [reflc] <                   > )   &
+!                        |    RDIFF [pown] |                              40.13 40.18
 !
 !             LINe < [xp] [yp] >                                          40.18 40.09
 !
@@ -897,8 +893,6 @@
         OBSTMP%RFCOEF(4) = 0.                                             40.31
         OBSTMP%RFCOEF(5) = 0.                                             40.31
         OBSTMP%RFCOEF(6) = 0.                                             40.31
-        OBSTMP%RFCOEF(7) = 0.                                             40.31
-        OBSTMP%RFCOEF(8) = 0.                                             40.31
 !
 !       data concerning transmission of energy over/through the obstacle
 !
@@ -939,38 +933,24 @@
           ENDIF                                                           40.09
           CALL INREAL ('REFLC', REF0, 'STA', 1.)                          40.09
           DUM = REF0*REF0+TRCF*TRCF                                       40.51 40.14
-          IF (ITRAS.EQ.0 .AND. ((DUM < 0.) .OR. (DUM > 1.))) THEN         40.51 40.14
-            CALL MSGERR(3,'Kt^2 + Kr^2 > 1 or Kt^2 + Kr^2 < 0! ')         40.51 40.14
+          IF (ITRAS.EQ.0 .AND. DUM.GT.1.) THEN                            40.51 40.14
+            CALL MSGERR(3,'Kt^2 + Kr^2 > 1 ')                             40.51 40.14
           ENDIF                                                           40.14
           OBSTMP%RFCOEF(1) = REF0                                         40.31
 !                                                                         40.18
           CALL INKEYW ('REQ', '  ')                                       40.18
           IF (KEYWIS('RDIFF')) THEN                                       40.18
             LREFDIFF = 1                                                  40.31 40.18
-            CALL INREAL ('POWS', POWS, 'REQ', 1.)                         40.18
-            DUM = MOD(POWS,1.)                                            40.18
-            IF (POWS < 0.) THEN                                           40.38
-              CALL MSGERR(3,'Power POWS is not a positive number! ')      40.38
+            CALL INREAL ('POWN', POWN, 'REQ', 1.)                         40.18
+            DUM = MOD(POWN,1.)                                            40.18
+            IF (POWN.LT.0.) THEN                                          40.38
+              CALL MSGERR(3,'Power POWN is not a positive number! ')      40.38
             ENDIF                                                         40.38
-            IF (DUM .NE. 0.) THEN                                         40.18
-              CALL MSGERR(3,'Power POWS is not an integer number! ')      40.18
+            IF (DUM.NE.0.) THEN                                           40.18
+              CALL MSGERR(3,'Power POWN is not an integer number! ')      40.18
             ENDIF                                                         40.18
-            OBSTMP%RFCOEF(2) = POWS                                       40.31
+            OBSTMP%RFCOEF(2) = POWN                                       40.31
 !                                                                         40.18
-            CALL INREAL ('POWD', POWD, 'STA', 1.)                         40.28
-            DUM = MOD(POWD,1.)                                            40.28
-            IF (POWD < 0.) THEN                                           40.38
-              CALL MSGERR(3,'Power POWD is not a positive number! ')      40.38
-            ENDIF                                                         40.38
-            IF (DUM .NE. 0.) THEN                                         40.28
-              CALL MSGERR(3,'Power POWD is not an integer number! ')      40.28
-            ENDIF                                                         40.28
-            OBSTMP%RFCOEF(3) = POWD                                       40.31
-            CALL INREAL ('KDIF', KDIF, 'STA', 0.)                         40.28
-            IF ((KDIF < 0.) .OR. (KDIF > 1.)) THEN                        40.28
-              CALL MSGERR(3,'KDIF > 1 or KDIF < 0! ')                     40.28
-            ENDIF                                                         40.28
-            OBSTMP%RFCOEF(4) = KDIF                                       40.31
           ELSE                                                            40.18
             CALL IGNORE ('RSPEC')                                         40.18
             LREFDIFF = 0                                                  40.31 40.18
@@ -985,13 +965,13 @@
             CALL INREAL ('FD2', FD2, 'REQ', 0.75)                         40.28
             CALL INREAL ('FD3', FD3, 'REQ', -21.)                         40.28
             CALL INREAL ('FD4', FD4, 'REQ', 0.066)                        40.28
-            IF (FD3 .GE. 0.) THEN                                         40.28
+            IF (FD3.GE.0.) THEN                                           40.28
               CALL MSGERR(3,'Positive frequency dependency! ')            40.28
             ENDIF                                                         40.28
-            OBSTMP%RFCOEF(5) = FD1                                        40.31
-            OBSTMP%RFCOEF(6) = FD2                                        40.31
-            OBSTMP%RFCOEF(7) = FD3                                        40.31
-            OBSTMP%RFCOEF(8) = FD4                                        40.31
+            OBSTMP%RFCOEF(3) = FD1                                        40.31
+            OBSTMP%RFCOEF(4) = FD2                                        40.31
+            OBSTMP%RFCOEF(5) = FD3                                        40.31
+            OBSTMP%RFCOEF(6) = FD4                                        40.31
           ELSE                                                            40.28
             LRFRD = 0                                                     40.31 40.28
           ENDIF                                                           40.28
@@ -1299,8 +1279,6 @@
           IF (KEYWIS ('EXC')) THEN                                        30.60
             CALL INREAL ('EXCVAL', EXCFLD(8), 'REQ', 0.)                  30.60
             CALL INREAL ('EXCVAL', EXCFLD(9), 'STA', EXCFLD(8))           30.60
-            OVEXCV(1) = EXCFLD(8)                                         40.41
-            OVEXCV(2) = EXCFLD(9)                                         40.41
           ENDIF                                                           30.60
         ENDIF                                                             30.60
 !
@@ -2288,7 +2266,7 @@
       IF (KEYWIS ('TRI')) THEN
         ITRIAD = 1                                                        20.81
         CALL INREAL ('TRFAC', PTRIAD(1), 'UNC', 0.0)
-        CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 5.0)                      40.55 30.82
+        CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 2.5)                      40.61 40.55 30.82
         CALL INREAL ('URCRIT', PTRIAD(4), 'UNC', 0.0)                     40.13
         CALL INREAL ('URSLIM', PTRIAD(5), 'STA', 0.01)                    40.41 40.23 40.13
 !       reserve space in array Compda for Ursell number                   40.03
@@ -2396,7 +2374,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2788,7 +2766,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2906,7 +2884,7 @@
 ! 13. Source text
 !
       REAL, ALLOCATABLE :: TARR(:)                                        40.31
-      LOGICAL    KEYWIS, VECTOR, LOGT                                     30.00
+      LOGICAL    KEYWIS, VECTOR                                           30.00
       LOGICAL    LOGCOM(6)                                                30.21
       SAVE  IENT
       DATA  IENT/0/
@@ -2998,7 +2976,6 @@
 !
       CALL INREAL ('FAC', IFLFAC(IGR1), 'STA', 1.)
 !
-      IF (IFLDYN(IGR1).GT.0) LOGT = .TRUE.
       IF (IGR2.GT.0) THEN
         VECTOR = .TRUE.
         IFLFAC(IGR2) = IFLFAC(IGR1)
@@ -3007,14 +2984,14 @@
       ENDIF
 !
       CALL REPARM (IFLNDF(IGR1), IFLNDS(IGR1), IFLIDL(IGR1),              40.00
-     &             IFLIFM(IGR1), IFLFRM(IGR1), IFLNHF(IGR1), LOGT,        40.00
-     &             IFLNHD(IGR1), VECTOR, NHEDC)                           40.00
+     &             IFLIFM(IGR1), IFLFRM(IGR1), IFLNHF(IGR1),              40.00
+     &             IFLDYN(IGR1), IFLNHD(IGR1), VECTOR, NHEDC)             40.00
       IF (STPNOW()) RETURN                                                34.01
 !
       IF (ITEST.GE.60) WRITE (PRTEST, 35) IGR1, IFLNDF(IGR1),
      &    IFLNDS(IGR1), IFLIDL(IGR1), IFLIFM(IGR1), IFLFRM(IGR1),         40.00
-     &    IFLNHF(IGR1), LOGT, IFLNHD(IGR1), VECTOR, NHEDC
-  35  FORMAT (' Reading parameters: ', 5I4, A, /, 12X,I5,L2,I5,L2,I5)     40.00
+     &    IFLNHF(IGR1), IFLDYN(IGR1), IFLNHD(IGR1), VECTOR, NHEDC
+  35  FORMAT (' Reading parameters: ', 5I4, A, /, 12X,I5,I5,I5,L2,I5)     40.00
 !
       IFLNHD(IGR1) = IFLNHD(IGR1) + NHEDC
       IF (IGR2.GT.0) THEN
@@ -3130,7 +3107,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3299,7 +3276,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3555,7 +3532,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3778,7 +3755,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4146,7 +4123,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4259,7 +4236,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4434,7 +4411,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4607,7 +4584,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4965,7 +4942,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

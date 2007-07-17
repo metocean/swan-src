@@ -22,8 +22,8 @@
       SUBROUTINE SBOT (ABRBOT  ,DEP2    ,ECOS    ,ESIN    ,
      &                 IMATDA  ,KWAVE   ,SPCSIG  ,UBOT    ,UX2     ,      30.72
      &                 UY2     ,IDCMIN  ,IDCMAX  ,
-     &                 PLBTFR  ,ISSTOP  ,DISSC1  ,VARFR   , FRCOEF
-     &                              )
+     &                 PLBTFR  ,ISSTOP  ,DISSC1  ,VARFR   , FRCOEF ,
+     &                 DISBOT  )                                          40.61
 !
 !****************************************************************
 !
@@ -46,7 +46,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,6 +69,7 @@
 !     20.68: Nico Booij
 !     30.72: IJsbrand Haagsma
 !     40.41: Marcel Zijlema
+!     40.61: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -76,6 +77,7 @@
 !                     introduced Putnam model replaced by Collins
 !     30.72, Feb. 98: Introduced generic names XCGRID, YCGRID and SPCSIG for SWAN
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.61, Sep. 06: introduce DISBOT variable for output purposes
 !
 !  2. Purpose
 !
@@ -83,7 +85,7 @@
 !
 !  3. Method
 !
-!     In SWAN several bottom dissipation models are computed, i.e.:
+!     In SWAN several bottom friction dissipation models are computed, i.e.:
 !
 !     IBOT = 1   Jonswap bottom friction model
 !     IBOT = 2   Collins bottom friction model
@@ -129,7 +131,7 @@
 !     2. MADSEN formulation:
 !     ----------------------
 !
-!     The bottom dissipation applying Madsen formulation is as
+!     The bottom friction dissipation applying Madsen formulation is as
 !     follows:
 !
 !                          fw [n - 1/2] UBR E(s,d)
@@ -181,7 +183,7 @@
 !     IY          Counter of gridpoints in y-direction
 !     IS          Counter of relative frequency band
 !     ID          Counter of the spectral direction
-!     IBOT        Indicator if bottomfriction is on
+!     IBOT        Indicator if bottom friction is on
 !     ICUR        Indicator if a current is present
 !     ITER        Number of iteration i.e. number of full sweeps
 !     MBOT        Maximum array size for the array PBOT
@@ -202,7 +204,7 @@
 !     FW          Friction factor
 !     GRAV        Gravitational acceleration
 !     KD          Wavenumber * Depth
-!     SBOTEO      Sourceterm for the bottomfriction to be stored
+!     SBOTEO      Sourceterm for the bottom friction to be stored
 !                 in the array IMATDA
 !     CURR        Main current velocity
 !     UC          Absolute value of the current
@@ -215,11 +217,12 @@
 !     ECOS      1D    Cos per spectral direction (id)
 !     IMATDA    2D    Coefficients of diagonal of matrix
 !     KWAVE     2D    Wavenumber function of frequency and IC
-!     PBOT      1D    Coefficient for bottomfriction models
+!     PBOT      1D    Coefficient for bottom friction models
 !     UBOT      2D    Near bottom velocity as function of X,Y
 !     UX2       2D    Current velocity in y direction as function of X,Y
 !     UY2       2D    Current velocity in y direction as function of X,Y
-!     DISSC1    2D    Dissipation coefficient, fun of sigma and theta
+!     DISSC1    2D    Dissipation coefficient, function of sigma and theta
+!     DISBOT    2D    Total bottom friction dissipation for output purposes
 !     FRCOEF    2D    Spatially variable friction coefficient             20.68
 !
 !  7. Common blocks used
@@ -271,9 +274,10 @@
      &         UX2(MCGRD)                ,
      &         UY2(MCGRD)                ,
      &         DISSC1(MDC,MSC)           ,
+     &         DISBOT(MDC,MSC)           ,                                40.61
      &         FRCOEF(MCGRD)                                              20.68
 !
-      INTEGER  IDCMIN(MSC)                  ,
+      INTEGER  IDCMIN(MSC)               ,
      &         IDCMAX(MSC)
 !
       SAVE IENT
@@ -372,6 +376,7 @@
               IMATDA(ID,IS) = IMATDA(ID,IS) + SBOTEO
               IF (TESTFL) PLBTFR(ID,IS,IPTST) = -1.* SBOTEO               40.00
               DISSC1(ID,IS) = DISSC1(ID,IS) + SBOTEO
+              DISBOT(ID,IS) = DISBOT(ID,IS) + SBOTEO                      40.61
  690        CONTINUE
           END IF
  700    CONTINUE
@@ -408,7 +413,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -581,7 +586,7 @@
       SUBROUTINE SSURF (ETOT    ,HM               ,                       30.81
      &                  QB      ,SMEBRK  ,AC2     ,IMATRA  ,              30.81
      &                  IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,              30.81
-     &                  ISSTOP  ,DISSC0  ,DISSC1                          30.81 30.21
+     &                  ISSTOP  ,DISSC0  ,DISSC1  ,DISSRF                 40.61 30.81 30.21
      &                                                              )
 !
 !****************************************************************
@@ -607,7 +612,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -632,6 +637,7 @@
 !     30.82: IJsbrand Haagsma
 !     40.13: Nico Booij
 !     40.41: Marcel Zijlema
+!     40.61: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -641,6 +647,7 @@
 !     30.81, Sep. 99: Argumentlist reduced
 !     40.13, Jan. 01: PLWBRK corrected (dissipation test output)
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.61, Sep. 06: introduce DISSRF variable for output purposes
 !
 !  2. Purpose
 !
@@ -740,6 +747,7 @@
 !                       (meant for output)
 !     DISSC1  output:   Dissipation coefficient as implicit part
 !                       (meant for output)
+!     DISSRF  output:   Total surf dissipation for output purposes
 !     ETOT    input :   Total energy per spatial gridpoint
 !     HM      input :   Maximum wave height
 !     ICMAX   input :   Maximum number of elements in KCGRD array
@@ -759,6 +767,7 @@
       REAL     AC2(MDC,MSC,MCGRD)   ,
      &         DISSC0(MDC,MSC)      ,
      &         DISSC1(MDC,MSC)      ,
+     &         DISSRF(MDC,MSC)      ,                                     40.61
      &         IMATDA(MDC,MSC)      ,
      &         IMATRA(MDC,MSC)      ,
      &         PLWBRK(MDC,MSC,NPTST)                                      40.00
@@ -864,6 +873,7 @@
           IF (TESTFL) PLWBRK(ID,IS,IPTST) = REAL(SURFA0-SURFA1)           40.13
           DISSC0(ID,IS) = DISSC0(ID,IS) - REAL(DIS0)                      30.82
           DISSC1(ID,IS) = DISSC1(ID,IS) + REAL(SURFA1)                    30.82
+          DISSRF(ID,IS) = DISSRF(ID,IS) + REAL(SURFA1-SURFA0)             40.61
  100    CONTINUE
  101  CONTINUE
 !
@@ -887,7 +897,7 @@
      &                   IDCMIN  ,IDCMAX  ,ISSTOP  ,                      40.02
      &                   ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,             40.02
      &                   CGO     ,UFRIC   ,                               40.53
-     &                   DEP2    ,DISSIP  ,DISIMP  )                      40.12
+     &                   DEP2    ,DISSIP  ,DISIMP  ,DISWCP  )             40.61 40.12
 !
 !****************************************************************
 !
@@ -914,7 +924,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -941,6 +951,7 @@
 !     40.41: Gerbrant van Vledder
 !     40.41: Marcel Zijlema
 !     40.53: Andre van der Westhuysen
+!     40.61: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -951,6 +962,7 @@
 !     40.41, May. 04: Normalisation added to CSM
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53: Aug. 04: white-capping based Alves and Banner (2003) method
+!     40.61, Sep. 06: introduce DISWCP variable for output purposes
 !
 !
 !  2. Purpose
@@ -1068,6 +1080,7 @@
 !     DEP2  : Array containing water-depth
 !     DISSIP: Array containing dissipation
 !     DISIMP: Array containing implicit part of the dissipation
+!     DISWCP: Total whitecapping dissipation for output purposes
 !     ETOT  : Total wave energy density
 !     IDCMIN: Counter that indicates the minimum direction that is propagated in the sweep
 !     IDCMAX: Counter that indicates the maximum direction that is propagated in the sweep
@@ -1095,6 +1108,7 @@
       REAL, INTENT(OUT)    :: PLWCAP(MDC,MSC,NPTST)
       REAL, INTENT(IN OUT) :: IMATDA(MDC,MSC), IMATRA(MDC,MSC)
       REAL, INTENT(IN OUT) :: DISSIP(MDC,MSC), DISIMP(MDC,MSC)            40.12
+      REAL, INTENT(IN OUT) :: DISWCP(MDC,MSC)                             40.61
       REAL, INTENT(IN)     :: UFRIC                                       40.53
       REAL, INTENT(IN)     :: CGO(MSC,MICMAX)                             40.53
 !
@@ -1390,6 +1404,7 @@
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1
             IMATDA(ID,IS) = IMATDA(ID,IS) + WCAP(IS)
             DISSIP(ID,IS) = DISSIP(ID,IS) + WCAP(IS)                      40.12
+            DISWCP(ID,IS) = DISWCP(ID,IS) + WCAP(IS)-WCIMPL(IS)           40.61
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*(WCAP(IS)-WCIMPL(IS))
           END DO
         END DO
@@ -1404,6 +1419,7 @@
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1                            40.30
             IMATDA(ID,IS) = IMATDA(ID,IS) + CUMSTP(IS,ID)                 40.30
             DISSIP(ID,IS) = DISSIP(ID,IS) + CUMSTP(IS,ID)                 40.30
+            DISWCP(ID,IS) = DISWCP(ID,IS) + CUMSTP(IS,ID)                 40.61
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*CUMSTP(IS,ID)           40.30
           END DO                                                          40.30
         END DO                                                            40.30
@@ -1461,7 +1477,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1701,7 +1717,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
