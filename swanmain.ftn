@@ -2019,7 +2019,7 @@
       OVHEXP(IVTYPE) = 1.
       OVEXCV(IVTYPE) = -9.
 !
-      IVTYPE = 54
+      IVTYPE = 57
       OVKEYW(IVTYPE) = 'DISB'                                             40.61
       OVSNAM(IVTYPE) = 'Disbot'
       OVLNAM(IVTYPE) = 'Bottom friction dissipation'
@@ -2031,7 +2031,7 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
-      IVTYPE = 55
+      IVTYPE = 58
       OVKEYW(IVTYPE) = 'DISSU'                                            40.61
       OVSNAM(IVTYPE) = 'Dissrf'
       OVLNAM(IVTYPE) = 'Wave breaking dissipation'
@@ -2043,7 +2043,7 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
-      IVTYPE = 56
+      IVTYPE = 59
       OVKEYW(IVTYPE) = 'DISW'                                             40.61
       OVSNAM(IVTYPE) = 'Diswcp'
       OVLNAM(IVTYPE) = 'Whitecapping dissipation'
