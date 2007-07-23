@@ -40,7 +40,7 @@
         ITMOPT=1
 
         IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)                   40.00
-        NCOMPT = NCOMPT + 1
+        NCOMPT = 1
         RCOMPT(NCOMPT,1) = REAL(NSTATC)                                   40.41
         RCOMPT(NCOMPT,2) = REAL(MTC)                                      40.41
         RCOMPT(NCOMPT,3) = TFINC                                          40.41
