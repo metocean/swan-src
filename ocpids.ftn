@@ -194,7 +194,7 @@
         PRTEST = PRINTF
         TSTFIL = '    '
         SCREEN = 6
-        IUNMAX = 99
+        IUNMAX = 999
 !       TABC is the Tab character (interpreted as blank in command reading)
 !DOS        TABC   = '	'
 !UNIX        TABC   = '	'
@@ -207,7 +207,7 @@
 !UNIX        DIRCH1 =  CHAR(92)                                                40.41 40.30
 !UNIX        DIRCH2 =  CHAR(47)                                                40.30
 !       INST = name of institute, max. 40 characters
-        INST = 'Delft University of Technology'
+        INST = 'MSL'
         ITMOPT = 1
 !
       ENDIF
