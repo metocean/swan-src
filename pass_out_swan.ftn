@@ -18,7 +18,8 @@
       REAL COMPDA(MCGRD,MCMVAR),XCGRID(MXC,MYC),YCGRID(MXC,MYC)
       REAL SPCDIR(MDC,6), SPCSIG(MSC)  
       REAL AC2(MDC,MSC,MCGRD)
-      Real DIRDEG,DS,ETOT,EEX,EEY,EAD,EHFR,EFTAIL      
+      real WK(MSC), CG(MSC), NE(MSC), NED(MSC)
+      Real DIRDEG,DS,ETOT,EEX,EEY,EAD,EHFR,EFTAIL,CGE,CEX,CEY      
       integer IX,IY, INDX,KGRPNT(MXC,MYC)
       
       PRINT*,'Passing variables out of SWAN'
@@ -104,10 +105,18 @@
           ETOT = 0.
           EEX  = 0.
           EEY  = 0.
+          CGE = 0.
+          CEX = 0.
+          CEY = 0.
           DO 240 ID=1, MDC
               EAD = 0.
               DO 237 IS=2,MSC
-                DS=SPCSIG(IS)-SPCSIG(IS-1)                                
+                if(ID.eq.1)CALL KSCIP1 (MSC,SPCSIG,compda(indx,JDP2)
+     &                     , WK, CG, NE, NED)
+                DS=SPCSIG(IS)-SPCSIG(IS-1)
+                CGE = CGE + DS * CG(IS) * SPCSIG(IS)* AC2(ID,IS,INDX)
+                CEX = CEX + CGE * SPCDIR(ID,2)
+                CEY = CEY + CGE * SPCDIR(ID,3)
                 EDI = 0.5*(SPCSIG(IS)*AC2(ID,IS,INDX)+                       
      &                     SPCSIG(IS-1)*AC2(ID,IS-1,INDX))*DS                
                 EAD = EAD + EDI
@@ -123,9 +132,13 @@
               EEY  = EEY + EAD * SPCDIR(ID,3)
   240     CONTINUE
           IF (ETOT.GT.0.) THEN
-               Pass_theta(ix,iy) = ATAN2(EEY,EEX) * 180./PI                    
+               Pass_theta(ix,iy) = ATAN2(EEY,EEX) * 180./PI
+               Pass_MassFluxU(ix,iy) = CEX * DDIR
+               Pass_MassFluxV(ix,iy) = CEY * DDIR
           ELSE
                Pass_theta(ix,iy) = 0
+               Pass_MassFluxU(ix,iy) = 0
+               Pass_MassFluxV(ix,iy) = 0
           ENDIF
          ENDDO
          ENDDO
