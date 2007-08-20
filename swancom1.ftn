@@ -9034,8 +9034,8 @@
                  SETPDA(INDX,2) =
      &                  -(RSXYI*DIX + RSXYJ*DJX + RSYYI*DIY + RSYYJ*DJY)  31.03
 !
-!NCOM                 Pass_Wave_Fx(IX,IY)=SETPDA(INDX,1)
-!NCOM                 Pass_Wave_Fy(IX,IY)=SETPDA(INDX,2)
+!NCOM                 Pass_Wave_Fx(IX,IY)=grav*SETPDA(INDX,1)
+!NCOM                 Pass_Wave_Fy(IX,IY)=grav*SETPDA(INDX,2)
               END IF
            END DO
         END DO
