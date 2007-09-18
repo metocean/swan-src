@@ -25,19 +25,28 @@
       LOGICAL, SAVE :: RUNMADE = .FALSE.                                  40.03
       CHARACTER PSNAME *8, PNAME *8, COMPUT *(*), PTYPE *1, DTTIWR *18    40.00
 ! define MasterDT
-      REAL  :: MasterDT
+      REAL  :: MasterDT,SwanDT
 !
 !  calculate time variables: TINIC, TFINC, TIMCO, RDTIM, MTC, ITMOPT -fyshi
 !                       and RUNMADE COMPUT -fyshi
 
-        MasterDT= Master_dt*N_Interval_CallWave*N_Speedup_Sedi
+        SwanDT=Master_dt*N_Interval_CallWave
+        MasterDT=SwanDT*N_Speedup
+        
+        
 
         RUNMADE=.TRUE.
         COMPUT='COMP'
-        TINIC=TIMCO
-        TFINC=TINIC + MasterDT
+        if (TIMCO.gt.TINIC) then
+            TINIC=TINIC+MasterDT
+        else
+            print*,'Swan DT=',SwanDT,'MasterDT=',MasterDT
+        endif
+        
+        TIMCO=TINIC
+        TFINC=TINIC + SwanDT
         RDTIM=1./DT
-        ITMOPT=1
+        ITMOPT=1 
 
         IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)                   40.00
         NCOMPT = 1
