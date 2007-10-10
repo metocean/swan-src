@@ -101,6 +101,7 @@
             Pass_Diss(ix,iy)=compda(indx,JDISS)
             Pass_ubott(ix,iy)=compda(indx,JUBOT)
             Pass_Height(ix,iy)=compda(indx,JHS)
+            Pass_ibrk(ix,iy)=compda(indx,JQB)
           ENDIF
           ETOT = 0.
           EEX  = 0.

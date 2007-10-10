@@ -5389,7 +5389,17 @@
       DIFPARDX(1:MCGRD) = 0.
       DIFPARDY(1:MCGRD) = 0.
       
-      if (KSPHER.EQ.1) LLCONVX=LENDEG*COS(DEGRAD*(YOFFS+YCGRID(1,1)))
+      
+      if (OPTG.EQ.1) then
+         DXLOC = DX
+         DYLOC = DY
+         if (KSPHER.EQ.1) then
+            LLCONVX=LENDEG*COS(DEGRAD*(YOFFS+YCGRID(1,1)))
+            DXLOC = DXLOC * LLCONVX
+            DYLOC = DYLOC * LENDEG
+         endif
+       endif
+                  
 
 !     --- loop over all X-connections
       DO IX = MAX(IX1,2), MIN(IX2+1,MXC)                                  40.41
@@ -5406,13 +5416,7 @@
             IF (NOOBST                                                    40.41
      &          .AND.DEP2(IND ).GT.DEPMIN
      &          .AND.DEP2(INDL).GT.DEPMIN) THEN
-               if (KSPHER.EQ.1.AND.OPTG.EQ.1) then
-                  DXLOC = DX * LLCONVX
-                  DYLOC = DY * LENDEG
-               ELSEIF ( OPTG.EQ.1 ) THEN
-                  DXLOC = DX
-                  DYLOC = DY
-               ELSE
+               if (optg.ne.1)then
                   DXLOC = XCGRID(IX,IY) - XCGRID(IX-1,IY)
                   IF (LMYF .AND. IY.EQ.1) THEN
                      DYLOC = YCGRID(IX,IY+1) - YCGRID(IX,IY)
@@ -5429,20 +5433,23 @@
                IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
                TMP = 0.5*(CG(INDL)/K(INDL)+CG(IND)/K(IND)) *
      &                   DYLOC * (EN(IND)-EN(INDL)) / DXLOC
-               EAD = DXLOC * DYLOC * EN(IND)*CG(IND)*K(IND)
                LAPE (INDL) = LAPE (INDL) + TMP
                LAPE (IND ) = LAPE (IND ) - TMP
-               DENOM(IND ) = DENOM(IND ) + EAD
             END IF
          END DO
       END DO
+      
 
 
 !     --- loop over all Y-connections
       DO IX = IX1, IX2                                                    40.41
-         DO IY = MAX(IY1,2), MIN(IY2+1,MYC)                               40.41
+         DO IY = MAX(IY1,1), MIN(IY2+1,MYC)                               40.41
             IND  = KGRPNT(IX,IY  )
-            INDB = KGRPNT(IX,IY-1)
+            if (iy.gt.1)then
+                INDB = KGRPNT(IX,IY-1)
+            else
+                INDB = KGRPNT(IX,IY)
+            endif
             IF (NUMOBS.EQ.0) THEN                                         40.41
                NOOBST=.TRUE.                                              40.41
             ELSE IF (CROSS(2,IND).EQ.0) THEN                              40.41
@@ -5453,14 +5460,12 @@
             IF (NOOBST                                                    40.41
      &          .AND.DEP2(IND ).GT.DEPMIN
      &          .AND.DEP2(INDB).GT.DEPMIN) THEN
-               IF (KSPHER.EQ.1.AND.OPTG.EQ.1) THEN
-                  DXLOC = DX * LLCONVX
-                  DYLOC = DY * LENDEG
-               ELSEIF ( OPTG.EQ.1 ) THEN
-                  DXLOC = DX
-                  DYLOC = DY
-               ELSE
-                  DYLOC = YCGRID(IX,IY) - YCGRID(IX,IY-1)
+               IF (OPTG.NE.1) THEN
+                  if (IY.EQ.1)THEN
+                    DYLOC = YCGRID(IX,2) - YCGRID(IX,1)
+                  else
+                    DYLOC = YCGRID(IX,IY) - YCGRID(IX,IY-1)
+                  endif
                   IF (LMXF .AND. IX.EQ.1) THEN
                      DXLOC = XCGRID(IX+1,IY) - XCGRID(IX,IY)
                   ELSE IF (LMXL .AND. IX.EQ.MXC) THEN
@@ -5469,35 +5474,39 @@
                      DXLOC = 0.5*( XCGRID(IX+1,IY) -
      &                             XCGRID(IX-1,IY) )
                   END IF
+                  DXLOC = ABS(DXLOC)
+                  DYLOC = ABS(DYLOC)
+                  IF (EQREAL(DXLOC,0.)) DXLOC = 0.01
+                  IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
                END IF
-               DXLOC = ABS(DXLOC)
-               DYLOC = ABS(DYLOC)
-               IF (EQREAL(DXLOC,0.)) DXLOC = 0.01
-               IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
-               TMP = 0.5*(CG(INDB)/K(INDB)+CG(IND)/K(IND)) *
-     &                   DXLOC * (EN(IND)-EN(INDB)) / DYLOC
                EAD = DXLOC * DYLOC * EN(IND)*CG(IND)*K(IND)
-               LAPE (INDB) = LAPE (INDB) + TMP
-               LAPE (IND ) = LAPE (IND ) - TMP
+               if(iy.gt.1)then
+                TMP = 0.5*(CG(INDB)/K(INDB)+CG(IND)/K(IND)) *
+     &                   DXLOC * (EN(IND)-EN(INDB)) / DYLOC
+                LAPE (INDB) = LAPE (INDB) + TMP
+                LAPE (IND ) = LAPE (IND ) - TMP
+               endif
                DENOM(IND ) = DENOM(IND ) + EAD
             END IF
          END DO
       END DO
-
+      
 !     --- calculate the diffraction coefficient
-
-      DO IND = 1, MCGRD
-         IF ( DENOM(IND).GT.0.0 ) THEN
-            TMP = 2.*LAPE(IND)/DENOM(IND)
-         ELSE
-            TMP = 0.
-         END IF
-         IF (TMP.LT.-1.) THEN
-            DIFPARAM(IND) = 0.
-         ELSE
-            DIFPARAM(IND) = SQRT(1.+TMP)
-         END IF
-      END DO
+      DO IX = IX1, IX2                                                    40.41
+         DO IY = IY1, IY2                                                 40.41
+            IND  = KGRPNT(IX,IY  )
+            IF ( DENOM(IND).GT.0.0 ) THEN
+                ead=min(min(abs(ix-ix1),abs(ix-ix2)),
+     .          min(abs(iy-iy1),abs(iy-iy2)))
+                ead=min(1.0,ead/5.) 
+                TMP = LAPE(IND)/DENOM(IND)
+                tmp=max(-1.0,min(tmp,1.0))
+                DIFPARAM(IND) = SQRT(1.+ead*TMP)
+            ELSE
+                DIFPARAM(IND)=1.
+            endif
+         END DO
+      ENDDO
       CALL SWEXCHG(DIFPARAM(:),KGRPNT)                                    40.41
       IF (STPNOW()) RETURN                                                40.41
 
@@ -5597,11 +5606,59 @@
   82        FORMAT (10(1X,E12.4))
          END DO
       END IF
+      
+      if (.false.) then
+      
+      entmp=0.
+      open(17,file='en.out')
+      do iy=iy1,iy2
+        do ix=ix1,ix2
+            IND = KGRPNT(IX,IY)
+            if (ind.gt.1) entmp(ix,iy)=en(ind)
+        enddo
+        write(17,100)(entmp(ix,iy),ix=ix1,ix2)
+      enddo
+      close(17)
+      open(17,file='lape.out')
+      do iy=iy1,iy2
+        do ix=ix1,ix2
+            IND = KGRPNT(IX,IY)
+            if (ind.gt.1) entmp(ix,iy)=lape(ind)
+        enddo
+        write(17,100)(entmp(ix,iy),ix=ix1,ix2)
+      enddo
+      close(17)
+      open(17,file='denom.out')
+      do iy=iy1,iy2
+        do ix=ix1,ix2
+            IND = KGRPNT(IX,IY)
+            if (ind.gt.1) entmp(ix,iy)=denom(ind)
+        enddo
+        write(17,100)(entmp(ix,iy),ix=ix1,ix2)
+      enddo
+      close(17)
+      open(17,file='difparam.out')
+      do iy=iy1,iy2
+        do ix=ix1,ix2
+            IND = KGRPNT(IX,IY)
+            if (ind.gt.1) entmp(ix,iy)=difparam(ind)
+        enddo
+        write(17,100)(entmp(ix,iy),ix=ix1,ix2)
+      enddo
+      close(17)
+      
+      endif
+      
+        
+                
 
 !     --- deallocate arrays
       DEALLOCATE (EN, LAPE, DENOM, K, CG)
       DEALLOCATE (ENTMP)
 
 !     End of subroutine DIFPAR
+
+  100  format(201(f20.12))
+
       RETURN
       END
