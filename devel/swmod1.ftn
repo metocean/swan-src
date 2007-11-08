@@ -29,7 +29,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -190,7 +190,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -315,7 +315,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -421,7 +421,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -567,7 +567,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -589,6 +589,7 @@
 !
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
+!     40.61: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -601,6 +602,8 @@
 !     40.51, Sep. 05: NMOVAR increased by 2 (quantities WATLEV
 !                     and BOTLEV added)
 !     40.51, Feb. 06: NMOVAR increased by 1 (quantity TPS added)
+!     40.61, Sep. 06: NMOVAR increased by 3 (quantities DISBOT,
+!                     DISSRF and DISWCP added)
 !
 !  2. Purpose
 !
@@ -626,7 +629,7 @@
 !     MOUTPA [   5]  number of output parameters
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 53, MOUTPA=5)                                   40.51 40.21 40.41
+      PARAMETER (NMOVAR = 59, MOUTPA=5)                                   40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -683,6 +686,9 @@
 !  (51) [  'WATL']
 !  (52) [  'BOTL']
 !  (53) [   'TPS']
+!  (54) [  'DISB']
+!  (55) [ 'DISSU']
+!  (56) [  'DISW']
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -732,6 +738,9 @@
 !  (51) ['Watlev']
 !  (52) ['Botlev']
 !  (53) ['TPsmoo']
+!  (54) ['Disbot']
+!  (55) ['Dissrf']
+!  (56) ['Diswcp']
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
 !  ( 2) [                        'Y user coordinate']
@@ -781,6 +790,9 @@
 !  (51) [                              'Water level']
 !  (52) [                             'Bottom level']
 !  (53) [            'Relative peak period (smooth)']
+!  (54) [              'Bottom friction dissipation']
+!  (55) [                'Wave breaking dissipation']
+!  (56) [                 'Whitecapping dissipation']
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
 !  ( 2) [CALCULAT] =UL
@@ -830,6 +842,9 @@
 !  (51) [CALCULAT] =UH
 !  (52) [CALCULAT] =UH
 !  (53) [CALCULAT] =UT
+!  (54) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (55) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (56) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
 ! UD    [        ] not used
@@ -924,6 +939,9 @@
 !  (51)  [  1]   Watlev
 !  (52)  [  1]   Botlev
 !  (53)  [  1]   TPSmoo
+!  (54)  [  1]   Disbot
+!  (55)  [  1]   Dissrf
+!  (56)  [  1]   Diswcp
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -971,6 +989,9 @@
 !  (51)  [   -99.] Watlev
 !  (52)  [   -99.] Botlev
 !  (53)  [   -10.] TPSmoo
+!  (54)  [   -10.] Disbot
+!  (55)  [   -10.] Dissrf
+!  (56)  [   -10.] Diswcp
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1018,6 +1039,9 @@
 !  (51)  [  -100.] Watlev
 !  (52)  [  -100.] Botlev
 !  (53)  [     0.] TPSmoo
+!  (54)  [     0.] Disbot
+!  (55)  [     0.] Dissrf
+!  (56)  [     0.] Diswcp
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1065,6 +1089,9 @@
 !  (51)  [  -1.E4] Watlev
 !  (52)  [  -1.E4] Botlev
 !  (53)  [     0.] TPSmoo
+!  (54)  [     0.] Disbot
+!  (55)  [     0.] Dissrf
+!  (56)  [     0.] Diswcp
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1112,6 +1139,9 @@
 !  (51)  [   100.] Watlev
 !  (52)  [   100.] Botlev
 !  (53)  [   100.] TPSmoo
+!  (54)  [   100.] Disbot
+!  (55)  [   100.] Dissrf
+!  (56)  [   100.] Diswcp
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1159,6 +1189,9 @@
 !  (51)  [   1.E4] Watlev
 !  (52)  [   1.E4] Botlev
 !  (53)  [  1000.] TPSmoo
+!  (54)  [  1000.] Disbot
+!  (55)  [  1000.] Dissrf
+!  (56)  [  1000.] Diswcp
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
 ! SPCPOW [      1] power in expression for computation of average frequency
@@ -1220,7 +1253,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1420,7 +1453,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1502,9 +1535,9 @@
 !
 !     *** pointers for data arrays on computational grid ***
 !
-! JABIN  [  7] within array SWMATR
-! JABLK  [  8] within array SWMATR
-! JAOLD  [ 12] within array SWMATR
+! JABIN  [  1] within array LSWMAT
+! JABLK  [  2] within array LSWMAT
+! JAOLD  [ 10] within array SWMATR
 ! JASTD2 [   ] new air-sea temp. diff. within array COMPDA
 ! JASTD3 [   ] last read air-sea temp. diff. within array COMPDA
 ! JBTIME [   ] ??
@@ -1514,11 +1547,17 @@
 !              (difference in Hs between last two iterations)
 ! JDIS0  [  7] within array SWMATR
 ! JDIS1  [  8] within array SWMATR
+! JDISB  [ 11] within array SWMATR
 ! JDISS  [  2] dissipation within array COMPDA
+! JDISU  [ 12] within array SWMATR
+! JDISW  [ 13] within array SWMATR
 ! JDPSAV [  1] saved depth (for setup) within array COMPDA
 ! JDP1   [  7] old depth within array COMPDA
 ! JDP2   [  8] new depth within array COMPDA
 ! JDP3   [ 15] last read depth within array COMPDA
+! JDSXB  [ 29] bottom friction dissipation within array COMPDA
+! JDSXS  [ 30] surf dissipation within array COMPDA
+! JDSXW  [ 31] whitecapping dissipation within array COMPDA
 ! JDTM   [ 20] wave period correction within array COMPDA
 !              (difference in average wave period between last two iterations)
 ! JFRC2  [   ] friction coefficient within array COMPDA
@@ -1569,7 +1608,7 @@
 ! JWY3   [ 19] y of last read wind velocity within array COMPDA
 ! JZEL   [  1] roughness within array COMPDA,
 !              set by command WCAP JANS ...
-! MCMVAR [ 28] within array COMPDA,
+! MCMVAR [ 31] within array COMPDA,
 !              =MCMVAR+1, for command READ BOT ... (add JDP2) (obsolete)
 !              =MCMVAR+2, for command READ FR ... (add JFRC2, JFRC3)
 !              =MCMVAR+1, for command READ WL ... (add JWLV2) (obsolete)
@@ -1580,7 +1619,8 @@
 !              =MCMVAR+4, for command WCAP JANS ... (add JCDRAG, JTAUW,
 !               JUSTAR, JZEL)
 !              =MCMVAR+1, for command TRIAD .......(add Ursell)
-! MSWMAT [ 12] within array SWMATR
+! MLSWMAT [  2] within array LSWMAT
+! MSWMATR [ 13] within array SWMATR
 ! MTSVAR [  8] within array TESTDA
 !
       INTEGER             JABIN,       JABLK,       JAOLD
@@ -1589,6 +1629,9 @@
       INTEGER             JDIS1,       JDISS,       JDPSAV,      JDP1
       INTEGER             JDP2
       INTEGER             JDP3,        JDTM,        JFRC2,       JFRC3
+      INTEGER             JDISB,       JDSXB
+      INTEGER             JDISU,       JDSXS
+      INTEGER             JDISW,       JDSXW
       INTEGER             JHS,         JHSIBC,      JLEAK
       INTEGER             JLEK1,       JMAT5,       JMAT6,       JMATD
       INTEGER             JMATL,       JMATR,       JMATU
@@ -1965,19 +2008,16 @@
 !                 =0.012; set by command BRE VAR
 !                 =coeff2; set by command BRE VAR ... [coeff2]
 ! PTRIAD(MTRIAD)
-!  ( 1)  [   0.5] controls the proportionality coefficient,
-!                 =0.25; for command TRIAD LTA
-!                 =0.5; for command TRIAD DTA
+!  ( 1)  [  0.05] controls the proportionality coefficient,
 !                 =trfac; set by command TRIAD ... [trfac] ...
-!  ( 2)  [      ] controls the maximum frequency considered in the comp.,
-!                 =2.5; for command TRIAD ...
+!  ( 2)  [   2.5] controls the maximum frequency considered in the comp.,
 !                 =cutfr; set by command TRIAD ... [cutfr]
-!  ( 3)  [   0.1] controls above which Ursell number the quadruplets (and
+!  ( 3)  [  10.0] controls above which Ursell number the quadruplets (and
 !                 thus the limiter) are switched off
-!                 =ursell; set by command LIM [ursell]
+!                 =ursell; set by command LIM ... [ursell]
+!  ( 4)  [   0.2] critical Ursell number appearing in the biphase expression
 !                 =urcrit; set by command TRIAD ... [urcrit]
-!  ( 4)  [   0.2] controls above which Ursell number the triads are
-!                 calculated
+!  ( 5)  [  0.01] controls below which Ursell number the triads are switched off
 !                 =urslim; set by command TRIAD ... [urslim]
 ! PWCAP(MWCAP)     whitecapping coefficients
 !  ( 1)  [2.36E-5] coefficient for Komen et al. (1984),
@@ -2175,7 +2215,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2270,7 +2310,7 @@
 !                 propagation around the globe)
 ! KSPHER [     0] indicates whether spherical coordinates are used, and which projection method
 !                 0=Cartesian coordinates, >0=spherical coordinates
-! LENDEG [   1E5] length of a degree NS
+! LENDEG [   1E5] length of a degree of the sphere
 ! PROJ_METHOD[ 0] projection method; 0=(quasi-)Cartesian,
 !                 1=uniform Mercator (only spherical coordinates)
 ! PROPFL [CALCUL] indicates whether flux-limiting in spectral space is used
@@ -2334,7 +2374,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

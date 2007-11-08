@@ -135,6 +135,10 @@
         READ (11, *,   ERR=930, END=930) IUNMAX
         READ (11, 130, ERR=930, END=930) COMID
         READ (11, 130, ERR=930, END=930) TABC
+	if (iargc().gt.0) then
+		call getarg(1,INPFIL)
+		OUTFIL=trim(INPFIL) // '.log'
+	  endif
         IF (INIVEF.GE.2) THEN                                             40.00
           READ (11, 130, ERR=930, END=930) DIRCH1
           READ (11, 130, ERR=930, END=930) DIRCH2
