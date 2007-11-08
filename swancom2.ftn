@@ -22,8 +22,7 @@
       SUBROUTINE SBOT (ABRBOT  ,DEP2    ,ECOS    ,ESIN    ,
      &                 IMATDA  ,KWAVE   ,SPCSIG  ,UBOT    ,UX2     ,      30.72
      &                 UY2     ,IDCMIN  ,IDCMAX  ,
-     &                 PLBTFR  ,ISSTOP  ,DISSC1  ,VARFR   , FRCOEF ,
-     &                 DISBOT  )                                          40.61
+     &                 PLBTFR  ,ISSTOP  ,DISSC1  ,VARFR   , FRCOEF )      40.67
 !
 !****************************************************************
 !
@@ -38,10 +37,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -70,6 +66,7 @@
 !     30.72: IJsbrand Haagsma
 !     40.41: Marcel Zijlema
 !     40.61: Marcel Zijlema
+!     40.67: Nico Booij
 !
 !  1. Updates
 !
@@ -78,6 +75,7 @@
 !     30.72, Feb. 98: Introduced generic names XCGRID, YCGRID and SPCSIG for SWAN
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Sep. 06: introduce DISBOT variable for output purposes
+!     40.67, Jun. 07: more accurate computation fo dissipation terms
 !
 !  2. Purpose
 !
@@ -222,7 +220,6 @@
 !     UX2       2D    Current velocity in y direction as function of X,Y
 !     UY2       2D    Current velocity in y direction as function of X,Y
 !     DISSC1    2D    Dissipation coefficient, function of sigma and theta
-!     DISBOT    2D    Total bottom friction dissipation for output purposes
 !     FRCOEF    2D    Spatially variable friction coefficient             20.68
 !
 !  7. Common blocks used
@@ -273,8 +270,7 @@
      &         UBOT(MCGRD)               ,
      &         UX2(MCGRD)                ,
      &         UY2(MCGRD)                ,
-     &         DISSC1(MDC,MSC)           ,
-     &         DISBOT(MDC,MSC)           ,                                40.61
+     &         DISSC1(MDC,MSC,1:MDISP)   ,                                40.67
      &         FRCOEF(MCGRD)                                              20.68
 !
       INTEGER  IDCMIN(MSC)               ,
@@ -375,8 +371,7 @@
 !
               IMATDA(ID,IS) = IMATDA(ID,IS) + SBOTEO
               IF (TESTFL) PLBTFR(ID,IS,IPTST) = -1.* SBOTEO               40.00
-              DISSC1(ID,IS) = DISSC1(ID,IS) + SBOTEO
-              DISBOT(ID,IS) = DISBOT(ID,IS) + SBOTEO                      40.61
+              DISSC1(ID,IS,3) = DISSC1(ID,IS,3) + SBOTEO                  40.67
  690        CONTINUE
           END IF
  700    CONTINUE
@@ -405,10 +400,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -586,8 +578,7 @@
       SUBROUTINE SSURF (ETOT    ,HM               ,                       30.81
      &                  QB      ,SMEBRK  ,AC2     ,IMATRA  ,              30.81
      &                  IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,              30.81
-     &                  ISSTOP  ,DISSC0  ,DISSC1  ,DISSRF                 40.61 30.81 30.21
-     &                                                              )
+     &                  ISSTOP  ,DISSC0  ,DISSC1  )                       40.67 40.61 30.81 30.21
 !
 !****************************************************************
 !
@@ -604,10 +595,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -638,6 +626,7 @@
 !     40.13: Nico Booij
 !     40.41: Marcel Zijlema
 !     40.61: Marcel Zijlema
+!     40.67: Nico Booij
 !
 !  1. Updates
 !
@@ -648,6 +637,7 @@
 !     40.13, Jan. 01: PLWBRK corrected (dissipation test output)
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Sep. 06: introduce DISSRF variable for output purposes
+!     40.67, Jun. 07: more accurate computation of dissipation terms
 !
 !  2. Purpose
 !
@@ -747,7 +737,6 @@
 !                       (meant for output)
 !     DISSC1  output:   Dissipation coefficient as implicit part
 !                       (meant for output)
-!     DISSRF  output:   Total surf dissipation for output purposes
 !     ETOT    input :   Total energy per spatial gridpoint
 !     HM      input :   Maximum wave height
 !     ICMAX   input :   Maximum number of elements in KCGRD array
@@ -765,9 +754,8 @@
      &         IDCMIN(MSC), IDCMAX(MSC)
 !
       REAL     AC2(MDC,MSC,MCGRD)   ,
-     &         DISSC0(MDC,MSC)      ,
-     &         DISSC1(MDC,MSC)      ,
-     &         DISSRF(MDC,MSC)      ,                                     40.61
+     &         DISSC0(MDC,MSC,MDISP),                                     40.67
+     &         DISSC1(MDC,MSC,MDISP),                                     40.67
      &         IMATDA(MDC,MSC)      ,
      &         IMATRA(MDC,MSC)      ,
      &         PLWBRK(MDC,MSC,NPTST)                                      40.00
@@ -871,9 +859,8 @@
           DIS0 = SURFA0 * DBLE(AC2(ID,IS,KCGRD(1)))                       30.82
           IMATRA(ID,IS) = IMATRA(ID,IS) + REAL(DIS0)                      30.82
           IF (TESTFL) PLWBRK(ID,IS,IPTST) = REAL(SURFA0-SURFA1)           40.13
-          DISSC0(ID,IS) = DISSC0(ID,IS) - REAL(DIS0)                      30.82
-          DISSC1(ID,IS) = DISSC1(ID,IS) + REAL(SURFA1)                    30.82
-          DISSRF(ID,IS) = DISSRF(ID,IS) + REAL(SURFA1-SURFA0)             40.61
+          DISSC0(ID,IS,2) = DISSC0(ID,IS,2) - REAL(DIS0)                  40.67 30.82
+          DISSC1(ID,IS,2) = DISSC1(ID,IS,2) + REAL(SURFA1)                40.67 30.82
  100    CONTINUE
  101  CONTINUE
 !
@@ -897,7 +884,7 @@
      &                   IDCMIN  ,IDCMAX  ,ISSTOP  ,                      40.02
      &                   ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,             40.02
      &                   CGO     ,UFRIC   ,                               40.53
-     &                   DEP2    ,DISSIP  ,DISIMP  ,DISWCP  )             40.61 40.12
+     &                   DEP2    ,DISSC1  ,DISSC0  )                      40.67 40.61 40.12
 !
 !****************************************************************
 !
@@ -916,10 +903,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -952,6 +936,8 @@
 !     40.41: Marcel Zijlema
 !     40.53: Andre van der Westhuysen
 !     40.61: Marcel Zijlema
+!     40.63: Andre van der Westhuysen
+!     40.67: Nico Booij
 !
 !  1. Updates
 !
@@ -963,6 +949,9 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53: Aug. 04: white-capping based Alves and Banner (2003) method
 !     40.61, Sep. 06: introduce DISWCP variable for output purposes
+!     40.63, Apr. 07: a correction to Alves and Banner method
+!     40.67, Jun. 07: more accurate computation of source terms
+!                     DISSIP and DISIMP renamed DISSC1 and DISSC0 (as elsewhere)
 !
 !
 !  2. Purpose
@@ -1078,9 +1067,8 @@
 !     ACTOT : Total action density per gridpoint
 !     CGO   : Group velocity (excluding current!)
 !     DEP2  : Array containing water-depth
-!     DISSIP: Array containing dissipation
-!     DISIMP: Array containing implicit part of the dissipation
-!     DISWCP: Total whitecapping dissipation for output purposes
+!     DISSC0: Array containing implicit part of the dissipation
+!     DISSC1: Array containing dissipation
 !     ETOT  : Total wave energy density
 !     IDCMIN: Counter that indicates the minimum direction that is propagated in the sweep
 !     IDCMAX: Counter that indicates the maximum direction that is propagated in the sweep
@@ -1098,19 +1086,18 @@
 !     SPCSIG: Relative frequencies in computational domain in sigma-space
 !     UFRIC : wind friction velocity
 !
-      INTEGER, INTENT(IN)  :: ISSTOP, IDCMIN(MSC), IDCMAX(MSC)
+      INTEGER, INTENT(IN) :: ISSTOP, IDCMIN(MSC), IDCMAX(MSC)
 !
-      REAL, INTENT(IN)     :: AC2(MDC,MSC,MCGRD), DEP2(MCGRD)
-      REAL, INTENT(IN)     :: ETOT
+      REAL, INTENT(IN)    :: AC2(MDC,MSC,MCGRD), DEP2(MCGRD)
+      REAL, INTENT(IN)    :: ETOT
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
-      REAL, INTENT(IN)     :: KWAVE(MSC,MICMAX)                           40.22
-      REAL, INTENT(IN)     :: SPCDIR(MDC,6), SPCSIG(MSC)
-      REAL, INTENT(OUT)    :: PLWCAP(MDC,MSC,NPTST)
-      REAL, INTENT(IN OUT) :: IMATDA(MDC,MSC), IMATRA(MDC,MSC)
-      REAL, INTENT(IN OUT) :: DISSIP(MDC,MSC), DISIMP(MDC,MSC)            40.12
-      REAL, INTENT(IN OUT) :: DISWCP(MDC,MSC)                             40.61
-      REAL, INTENT(IN)     :: UFRIC                                       40.53
-      REAL, INTENT(IN)     :: CGO(MSC,MICMAX)                             40.53
+      REAL, INTENT(IN)    :: KWAVE(MSC,MICMAX)                            40.22
+      REAL, INTENT(IN)    :: SPCDIR(MDC,6), SPCSIG(MSC)
+      REAL, INTENT(OUT)   :: PLWCAP(MDC,MSC,NPTST)
+      REAL, INTENT(INOUT) :: IMATDA(MDC,MSC), IMATRA(MDC,MSC)
+      REAL, INTENT(INOUT) :: DISSC0(MDC,MSC,MDISP),DISSC1(MDC,MSC,MDISP)  40.67 40.12
+      REAL, INTENT(IN)    :: UFRIC                                        40.53
+      REAL, INTENT(IN)    :: CGO(MSC,MICMAX)                              40.53
 !
 !  6. Local variables
 !
@@ -1163,7 +1150,8 @@
       REAL, ALLOCATABLE :: CUMSTP(:,:), DSIGMA(:)                         40.30
       REAL, ALLOCATABLE :: FCOS(:)                                        40.31
 
-      REAL              :: B, P                                           40.53
+      REAL              :: B, P, BRKD, FBR                                40.63 40.53
+      REAL              :: PWCAP1, PWCAP2, PWCAP9, PWCAP10, PWCAP11       40.63
       REAL              :: EF(MSC)                                        40.53
 !
       CHARACTER*20 NUMSTR, CHARS                                          40.51
@@ -1329,6 +1317,26 @@
 ! Calculate dissipation according to Alves & Banner (2003)                40.53
 !
       IF ( IWCAP.EQ.7 ) THEN                                              40.53
+!
+! Calculate C_K                                                           40.63
+!
+! Note: use the default parameters of Komen et al. (1984) except Cds
+!       which is slightly larger
+!
+        PWCAP1  = 3.00E-5                                                 40.63
+        PWCAP2  = 3.02E-3                                                 40.63
+        PWCAP9  = 2.                                                      40.63
+        PWCAP10 = 0.                                                      40.63
+        PWCAP11 = 1.                                                      40.63
+!
+        C_K    = 0.                                                       40.63
+        STP_OV = KM_WAM * SQRT(ETOT)                                      40.63
+        STP_PM = SQRT(PWCAP2)                                             40.63
+        N1     = PWCAP11                                                  40.63
+        N2     = 2. * PWCAP9                                              40.63
+        C_K(:) = PWCAP1 * (1. - PWCAP10 +                                 40.63
+     &           PWCAP10 * (KWAVE(:,1) / KM_WAM)**N1) *                   40.63
+     &           (STP_OV / STP_PM)**N2                                    40.63
 !                                                                         40.53
 !  Loop to calculate B(k)                                                 40.53
 !                                                                         40.53
@@ -1348,15 +1356,18 @@
 !  Calculate exponent P of the relative saturation (B/Br)                 40.53
 !                                                                         40.53
           PWCAP(10)= 3. + TANH(25.76*(UFRIC*KWAVE(IS,1)/SPCSIG(IS)-0.1))  40.53
-          P = 0.5*PWCAP(10)*(1. + TANH( 10.*( (B/PWCAP(12))**0.5 - 1.)))  40.53
+          BRKD = PWCAP(12)*(GRAV*KWAVE(IS,1)/(SPCSIG(IS)**2))**0          40.63
+          P = PWCAP(10)                                                   40.63 40.53
+          FBR = 0.5*(1. + TANH( 10.*( (B/BRKD)**0.5 - 1.)))               40.63
 !                                                                         40.53
 !  Calculate WCAP(IS) from B(k) and P                                     40.53
 !                                                                         40.53
           STP_OV = KM_WAM * SQRT(ETOT)                                    40.53
-          WCAP(IS) = PWCAP(1)*(B/PWCAP(12))**(P/2.) *                     40.53
+          WCAP(IS) = PWCAP(1)*FBR*(B/BRKD)**(P/2.) *                      40.63 40.53
      &    STP_OV**PWCAP(9) * (KWAVE(IS,1)/KM_WAM)**PWCAP(11) *            40.53
      &    (GRAV**(0.5)*KWAVE(IS,1)**(0.5)/SPCSIG(IS))**(PWCAP(10)/2-1) *  40.53
      &    GRAV**(0.5)*KWAVE(IS,1)**(0.5)                                  40.53
+     &    + (1.-FBR) * C_K(IS) * SIGM_10 * (KWAVE(IS,1) / KM_WAM)         40.63
                                                                           40.53
         END DO                                                            40.53
       END IF                                                              40.53
@@ -1402,9 +1413,8 @@
 !
           DO IDDUM = IDCMIN(IS), IDCMAX(IS)
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1
-            IMATDA(ID,IS) = IMATDA(ID,IS) + WCAP(IS)
-            DISSIP(ID,IS) = DISSIP(ID,IS) + WCAP(IS)                      40.12
-            DISWCP(ID,IS) = DISWCP(ID,IS) + WCAP(IS)-WCIMPL(IS)           40.61
+            IMATDA(ID,IS)   = IMATDA(ID,IS)   + WCAP(IS)
+            DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + WCAP(IS)                  40.67 40.12
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*(WCAP(IS)-WCIMPL(IS))
           END DO
         END DO
@@ -1417,9 +1427,8 @@
 !                                                                         40.30
           DO IDDUM = IDCMIN(IS), IDCMAX(IS)                               40.30
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1                            40.30
-            IMATDA(ID,IS) = IMATDA(ID,IS) + CUMSTP(IS,ID)                 40.30
-            DISSIP(ID,IS) = DISSIP(ID,IS) + CUMSTP(IS,ID)                 40.30
-            DISWCP(ID,IS) = DISWCP(ID,IS) + CUMSTP(IS,ID)                 40.61
+            IMATDA(ID,IS)   = IMATDA(ID,IS)   + CUMSTP(IS,ID)             40.30
+            DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + CUMSTP(IS,ID)             40.67 40.30
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*CUMSTP(IS,ID)           40.30
           END DO                                                          40.30
         END DO                                                            40.30
@@ -1436,10 +1445,10 @@
 !
           DO IDDUM = IDCMIN(IS), IDCMAX(IS)
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1
-            IMATRA(ID,IS) = IMATRA(ID,IS) +
-     &                      WCIMPL(IS) * AC2(ID,IS,KCGRD(1))
-            DISIMP(ID,IS) = DISIMP(ID,IS) +                               40.12
-     &                      WCIMPL(IS) * AC2(ID,IS,KCGRD(1))              40.12
+            IMATRA(ID,IS)   = IMATRA(ID,IS) +
+     &                        WCIMPL(IS) * AC2(ID,IS,KCGRD(1))
+            DISSC0(ID,IS,1) = DISSC0(ID,IS,1) +                           40.67 40.12
+     &                        WCIMPL(IS) * AC2(ID,IS,KCGRD(1))            40.12
           END DO
         END DO
       END IF
@@ -1469,10 +1478,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1709,10 +1715,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !

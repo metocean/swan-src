@@ -70,10 +70,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -540,7 +537,7 @@
 !     SWREDUCE                                                            40.30
 !     SWRECVAC                                                            40.30
 !     SWSENDAC                                                            40.30
-!     MSGERR : Handles error messeges according to severity               40.41
+!     MSGERR : Handles error messages according to severity               40.41
 !     NUMSTR : Converts integer/real to string                            40.41
 !     TXPBLA : Removes leading and trailing blanks in string              40.41
 !
@@ -1116,13 +1113,11 @@
       JMAT5 = 5                                                           40.22
       JMAT6 = 6                                                           40.22
       JDIS0 = 7                                                           40.22
-      JDIS1 = 8                                                           40.22
-      JLEK1 = 9                                                           40.22
-      JAOLD = 10                                                          40.22
-      JDISB = 11                                                          40.61
-      JDISU = 12                                                          40.61
-      JDISW = 13                                                          40.61
-      MSWMATR = 13                                                        40.61 40.22
+      MSWMATR = 7                                                         40.67
+      JDIS1 = MSWMATR+MDISP                                               40.67 40.22
+      JLEK1 = MSWMATR+2*MDISP                                             40.67 40.22
+      JAOLD = MSWMATR+2*MDISP+1                                           40.67 40.22
+      MSWMATR = MSWMATR+2*MDISP+1                                         40.67 40.61 40.22
       JABIN = 1                                                           40.22
       JABLK = 2                                                           40.22
       MLSWMAT = 2                                                         40.22
@@ -1437,6 +1432,7 @@
           COMPDA(IP,JDSXB) = 0.                                           40.61
           COMPDA(IP,JDSXS) = 0.                                           40.61
           COMPDA(IP,JDSXW) = 0.                                           40.61
+          COMPDA(IP,JQB  ) = 0.                                           40.67
         ENDDO
 !
 !       initialise Ursell number to 0 for each iteration                  40.03
@@ -2277,10 +2273,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3064,17 +3057,19 @@
 !       *** in stationary mode (since it is zero in first      ***
 !           stationary run)                                    ***
 !
+        LPREDT=.FALSE.
         IF (ICOND.NE.4 .AND. ITER.EQ.1 .AND. NSTATC.EQ.0) THEN            40.41 40.00
           LPREDT=.TRUE.
           COMPDA(KCGRD(1),JHS) = 0.
           GOTO 333
- 330      CONTINUE
+        END IF
+ 330    IF (LPREDT) THEN
           CALL SPREDT (SWPDIR           ,AC2               ,CAX       ,
      &                 CAY              ,IDCMIN            ,IDCMAX    ,
      &                 ISSTOP           ,LSWMAT(1,1,JABIN) ,              40.02
      &                 RDX              ,RDY               ,OBREDF    )   40.00
+           LPREDT=.FALSE.
         END IF
-        LPREDT=.FALSE.
 !
 !       Calculate various integral parameters for use in the source terms
 !
@@ -3170,7 +3165,6 @@
      &  WWSWG               ,CGO                 ,COMPDA(1,JUSTAR)    ,
      &  COMPDA(1,JZEL)      ,SPCDIR              ,ANYWND              ,
      &  SWMATR(1,1,JDIS0)   ,SWMATR(1,1,JDIS1)   ,
-     &  SWMATR(1,1,JDISB)   ,SWMATR(1,1,JDISU)   ,SWMATR(1,1,JDISW)   ,   40.61
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO                  40.41 40.03
      &                                                                )   30.21
@@ -3351,9 +3345,9 @@
         CALL ADDDIS (COMPDA(1,JDISS)    ,COMPDA(1,JLEAK)    ,
      &               AC2                ,LSWMAT(1,1,JABIN)  ,             40.02
      &               SWMATR(1,1,JDIS0)  ,SWMATR(1,1,JDIS1)  ,
-     &               SWMATR(1,1,JDISB)  ,COMPDA(1,JDSXB)    ,             40.61
-     &               SWMATR(1,1,JDISU)  ,COMPDA(1,JDSXS)    ,             40.61
-     &               SWMATR(1,1,JDISW)  ,COMPDA(1,JDSXW)    ,             40.61
+     &               COMPDA(1,JDSXB)    ,                                 40.67 40.61
+     &               COMPDA(1,JDSXS)    ,                                 40.67 40.61
+     &               COMPDA(1,JDSXW)    ,                                 40.67 40.61
      &               SWMATR(1,1,JLEK1)  ,SPCSIG                           30.72
      &                                                      )
 !TIMG        CALL SWTSTO(124)                                                  40.23
@@ -4080,10 +4074,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4467,10 +4458,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4865,10 +4853,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -5088,10 +5073,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -5339,10 +5321,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -5674,7 +5653,6 @@
      &                     WWSWG      ,CGO        ,USTAR      ,
      &                     ZELEN      ,SPCDIR     ,ANYWND     ,
      &                     DISSC0     ,DISSC1     ,
-     &                     DISBOT     ,DISSRF     ,DISWCP     ,           40.61
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
      &                     URSELL     ,ANYBIN     ,REFLSO                 40.41 40.03
      &                                                        )           30.21
@@ -5700,10 +5678,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -6022,11 +5997,8 @@
       REAL  :: CGO(MSC,MICMAX)                                            40.22
       REAL  :: USTAR(MCGRD)
       REAL  :: ZELEN(MCGRD)
-      REAL  :: DISSC0(MDC,MSC)
-      REAL  :: DISSC1(MDC,MSC)
-      REAL  :: DISBOT(MDC,MSC)                                            40.61
-      REAL  :: DISSRF(MDC,MSC)                                            40.61
-      REAL  :: DISWCP(MDC,MSC)                                            40.61
+      REAL  :: DISSC0(1:MDC,1:MSC,1:MDISP)                                40.67
+      REAL  :: DISSC1(1:MDC,1:MSC,1:MDISP)                                40.67
       REAL  :: URSELL(MCGRD)                                              40.03
       REAL  :: FRCOEF(MCGRD)                                              20.68
       REAL  :: REFLSO(MDC,MSC)                                            40.41
@@ -6056,15 +6028,8 @@
 !
 !     *** set all dissipation coeff at 0 ***
 !
-      DO ISC = 1, MSC
-        DO IDC = 1, MDC
-          DISSC0(IDC,ISC) = 0.
-          DISSC1(IDC,ISC) = 0.
-          DISBOT(IDC,ISC) = 0.                                            40.61
-          DISSRF(IDC,ISC) = 0.                                            40.61
-          DISWCP(IDC,ISC) = 0.                                            40.61
-        ENDDO
-      ENDDO
+      DISSC0(1:MDC,1:MSC,1:MDISP) = 0.                                    40.67
+      DISSC1(1:MDC,1:MSC,1:MDISP) = 0.                                    40.67
 !
 !TIMG      CALL SWTSTA(130)                                                    40.23
       IF (IBOT .GE. 1) THEN
@@ -6074,8 +6039,7 @@
         CALL SBOT (ABRBOT   ,DEP2     ,ECOS     ,ESIN     ,
      &             IMATDA   ,KWAVE    ,SPCSIG   ,UBOT     ,UX2      ,     30.72
      &             UY2      ,IDCMIN   ,IDCMAX   ,
-     &             PLBTFR   ,ISSTOP   ,DISSC1   ,VARFR    ,FRCOEF   ,
-     &             DISBOT   )                                             40.61
+     &             PLBTFR   ,ISSTOP   ,DISSC1   ,VARFR    ,FRCOEF   )     40.67
       END IF
 !TIMG      CALL SWTSTO(130)                                                    40.23
 !
@@ -6090,8 +6054,7 @@
           CALL SSURF (ETOT    ,HM      ,
      &                QBLOC   ,SMEBRK  ,AC2     ,IMATRA  ,                30.81
      &                IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,
-     &                ISSTOP  ,DISSC0  ,DISSC1  ,DISSRF                   40.61 30.21
-     &                                                              )
+     &                ISSTOP  ,DISSC0  ,DISSC1  )                         40.67 40.61 30.21
 !
       END IF
 !TIMG      CALL SWTSTO(131)                                                    40.23
@@ -6158,7 +6121,7 @@
      &                            IDCMIN  ,IDCMAX  ,ISSTOP  ,             40.02
      &                            ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,    40.02
      &                            CGO     ,UFRIC   ,                      40.53
-     &                            DEP2    ,DISSC1  ,DISSC0  ,DISWCP  )    40.61 40.12
+     &                            DEP2    ,DISSC1  ,DISSC0  )             40.67 40.61 40.12
 !TIMG      CALL SWTSTO(133)                                                    40.23
 !
 !     compute nonlinear interactions, starting with triads                 NB!
@@ -6514,10 +6477,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -6668,10 +6628,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -6815,10 +6772,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -8132,10 +8086,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -8253,10 +8204,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -8596,10 +8544,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -9154,10 +9099,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
