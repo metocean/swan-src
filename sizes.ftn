@@ -28,9 +28,11 @@ C    for curvcirc
       integer, parameter :: nx_max =300
       integer, parameter :: ny_max =300
       
-      integer, parameter :: nphase = 30
       real(8), parameter :: pie1 = 3.14159265358979
       real(8), parameter :: pie2 = 6.28318530717959
+      real(8), parameter :: d2r=pie1/180
+      real, parameter :: rhow=1030.
+      real, parameter :: g=9.81
 
 C
 C...SET NUMBER OF BYTES "SZ" IN REAL(SZ) DECLARATIONS       

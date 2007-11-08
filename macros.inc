@@ -4,7 +4,7 @@
 F90_SER = f90
 F90_OMP =
 F90_MPI = f90
-FLAGS_OPT = /optimize:5
+FLAGS_OPT = 
 FLAGS_MSC = /assume:byterecl /nowarn /nologo
 FLAGS_SER =
 FLAGS_OMP =

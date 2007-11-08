@@ -53,6 +53,8 @@ help:
 	@echo "make ser       -- makes the Serial $(SWAN_EXE) executable"
 	@echo "make omp       -- makes the OpenMP $(SWAN_EXE) executable"
 	@echo "make mpi       -- makes the    MPI $(SWAN_EXE) executable"
+	@echo "make ncom      -- makes the    NCOM library"
+	@echo "make ncom_debug-- makes the    NCOM debug library"
 	@echo "make doc       -- makes the SWAN documentation (PDF)"
 	@echo "make clean     -- removes compiled objects and modules"
 	@echo "make allclean  -- removes compiled objects, modules and $(SWAN_EXE)"
@@ -87,8 +89,9 @@ ser:
 
 ser_debug:
 	@perl switch.pl $(swch) *.ftn
-	$(MAKE) FOR=$(F90_SER) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_SER)  /Z7 /link:debug" \
+	$(MAKE) FOR=$(F90_SER) FFLAGS="/Z7 /warn:all /check:all $(FLAGS_MSC) $(FLAGS_SER)" \
                 INCS="$(INCS_SER)" LIBS="$(LIBS_SER)" $(SWAN_EXE)
+
 
 omp:
 	@perl switch.pl $(swch) -omp *.ftn
