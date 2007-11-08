@@ -26,10 +26,12 @@
 !
 !***********************************************************************
 !                                                                      *
-      PROGRAM SWAN
+!SWAN      PROGRAM SWAN
+!NCOM      Subroutine WaveModule()
 !                                                                      *
 !***********************************************************************
 !
+!NCOM       USE PASS
       IMPLICIT NONE
 !
 !
@@ -47,7 +49,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -105,12 +107,24 @@
 !
 !     --- initialize the MPI execution environment                        40.30
 
+!NCOM      if (Master_Start.eq.1) then
+
+!     --- initialize the MPI execution environment                        40.30
+!         and common block SWPARALL                                       40.30
+
       CALL SWINITMPI                                                      40.30
       IF (STPNOW()) GOTO 999                                              40.30
 
-!     --- start SWAN run
+!NCOM      else  
 
-      CALL SWMAIN                                                         40.31 34.01
+!     --- start SWAN run
+!NCOM      print*, 'Run SWAN loop ',int((istep-1)/N_Interval_CallWave)
+!NCOM      endif
+      CALL SWMAIN                                                         
+!NCOM      print*,'Out of SWAN loop'
+                                                               
+
+!NCOM       RETURN
 
 999   CONTINUE
 
@@ -137,6 +151,8 @@
       USE OUTP_DATA                                                       40.51
       USE M_GENARR                                                        40.31
       USE M_PARALL                                                        40.31
+!NCOM      USE PASS
+!NCOM      USE Interp_coef
 !
       IMPLICIT NONE
 !
@@ -155,7 +171,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -346,6 +362,9 @@
 !
 ! 13. Source text
 !
+
+!NCOM       if (Master_Start.eq.1)then
+
 !     --- initialize various data
 !TIMG
 !TIMG      DCUMTM(:,1:2) = 0D0                                                 40.23
@@ -367,15 +386,24 @@
 
 !     --- repeat
 
-      DO
+!NCOM      endif
+!SWAN      DO
 
 !       --- read and process user commands
 
 !TIMG        CALL SWTSTA(3)                                                    40.23
-        CALL SWREAD (COMPUT)                                              40.31 30.90
+
+! master program change -fyshi
+!NCOM        if(Master_Start.eq.1)then
+                CALL SWREAD (COMPUT)
+!NCOM           return
+!NCOM        else
+! master_time_ctr was modified from SWREAD in swanpre1.f -fyshi
+!NCOM           CALL MASTER_TIME_CTR(COMPUT)
+!NCOM        endif
+        
 !TIMG        CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
-
 !       --- if last command was STOP then exit from repeat
 
         IF (COMPUT.EQ.'STOP') THEN                                        40.13
@@ -388,7 +416,6 @@
         ENDIF                                                             40.13
 
 !       --- allocate some arrays meant for computation                    40.31
-
         IF (NUMOBS .GT. 0) THEN
            IF (.NOT.ALLOCATED(CROSS)) ALLOCATE(CROSS(2,MCGRD))            40.31
         ELSE
@@ -399,7 +426,7 @@
 
 !       --- do some preparations before computation                       40.31
 
-!TIMG        CALL SWTSTA(4)                                                    40.23
+!TIMG        CALL SWTSTA(4)
         CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
      &                KGRBND, SPCDIR, SPCSIG )                            40.31
 !TIMG        CALL SWTSTO(4)                                                    40.23
@@ -503,6 +530,7 @@
 
 !         --- loop over time steps                                        40.00
 
+!NCOM          call pass_in_swan(COMPDA,KGRPNT,XCGRID,YCGRID)
           DO 500 IT = IT0, MTC                                            40.00
 !
             IF (LEVERR.GT.MAXERR) THEN                                    30.82
@@ -602,16 +630,19 @@
 
         END IF
 
-      END DO
+!SWAN      END DO
 !
  900  CONTINUE
+
+!NCOM       call PASS_OUT_SWAN(COMPDA,KGRPNT,XCGRID,YCGRID,AC2,SPCDIR,SPCSIG)
+!NCOM       return
 !
 !TIMG      CALL SWTSTO(1)                                                      40.23
 !
-      DO IUNIT=1,HIOPEN                                                   34.01
-        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
-        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
-      END DO                                                              34.01
+!SWAN      DO IUNIT=1,HIOPEN                                                   34.01
+!SWAN        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
+!SWAN        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
+!SWAN      END DO                                                              34.01
 
 !     --- collect contents of individual process files for                40.30
 !         output requests in case of parallel computation                 40.30
@@ -684,7 +715,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -727,6 +758,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
+!     40.61: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -781,6 +813,7 @@
 !     40.51, Feb. 05: output variable TMBOT added
 !     40.51, Sep. 05: output variables WATLEV and BOTLEV added
 !     40.51, Feb. 06: output variable TPS added
+!     40.61, Sep. 06: output variables DISBOT, DISSRF and DISWCP added
 !
 !  2. Purpose
 !
@@ -832,7 +865,7 @@
       VERTXT = BLANK                                                      40.03
       VERNUM = 40.51
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-!FIX      CALL BUGFIX ('A')
+      CALL BUGFIX ('A')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
       IF (INERR.GT.0) RETURN                                              34.01
@@ -1171,8 +1204,8 @@
       PSURF(2)  = 0.73                                                    20.67
 !
 !     triad interactions
-      PTRIAD(1)  = 0.1                                                    30.82
-      PTRIAD(2)  = 5.0                                                    40.55 30.82
+      PTRIAD(1)  = 0.05                                                   40.61 30.82
+      PTRIAD(2)  = 2.5                                                    40.61 40.55 30.82
       PTRIAD(3)  = 10.                                                    40.23
       PTRIAD(4)  = 0.2                                                    40.13
       PTRIAD(5)  = 0.01                                                   40.23
@@ -1244,7 +1277,10 @@
       JHS    = 26                                                         40.13
       JURSEL = 27                                                         40.13
       JPBOT  = 28                                                         40.51
-      MCMVAR = 28                                                         40.51 40.13
+      JDSXB  = 29                                                         40.61
+      JDSXS  = 30                                                         40.61
+      JDSXW  = 31                                                         40.61
+      MCMVAR = 31                                                         40.61 40.51 40.13
 !     subarray sequence number 1 is used only for unused subarrays        40.13
       JFRC2 = 1                                                           40.00
       JFRC3 = 1                                                           40.00
@@ -1947,6 +1983,80 @@
       OVHEXP(IVTYPE) = 100.
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 54                                                         40.51
+      OVKEYW(IVTYPE) = 'DPM'
+      OVSNAM(IVTYPE) = 'Dpm'
+      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 55                                                         40.51
+      OVKEYW(IVTYPE) = 'DPMSEA'
+      OVSNAM(IVTYPE) = 'Dpm_sea'
+      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 56                                                         40.51
+      OVKEYW(IVTYPE) = 'SWE'
+      OVSNAM(IVTYPE) = 'SWe'
+      OVLNAM(IVTYPE) = 'Spectral bandwidth'
+      OVUNIT(IVTYPE) = ' '
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 57
+      OVKEYW(IVTYPE) = 'DISB'                                             40.61
+      OVSNAM(IVTYPE) = 'Disbot'
+      OVLNAM(IVTYPE) = 'Bottom friction dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 58
+      OVKEYW(IVTYPE) = 'DISSU'                                            40.61
+      OVSNAM(IVTYPE) = 'Dissrf'
+      OVLNAM(IVTYPE) = 'Wave breaking dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 59
+      OVKEYW(IVTYPE) = 'DISW'                                             40.61
+      OVSNAM(IVTYPE) = 'Diswcp'
+      OVLNAM(IVTYPE) = 'Whitecapping dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+!
+!
 !     various parameters for computation of output quantities             40.00
 !
 !     reference time for TSEC
@@ -1998,7 +2108,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2307,7 +2417,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2665,7 +2775,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2967,7 +3077,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3365,7 +3475,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3499,7 +3609,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3629,7 +3739,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3790,7 +3900,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3892,7 +4002,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4065,11 +4175,6 @@
      &  CALL MSGERR (3, 'MXC must be >=3 for REPeating option')           33.09
       ENDIF
 !
-      IF (OPTG.NE.1 .AND. KSPHER.NE.0) THEN                               40.51
-         CALL MSGERR (3, 'Spherical coordinates must be given in')        40.51
-         CALL MSGERR (3, 'uniform, recti-linear computational grid')      40.51
-      END IF                                                              40.51
-!
       IF (PROPSC.EQ.2 .AND. NSTATC.GT.0) THEN                             33.10
         CALL MSGERR (3, 'SORDUP scheme only in stationary run')           33.10
       ENDIF
@@ -4132,24 +4237,12 @@
 !
       END IF                                                              30.72
 !
-!     Check whether limiter should be de-activated                        40.51
+!     Check whether limiter should be de-activated
 !
-      IF ( PNUMS(20).LT.100. ) THEN                                       40.51
-         IF ( IGEN.EQ.3 ) THEN
-!        --- third generation mode
-            IF ( IQUAD.EQ.0 .AND. ITRIAD.EQ.0 ) THEN
-               CALL MSGERR(1,'Limiter is de-activated in case of')
-               CALL MSGERR(1,'no wave-wave interactions')
-               PNUMS(20) = 1.E+20
-            END IF
-         ELSE IF ( IGEN.LT.3 ) THEN
-!        --- first or second generation mode
-            IF ( ITRIAD.EQ.0 ) THEN
-               CALL MSGERR(1,'Limiter is de-activated in case of')
-               CALL MSGERR(1,'first or second generation mode')
-               PNUMS(20) = 1.E+20
-            END IF
-         END IF
+      IF (IQUAD.EQ.0 .AND. PNUMS(20).LT.100.) THEN                        40.41
+         CALL MSGERR(1,
+     &              'Limiter is de-activated in case of no quadruplets')  40.41
+         PNUMS(20) = 1.E+20
       END IF
 !
 !     Check resolution in frequency-space when DIA is used                40.41
@@ -4244,7 +4337,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4558,11 +4651,11 @@
 
 !     field 7: water level
       IF (IFLDYN(7) .EQ. 1) THEN
-        CALL FLFILE ( 7, 0, WLEVL, 0.,                                    40.31
-     &               JWLV1, JWLV2, JWLV3, 0, 0, 0,
-     &               1., 0.,                                              40.31 30.90
-     &               COMPDA, XCGRID, YCGRID,
-     &               KGRPNT, IERR)
+!SWAN        CALL FLFILE ( 7, 0, WLEVL, 0.,                                    40.31
+!SWAN     &               JWLV1, JWLV2, JWLV3, 0, 0, 0,
+!SWAN     &               1., 0.,                                              40.31 30.90
+!SWAN     &               COMPDA, XCGRID, YCGRID,
+!SWAN     &               KGRPNT, IERR)
         IF (STPNOW()) RETURN                                              34.01
 !       Add bottom level to obtain depth
         DO 31 IX = 1, MXC
@@ -4596,11 +4689,11 @@
 
 !     field 2 and 3: current velocity
       IF (IFLDYN(2) .EQ. 1) THEN
-        CALL FLFILE ( 2, 3, UXB, UYB,                                     40.31
-     &               JVX1, JVX2, JVX3, JVY1, JVY2, JVY3,
-     &               COSVC, SINVC,                                        40.31 30.90
-     &               COMPDA, XCGRID, YCGRID,
-     &               KGRPNT, IERR)
+!SWAN        CALL FLFILE ( 2, 3, UXB, UYB,                                     40.31
+!SWAN     &               JVX1, JVX2, JVX3, JVY1, JVY2, JVY3,
+!SWAN     &               COSVC, SINVC,                                        40.31 30.90
+!SWAN     &               COMPDA, XCGRID, YCGRID,
+!SWAN     &               KGRPNT, IERR)
         IF (STPNOW()) RETURN                                              34.01
 !       reduce current velocity if Froude number is larger than PNUMS(18)
         DO IX = 1, MXC                                                    40.13
@@ -4682,7 +4775,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4710,6 +4803,7 @@
 !     40.05: Ekaterini E. Kriezi
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.61: Roop Lalbeharry
 !
 !  1. Updates
 !
@@ -4726,6 +4820,7 @@
 !                     changed
 !     40.31, Nov. 03: removing POOL-mechanism, reconsidering this subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.61, Nov. 06: variables USNEW, THWNEW no longer written in WAM4.5
 !
 !  2. Purpose
 !
@@ -5005,7 +5100,7 @@
 !             heading line                                                40.03
                 IF (BTYPE.EQ.'WAMW') THEN                                 40.03
                   READ(NDSD, END=380, ERR=920) XLON, XLAT, CDATE,
-     &               EMEAN, THQ, FMEAN, USNEW, THWNEW
+     &               EMEAN, THQ, FMEAN
                   TIMSTR = CDATE
 !                 convert time string to time in seconds
                   CALL DTRETI (TIMSTR, BFILED(6), TIMF2)                  40.03 40.05
@@ -5278,7 +5373,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5305,6 +5400,7 @@
 !     40.31: Tim Campbell and John Cazes
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.61: Roop Lalbeharry
 !
 !  1. Update
 !
@@ -5319,6 +5415,7 @@
 !     40.31, Nov. 03: removing POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.41, Nov. 04: small corrections
+!     40.61, Nov. 06: boundary spectra are read as written in WAM4.5
 !
 !  2. Purpose
 !
@@ -5572,15 +5669,11 @@
         ELSE
 !         format reading (except WW3)
           IF (DORDER.LT.0) THEN                                           40.31
-            READ (NDSD,*,END=940,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,1)           40.31
-            READ (NDSD,*,END=930,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=2,NFRE)        40.31
+            READ (NDSD,END=930,ERR=920)                                   40.61
+     &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)        40.61
           ELSE                                                            40.31
-            READ (NDSD,*,END=940,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,1)              40.31
-            READ (NDSD,*,END=930,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=2,NFRE)           40.31
+            READ (NDSD,*,END=930,ERR=920)                                 40.61
+     &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)           40.61
           ENDIF                                                           40.31
         ENDIF
 !
@@ -5709,7 +5802,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6016,7 +6109,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6248,7 +6341,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
