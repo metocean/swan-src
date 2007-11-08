@@ -21,10 +21,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -182,10 +179,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -307,10 +301,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -413,10 +404,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -559,10 +547,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -590,6 +575,7 @@
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
 !     40.61: Marcel Zijlema
+!     40.64: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -604,6 +590,7 @@
 !     40.51, Feb. 06: NMOVAR increased by 1 (quantity TPS added)
 !     40.61, Sep. 06: NMOVAR increased by 3 (quantities DISBOT,
 !                     DISSRF and DISWCP added)
+!     40.64, Apr. 07: NMOVAR increased by 2 (quantities QP and BFI added)
 !
 !  2. Purpose
 !
@@ -625,11 +612,11 @@
 !
 !  6. Parameter variables
 !
-!     NMOVAR [  56]  maximum number of output variables                   40.61 40.51 40.21 40.41
+!     NMOVAR [  59]  maximum number of output variables                   40.64 40.61 40.51 40.21 40.41
 !     MOUTPA [   5]  number of output parameters
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 56, MOUTPA=5)                                   40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 59, MOUTPA=5)                                   40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -689,6 +676,8 @@
 !  (54) [  'DISB']
 !  (55) [ 'DISSU']
 !  (56) [  'DISW']
+!  (58) [    'QP']
+!  (59) [   'BFI']
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -741,6 +730,8 @@
 !  (54) ['Disbot']
 !  (55) ['Dissrf']
 !  (56) ['Diswcp']
+!  (58) [    'Qp']
+!  (59) [   'BFI']
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
 !  ( 2) [                        'Y user coordinate']
@@ -793,6 +784,8 @@
 !  (54) [              'Bottom friction dissipation']
 !  (55) [                'Wave breaking dissipation']
 !  (56) [                 'Whitecapping dissipation']
+!  (58) [                               'Peakedness']
+!  (59) [                      'Benjamin-Feir index']
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
 !  ( 2) [CALCULAT] =UL
@@ -845,6 +838,8 @@
 !  (54) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (55) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (56) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (58) [     ' ']
+!  (59) [     ' ']
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
 ! UD    [        ] not used
@@ -942,6 +937,8 @@
 !  (54)  [  1]   Disbot
 !  (55)  [  1]   Dissrf
 !  (56)  [  1]   Diswcp
+!  (58)  [  1]   Qp
+!  (59)  [  1]   BFI
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -992,6 +989,8 @@
 !  (54)  [   -10.] Disbot
 !  (55)  [   -10.] Dissrf
 !  (56)  [   -10.] Diswcp
+!  (58)  [    -9.] Qp
+!  (59)  [    -9.] BFI
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1042,6 +1041,8 @@
 !  (54)  [     0.] Disbot
 !  (55)  [     0.] Dissrf
 !  (56)  [     0.] Diswcp
+!  (58)  [     0.] Qp
+!  (59)  [     0.] BFI
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1092,6 +1093,8 @@
 !  (54)  [     0.] Disbot
 !  (55)  [     0.] Dissrf
 !  (56)  [     0.] Diswcp
+!  (58)  [     0.] Qp
+!  (59)  [     0.] BFI
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1142,6 +1145,8 @@
 !  (54)  [   100.] Disbot
 !  (55)  [   100.] Dissrf
 !  (56)  [   100.] Diswcp
+!  (58)  [     1.] Qp
+!  (59)  [  1000.] BFI
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1192,6 +1197,8 @@
 !  (54)  [  1000.] Disbot
 !  (55)  [  1000.] Dissrf
 !  (56)  [  1000.] Diswcp
+!  (58)  [     1.] Qp
+!  (59)  [  1000.] BFI
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
 ! SPCPOW [      1] power in expression for computation of average frequency
@@ -1245,10 +1252,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1445,10 +1449,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1501,6 +1502,7 @@
 !
 !     MBOT   [  10] dimension of array PBOT
 !     MDIFFR [  10] dimension of array PDIFFR                             40.21
+!     MDISP  [   3] dimension for dissipation arrays                      40.67
 !     MICMAX [  10] max. number of points in comput. stencil
 !     MNUMS  [  30] dimension of array PNUMS
 !     MQUAD  [  10] dimension of array PQUAD
@@ -1517,9 +1519,11 @@
       INTEGER             MTRIAD,      MWCAP,       MWIND
       INTEGER             MICMAX
       INTEGER             MDIFFR                                          40.21
+      INTEGER             MDISP                                           40.67
 !
       PARAMETER           (MBOT   = 10)
       PARAMETER           (MDIFFR = 10)                                   40.21
+      PARAMETER           (MDISP  =  3)                                   40.67
       PARAMETER           (MICMAX = 10)
       PARAMETER           (MNUMS  = 30)
       PARAMETER           (MQUAD  = 10)
@@ -1537,38 +1541,39 @@
 !
 ! JABIN  [  1] within array LSWMAT
 ! JABLK  [  2] within array LSWMAT
-! JAOLD  [ 10] within array SWMATR
-! JASTD2 [   ] new air-sea temp. diff. within array COMPDA
-! JASTD3 [   ] last read air-sea temp. diff. within array COMPDA
-! JBTIME [   ] ??
+! JAOLD  [ 8+2*MDISP] within array SWMATR
+! JASTD2 [  1] new air-sea temp. diff. within array COMPDA
+! JASTD3 [  1] last read air-sea temp. diff. within array COMPDA
+! JBOTLV [  1] bottom level within array COMPDA
+!              set by command TABLE/BLOCK
 ! JCDRAG [  1] drag coefficient within array COMPDA,
 !              set by command WCAP JANS ...
 ! JDHS   [  6] wave height correction within array COMPDA
 !              (difference in Hs between last two iterations)
 ! JDIS0  [  7] within array SWMATR
-! JDIS1  [  8] within array SWMATR
-! JDISB  [ 11] within array SWMATR
+! JDIS1  [  7+MDISP] within array SWMATR
 ! JDISS  [  2] dissipation within array COMPDA
-! JDISU  [ 12] within array SWMATR
-! JDISW  [ 13] within array SWMATR
 ! JDPSAV [  1] saved depth (for setup) within array COMPDA
 ! JDP1   [  7] old depth within array COMPDA
 ! JDP2   [  8] new depth within array COMPDA
 ! JDP3   [ 15] last read depth within array COMPDA
-! JDSXB  [ 29] bottom friction dissipation within array COMPDA
-! JDSXS  [ 30] surf dissipation within array COMPDA
-! JDSXW  [ 31] whitecapping dissipation within array COMPDA
+! JDSXB  [  1] bottom friction dissipation within array COMPDA
+!              set by command TABLE/BLOCK
+! JDSXS  [  1] surf dissipation within array COMPDA
+!              set by command TABLE/BLOCK
+! JDSXW  [  1] whitecapping dissipation within array COMPDA
+!              set by command TABLE/BLOCK
 ! JDTM   [ 20] wave period correction within array COMPDA
 !              (difference in average wave period between last two iterations)
-! JFRC2  [   ] friction coefficient within array COMPDA
+! JFRC2  [  1] friction coefficient within array COMPDA
 !              set by command READ FR ...
-! JFRC3  [   ] friction coefficient within array COMPDA
+! JFRC3  [  1] friction coefficient within array COMPDA
 !              set by command READ FR ...
 ! JHS    [  1] significant wave height Hs within array COMPDA
 ! JHSIBC [ 25] significant wave height from boundary condition in array COMPDA
 ! JLEAK  [ 21] "leak" within array COMPDA
 !              (refractive energy tranport over sector boundaries)
-! JLEK1  [  9] within array SWMATR
+! JLEK1  [  7+2*MDISP] within array SWMATR
 ! JMAT5  [  5] within array SWMATR
 ! JMAT6  [  6] within array SWMATR
 ! JMATD  [  1] within array SWMATR
@@ -1577,7 +1582,8 @@
 ! JMATU  [  4] within array SWMATR
 ! JP4D   [  7] within array SWTSDA, quadruplet interactions
 ! JP4S   [  6] within array SWTSDA, quadruplet interactions
-! JPBOT  [ 28] bottom wave period within array COMPDA
+! JPBOT  [  1] bottom wave period within array COMPDA
+!              set by command TABLE/BLOCK
 ! JPBTFR [  4] within array SWTSDA, bottom friction
 ! JPTRI  [  8] within array SWTSDA, triad interactions
 ! JPWBRK [  5] within array SWTSDA, surf breaking
@@ -1608,30 +1614,28 @@
 ! JWY3   [ 19] y of last read wind velocity within array COMPDA
 ! JZEL   [  1] roughness within array COMPDA,
 !              set by command WCAP JANS ...
-! MCMVAR [ 31] within array COMPDA,
-!              =MCMVAR+1, for command READ BOT ... (add JDP2) (obsolete)
+! MCMVAR [ 27] within array COMPDA,
 !              =MCMVAR+2, for command READ FR ... (add JFRC2, JFRC3)
-!              =MCMVAR+1, for command READ WL ... (add JWLV2) (obsolete)
-!              =MCMVAR+2, for command WIND ... (add JWX2, JWY2) (obsolete)
-!              =MCMVAR+2, for command READ WI ... (add JWX2, JWY2) (obsolete)
-!              =MCMVAR+2, for command READ CUR ... (add JVX2, JVY2) (obsolete)
-!              =MCMVAR+2, for command READ COOR ... (add JCOOX, JCOOY)
 !              =MCMVAR+4, for command WCAP JANS ... (add JCDRAG, JTAUW,
 !               JUSTAR, JZEL)
-!              =MCMVAR+1, for command TRIAD .......(add Ursell)
+!              =MCMVAR+1, for command TABLE/BLOCK TMBOT (add JPBOT)
+!              =MCMVAR+1, for command TABLE/BLOCK BOTLEV (add JBOTLV)
+!              =MCMVAR+1, for command TABLE/BLOCK DISB (add JDSXB)
+!              =MCMVAR+1, for command TABLE/BLOCK DISSU (add JDSXS)
+!              =MCMVAR+1, for command TABLE/BLOCK DISW (add JDSXW)
 ! MLSWMAT [  2] within array LSWMAT
 ! MSWMATR [ 13] within array SWMATR
 ! MTSVAR [  8] within array TESTDA
 !
       INTEGER             JABIN,       JABLK,       JAOLD
       INTEGER             JASTD2,      JASTD3
-      INTEGER             JBTIME,      JCDRAG,      JDHS,        JDIS0
+      INTEGER             JCDRAG,      JDHS,        JDIS0
       INTEGER             JDIS1,       JDISS,       JDPSAV,      JDP1
       INTEGER             JDP2
       INTEGER             JDP3,        JDTM,        JFRC2,       JFRC3
-      INTEGER             JDISB,       JDSXB
-      INTEGER             JDISU,       JDSXS
-      INTEGER             JDISW,       JDSXW
+      INTEGER             JDSXB
+      INTEGER             JDSXS
+      INTEGER             JDSXW
       INTEGER             JHS,         JHSIBC,      JLEAK
       INTEGER             JLEK1,       JMAT5,       JMAT6,       JMATD
       INTEGER             JMATL,       JMATR,       JMATU
@@ -1644,7 +1648,7 @@
       INTEGER             JWX2,        JWX3
       INTEGER             JWY2,        JWY3,        JZEL  ,      JPBOT
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
-      INTEGER             MSWMATR,     MLSWMAT
+      INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
 !
 !     *** location and dimensions of computational grid ***
 !
@@ -2207,10 +2211,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2366,10 +2367,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !

@@ -41,10 +41,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -452,10 +449,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -667,12 +661,28 @@
            ENDIF
          ENDIF
 !
+!        for BFI add steepness and Qp as output quantities                40.64
+!
+         IF (IVTYPE.EQ.59) THEN
+           IF (.NOT.OQPROC(18)) THEN
+             NVOQP = NVOQP + 1
+             VOQR(18) = NVOQP
+             OQPROC(18) = .TRUE.
+           ENDIF
+           IF (.NOT.OQPROC(58)) THEN
+             NVOQP = NVOQP + 1
+             VOQR(58) = NVOQP
+             OQPROC(58) = .TRUE.
+           ENDIF
+         ENDIF
+!
 !        for some quantities compute action densities
 !
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
-     &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53      )      40.61 40.51 40.41 40.00
+     &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
+     &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
 !
 !        for some quantities also compute Depth, current, K and Cg
@@ -680,7 +690,7 @@
          IF (IVTYPE.EQ.15 .OR. IVTYPE.EQ.17 .OR. IVTYPE.EQ.18 .OR.
      &       IVTYPE.EQ.19 .OR. IVTYPE.EQ.20 .OR. IVTYPE.EQ.28 .OR.        10.10
      &       IVTYPE.EQ.32 .OR. IVTYPE.EQ.33 .OR. IVTYPE.EQ.42 .OR.
-     &       IVTYPE.EQ.47                                          )      40.41 40.00
+     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59                        )      40.64 40.41 40.00
      &   BKC = 2
 !
          IF (IVTYPE.EQ.11 .AND. ICUR.GT.0) BKC = 2                        20.36
@@ -740,10 +750,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -996,10 +1003,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1309,10 +1313,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1401,7 +1402,6 @@
       INTEGER    VOQR(*), KGRPNT(MXC,MYC)
       INTEGER    IONOD(*)                                                 40.31
       LOGICAL    OQPROC(*), EQREAL                                        30.72
-      REAL, ALLOCATABLE :: TARR(:,:)                                      40.51
       SAVE IENT
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOEXD')
@@ -1509,9 +1509,15 @@
 !
       IF (OQPROC(50)) THEN                                                40.51
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 50,
-     &  VOQR(50)
-        CALL SWIPOL (COMPDA(1,JPBOT), OVEXCV(50), XC, YC, MIP,
-     &               VOQ(1,VOQR(50)) ,KGRPNT, COMPDA(1,JDP2))
+     &  VOQR(50), JPBOT
+        IF (JPBOT.GT.1) THEN                                              40.65
+           CALL SWIPOL (COMPDA(1,JPBOT), OVEXCV(50), XC, YC, MIP,
+     &                  VOQ(1,VOQR(50)) ,KGRPNT, COMPDA(1,JDP2))
+        ELSE
+           DO IP = 1, MIP                                                 40.65
+             VOQ(IP,VOQR(50)) = OVEXCV(50)                                40.65
+           ENDDO                                                          40.65
+        ENDIF
       ENDIF
 !
 !     dissipation
@@ -1533,9 +1539,15 @@
 !
       IF (OQPROC(54)) THEN                                                40.61
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 54,
-     &  VOQR(54)
-        CALL SWIPOL (COMPDA(1,JDSXB), OVEXCV(54), XC, YC, MIP,
-     &               VOQ(1,VOQR(54)) ,KGRPNT, COMPDA(1,JDP2))
+     &  VOQR(54), JDSXB
+        IF (JDSXB.GT.1) THEN                                              40.65
+           CALL SWIPOL (COMPDA(1,JDSXB), OVEXCV(54), XC, YC, MIP,
+     &                  VOQ(1,VOQR(54)) ,KGRPNT, COMPDA(1,JDP2))
+        ELSE
+           DO IP = 1, MIP                                                 40.65
+             VOQ(IP,VOQR(54)) = OVEXCV(54)                                40.65
+           ENDDO                                                          40.65
+        ENDIF
         IF (INRHOG.EQ.1) THEN
           DO IP = 1, MIP
             F1 = VOQ(IP,VOQR(54))
@@ -1548,9 +1560,15 @@
 !
       IF (OQPROC(55)) THEN                                                40.61
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 55,
-     &  VOQR(55)
-        CALL SWIPOL (COMPDA(1,JDSXS), OVEXCV(55), XC, YC, MIP,
-     &               VOQ(1,VOQR(55)) ,KGRPNT, COMPDA(1,JDP2))
+     &  VOQR(55), JDSXS
+        IF (JDSXS.GT.1) THEN                                              40.65
+           CALL SWIPOL (COMPDA(1,JDSXS), OVEXCV(55), XC, YC, MIP,
+     &                  VOQ(1,VOQR(55)) ,KGRPNT, COMPDA(1,JDP2))
+        ELSE
+           DO IP = 1, MIP                                                 40.65
+             VOQ(IP,VOQR(55)) = OVEXCV(55)                                40.65
+           ENDDO                                                          40.65
+        ENDIF
         IF (INRHOG.EQ.1) THEN
           DO IP = 1, MIP
             F1 = VOQ(IP,VOQR(55))
@@ -1563,9 +1581,15 @@
 !
       IF (OQPROC(56)) THEN                                                40.61
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 56,
-     &  VOQR(56)
-        CALL SWIPOL (COMPDA(1,JDSXW), OVEXCV(56), XC, YC, MIP,
-     &               VOQ(1,VOQR(56)) ,KGRPNT, COMPDA(1,JDP2))
+     &  VOQR(56), JDSXW
+        IF (JDSXW.GT.1) THEN                                              40.65
+           CALL SWIPOL (COMPDA(1,JDSXW), OVEXCV(56), XC, YC, MIP,
+     &                  VOQ(1,VOQR(56)) ,KGRPNT, COMPDA(1,JDP2))
+        ELSE
+           DO IP = 1, MIP                                                 40.65
+             VOQ(IP,VOQR(56)) = OVEXCV(56)                                40.65
+           ENDDO                                                          40.65
+        ENDIF
         IF (INRHOG.EQ.1) THEN
           DO IP = 1, MIP
             F1 = VOQ(IP,VOQR(56))
@@ -1712,7 +1736,7 @@
      &                 VOQ(1,VOQR(39)) ,KGRPNT, COMPDA(1,JDP2))           32.02
         ELSE                                                              32.02
           DO IP = 1, MIP                                                  32.02
-            VOQ(IP,VOQR(39)) = 0.                                         32.02
+            VOQ(IP,VOQR(39)) = OVEXCV(39)                                 32.02
           ENDDO                                                           32.02
         ENDIF                                                             32.02
       ENDIF                                                               32.02
@@ -1730,9 +1754,15 @@
 !
       IF (OQPROC(46)) THEN
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 46,      40.03
-     &  VOQR(46)
-        CALL SWIPOL (COMPDA(1,JASTD2), OVEXCV(46), XC, YC, MIP,
-     &               VOQ(1,VOQR(46)) ,KGRPNT, COMPDA(1,JDP2))             40.03
+     &  VOQR(46), JASTD2
+        IF (VARAST) THEN
+           CALL SWIPOL (COMPDA(1,JASTD2), OVEXCV(46), XC, YC, MIP,
+     &                  VOQ(1,VOQR(46)) ,KGRPNT, COMPDA(1,JDP2))          40.03
+        ELSE
+           DO IP = 1, MIP
+              VOQ(IP,VOQR(46)) = OVEXCV(46)
+           END DO
+        END IF
       ENDIF
 !
 !       Diffraction parameter                                             40.21
@@ -1764,8 +1794,16 @@
          IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 27,
      &   VOQR(27)
          IF (VARFR) THEN
+!           interpolation done in all active and non-active points
+            RTMP=DEPMIN
+            DEPMIN=-10.*ABS(MINVAL(COMPDA(:,JDP2)))
             CALL SWIPOL (COMPDA(1,JFRC2), OVEXCV(27), XC, YC, MIP,
      &                   VOQ(1,VOQR(27)) ,KGRPNT, COMPDA(1,JDP2))
+            DEPMIN=RTMP
+            DO IP = 1, MIP
+               F1 = VOQ(IP,VOQR(27))
+               IF (EQREAL(F1,EXCFLD(4))) VOQ(IP,VOQR(27)) = OVEXCV(27)
+            ENDDO
          ELSE
             F1=0.
             IF (IBOT.EQ.1) F1 = PBOT(3)
@@ -1783,11 +1821,19 @@
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 51,
      &  VOQR(51)
         IF (VARWLV) THEN
+!          interpolation done in all active and non-active points
+           RTMP=DEPMIN
+           DEPMIN=-10.*ABS(MINVAL(COMPDA(:,JDP2)))
            CALL SWIPOL (COMPDA(1,JWLV2), OVEXCV(51), XC, YC, MIP,
      &                  VOQ(1,VOQR(51)) ,KGRPNT, COMPDA(1,JDP2))
+           DEPMIN=RTMP
+           DO IP = 1, MIP
+              F1 = VOQ(IP,VOQR(51))
+              IF (EQREAL(F1,EXCFLD(7))) VOQ(IP,VOQR(51)) = OVEXCV(51)
+           ENDDO
         ELSE
            DO IP = 1, MIP
-              VOQ(IP,VOQR(51))=0.
+              VOQ(IP,VOQR(51)) = 0.
            END DO
         END IF
         DO IP = 1, MIP
@@ -1800,23 +1846,23 @@
 !
       IF (OQPROC(52)) THEN                                                40.51
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 52,
-     &  VOQR(52)
-        ALLOCATE(TARR(MIP,2))
-        CALL SWIPOL (COMPDA(1,JDP2), OVEXCV(4), XC, YC, MIP,
-     &               TARR(1,1), KGRPNT, COMPDA(1,JDP2))
-        IF (VARWLV) THEN
-           CALL SWIPOL (COMPDA(1,JWLV2), OVEXCV(51), XC, YC, MIP,
-     &                  TARR(1,2), KGRPNT, COMPDA(1,JDP2))
+     &  VOQR(52), JBOTLV
+        IF (JBOTLV.GT.1) THEN                                             40.65
+!          interpolation done in all active and non-active points
+           RTMP=DEPMIN
+           DEPMIN=-10.*ABS(MINVAL(COMPDA(:,JDP2)))
+           CALL SWIPOL (COMPDA(1,JBOTLV), OVEXCV(52), XC, YC, MIP,
+     &                  VOQ(1,VOQR(52)) ,KGRPNT, COMPDA(1,JDP2))
+           DEPMIN=RTMP
+           DO IP = 1, MIP
+              F1 = VOQ(IP,VOQR(52))
+              IF (EQREAL(F1,EXCFLD(1))) VOQ(IP,VOQR(52)) = OVEXCV(52)
+           ENDDO
         ELSE
-           TARR(:,2)=0.
-        END IF
-        DO IP = 1, MIP
-           F1 = TARR(IP,1)
-           F2 = TARR(IP,2)
-           IF (.NOT.EQREAL(F1,OVEXCV( 4)) .AND.
-     &         .NOT.EQREAL(F2,OVEXCV(51)) ) VOQ(IP,VOQR(52))= F1-F2-WLEV
-        END DO
-        DEALLOCATE(TARR)
+           DO IP = 1, MIP                                                 40.65
+             VOQ(IP,VOQR(52)) = OVEXCV(52)                                40.65
+           ENDDO                                                          40.65
+        ENDIF
       ENDIF
 !
 !     --- in case of parallel run, mark location points inside own        40.31
@@ -1860,10 +1906,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2092,10 +2135,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2224,7 +2264,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=19)                                               40.51 40.41 40.00
+      PARAMETER  (NVOTP=21)                                               40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -2239,7 +2279,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53/                                 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59/                         40.64 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -2624,6 +2664,34 @@
            ENDIF
         ENDIF
 !
+!       peakedness (Qp)                                                   40.64
+!
+        IVTYPE = 58
+        IF (OQPROC(IVTYPE)) THEN
+           ETOT  = 0.
+           ESTOT = 0.
+           DO ID=1, MDC
+             DO IS = 1, MSC
+               SIG   = SPCSIG(IS)
+               EADD  = SIG**2 * ACLOC(ID,IS) * FRINTF * DDIR
+               ETOT  = ETOT  + EADD
+             ENDDO
+           ENDDO
+           DO IS = 1, MSC
+             SIG = SPCSIG(IS)
+             EADD = 0.
+             DO ID=1, MDC
+               EADD = EADD + SIG * ACLOC(ID,IS) * DDIR
+             ENDDO
+             ESTOT = ESTOT + SIG**2 * EADD**2 * FRINTF
+           ENDDO
+           IF (ETOT.GT.0.) THEN
+              VOQ(IP,VOQR(IVTYPE)) = 2.*ESTOT/(ETOT * ETOT)
+           ELSE
+              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           ENDIF
+        ENDIF
+!
         IF (BKC.EQ.1) GOTO 800
 !
 !       compute k and Cg
@@ -2963,6 +3031,19 @@
            ENDIF
         ENDIF
 !
+!       Benjamin-Feir Index (BFI)                                         40.64
+!
+        IVTYPE = 59
+        IF (OQPROC(IVTYPE)) THEN
+           STPNS = VOQ(IP,VOQR(18))
+           QP    = VOQ(IP,VOQR(58))
+           IF ( STPNS.NE.OVEXCV(18) .AND. QP.NE.OVEXCV(58) ) THEN
+              VOQ(IP,VOQR(IVTYPE)) = SQRT(PI2)*STPNS*QP
+           ELSE
+              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           ENDIF
+        ENDIF
+!
         GOTO 800
 !
 !       points on land: assign exception value
@@ -2999,10 +3080,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3211,10 +3289,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !

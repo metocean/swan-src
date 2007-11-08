@@ -31,10 +31,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -199,10 +196,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -902,10 +896,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1020,9 +1011,9 @@
 !   BLOCK   'sname'  HEADER / NOHEADER  'fname' (LAY-OUT [idla])            &
 !          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/  &
 !             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/ &
-!             DHSIGN/DRTM01/LEAK/XP/YP/DIST/SETUP/TMM10/RTMM10/TMBOT/       &
-!             WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP >  ([unit])          &
-!             (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
+!             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/        &
+!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP  >      &
+!             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   BLO   block type output
       IF (KEYWIS ('BLO')) THEN
@@ -1123,6 +1114,26 @@
                 CURR%NEXTI => TMP                                         40.31
                 CURR => TMP                                               40.31
                 IF (IVTYPE.EQ.6) IUBOTR = 1
+                IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                   40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JPBOT  = MCMVAR                                        40.65
+                ENDIF                                                     40.65
+                IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                  40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JBOTLV = MCMVAR                                        40.65
+                ENDIF                                                     40.65
+                IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                   40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JDSXB  = MCMVAR                                        40.65
+                ENDIF                                                     40.65
+                IF (IVTYPE.EQ.55 .AND. JDSXS.LE.1) THEN                   40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JDSXS  = MCMVAR                                        40.65
+                ENDIF                                                     40.65
+                IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                   40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JDSXW  = MCMVAR                                        40.65
+                ENDIF                                                     40.65
              ENDIF
              GOTO 70
           ENDIF
@@ -1163,9 +1174,9 @@
 !   TABLE   'sname'  HEADER / NOHEADER / INDEXED 'fname'                    &
 !          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/  &
 !             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/ &
-!             DHSIGN/DRTM01/LEAK/XP/YP/DIST/SETUP/TMM10/RTMM10/TMBOT/       &
-!             WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP >  ([unit])          &
-!             (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
+!             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/   &
+!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP  >      &
+!             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   TABLE   output in the form of a table
 
@@ -1236,6 +1247,26 @@
             CURR%NEXTI => TMP                                             40.31
             CURR => TMP                                                   40.31
             IF (IVTYPE.EQ.18) IUBOTR = 1
+            IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                       40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JPBOT  = MCMVAR                                            40.65
+            ENDIF                                                         40.65
+            IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                      40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JBOTLV = MCMVAR                                            40.65
+            ENDIF                                                         40.65
+            IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                       40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JDSXB  = MCMVAR                                            40.65
+            ENDIF                                                         40.65
+            IF (IVTYPE.EQ.55 .AND. JDSXS.LE.1) THEN                       40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JDSXS  = MCMVAR                                            40.65
+            ENDIF                                                         40.65
+            IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                       40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JDSXW  = MCMVAR                                            40.65
+            ENDIF                                                         40.65
             CALL INKEYW ('STA', ' ')                                      40.00
             IF (KEYWIS('UNIT')) THEN
               CALL MSGERR (1, 'UNIT is ignored in this version')          40.00
@@ -1461,10 +1492,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1634,10 +1662,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1755,10 +1780,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1887,10 +1909,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2921,10 +2940,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3415,10 +3431,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4007,10 +4020,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4470,10 +4480,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4728,10 +4735,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4892,10 +4896,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
