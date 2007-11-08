@@ -39,15 +39,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -147,15 +144,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -300,7 +294,7 @@
 !TIMG!     SWPRTI                                                              40.23
 !TIMG!     SWTSTA                                                              40.23
 !TIMG!     SWTSTO                                                              40.23
-!     MSGERR : Handles error messeges according to severity               40.41
+!     MSGERR : Handles error messages according to severity               40.41
 !     NUMSTR : Converts integer/real to string                            40.41
 !     TXPBLA : Removes leading and trailing blanks in string              40.41
 !
@@ -593,7 +587,7 @@
               IF (NSTATC.EQ.1 .AND. IT.LT.MTC) TIMCO = TIMCO + DT         40.00
               CHTIME = DTTIWR(ITMOPT, TIMCO)                              40.00
               IF (NSTATC.EQ.1) WRITE (PRINTF, 222) CHTIME, TIMCO          40.00
- 222          FORMAT(' Time of computation ->  ',A,' in sec:', F9.0)      40.00
+ 222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
 
  500      CONTINUE
@@ -676,15 +670,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -727,6 +718,8 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
+!     40.61: Marcel Zijlema
+!     40.64: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -781,6 +774,8 @@
 !     40.51, Feb. 05: output variable TMBOT added
 !     40.51, Sep. 05: output variables WATLEV and BOTLEV added
 !     40.51, Feb. 06: output variable TPS added
+!     40.61, Sep. 06: output variables DISBOT, DISSRF and DISWCP added
+!     40.64, Apr. 07: output variables Qp and BFI added
 !
 !  2. Purpose
 !
@@ -832,7 +827,8 @@
       VERTXT = BLANK                                                      40.03
       VERNUM = 40.51
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-!FIX      CALL BUGFIX ('A')
+      CALL BUGFIX ('A')
+      CALL BUGFIX ('B')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
       IF (INERR.GT.0) RETURN                                              34.01
@@ -1171,8 +1167,8 @@
       PSURF(2)  = 0.73                                                    20.67
 !
 !     triad interactions
-      PTRIAD(1)  = 0.1                                                    30.82
-      PTRIAD(2)  = 5.0                                                    40.55 30.82
+      PTRIAD(1)  = 0.05                                                   40.61 30.82
+      PTRIAD(2)  = 2.5                                                    40.61 40.55 30.82
       PTRIAD(3)  = 10.                                                    40.23
       PTRIAD(4)  = 0.2                                                    40.13
       PTRIAD(5)  = 0.01                                                   40.23
@@ -1243,8 +1239,7 @@
       JHSIBC = 25                                                         40.00
       JHS    = 26                                                         40.13
       JURSEL = 27                                                         40.13
-      JPBOT  = 28                                                         40.51
-      MCMVAR = 28                                                         40.51 40.13
+      MCMVAR = 27                                                         40.65 40.61 40.51 40.13
 !     subarray sequence number 1 is used only for unused subarrays        40.13
       JFRC2 = 1                                                           40.00
       JFRC3 = 1                                                           40.00
@@ -1260,6 +1255,14 @@
 !
       JSETUP = 1                                                          32.02
       JDPSAV = 1                                                          32.02
+!
+!     --- added for output purposes                                       40.65
+!
+      JPBOT  = 1                                                          40.65 40.51
+      JBOTLV = 1                                                          40.65
+      JDSXB  = 1                                                          40.65 40.61
+      JDSXS  = 1                                                          40.65 40.61
+      JDSXW  = 1                                                          40.65 40.61
 !
 !     Next pointers are for the plot of the source terms (SWTSDA)         40.31
 !
@@ -1947,6 +1950,66 @@
       OVHEXP(IVTYPE) = 100.
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 54
+      OVKEYW(IVTYPE) = 'DISB'                                             40.61
+      OVSNAM(IVTYPE) = 'Disbot'
+      OVLNAM(IVTYPE) = 'Bottom friction dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 55
+      OVKEYW(IVTYPE) = 'DISSU'                                            40.61
+      OVSNAM(IVTYPE) = 'Dissrf'
+      OVLNAM(IVTYPE) = 'Wave breaking dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 56
+      OVKEYW(IVTYPE) = 'DISW'                                             40.61
+      OVSNAM(IVTYPE) = 'Diswcp'
+      OVLNAM(IVTYPE) = 'Whitecapping dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 58                                                         40.64
+      OVKEYW(IVTYPE) = 'QP'
+      OVSNAM(IVTYPE) = 'Qp'
+      OVLNAM(IVTYPE) = 'Peakedness'
+      OVUNIT(IVTYPE) = ' '
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 59                                                         40.64
+      OVKEYW(IVTYPE) = 'BFI'
+      OVSNAM(IVTYPE) = 'BFI'
+      OVLNAM(IVTYPE) = 'Benjamin-Feir index'
+      OVUNIT(IVTYPE) = ' '
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1000.
+      OVEXCV(IVTYPE) = -9.
+!
 !     various parameters for computation of output quantities             40.00
 !
 !     reference time for TSEC
@@ -1990,15 +2053,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2299,15 +2359,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2657,15 +2714,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2790,10 +2844,10 @@
       IF (JDP1.GT.1) COMPDA(1,JDP1) = -1.                                 40.00
       IF (JDP3.GT.1) COMPDA(1,JDP3) = -1.                                 40.00
       IF (VARWLV) THEN
-        COMPDA(1,JWLV2) = 0.                                              40.00
+        COMPDA(1,JWLV2) = EXCFLD(7)                                       40.65 40.00
 !       next two lines only for nonstat water level
-        IF (JWLV1.GT.1) COMPDA(1,JWLV1) = 0.                              40.00
-        IF (JWLV3.GT.1) COMPDA(1,JWLV3) = 0.                              40.00
+        IF (JWLV1.GT.1) COMPDA(1,JWLV1) = EXCFLD(7)                       40.65 40.00
+        IF (JWLV3.GT.1) COMPDA(1,JWLV3) = EXCFLD(7)                       40.65 40.00
       ENDIF
       IF (ICUR.GT.0) THEN
         COMPDA(1,JVX2) = 0.                                               40.00
@@ -2804,8 +2858,8 @@
         IF (JVY3.GT.1) COMPDA(1,JVY3) = 0.                                40.00
       ENDIF
       IF (VARFR) THEN
-        COMPDA(1,JFRC2) = 0.                                              40.00
-        COMPDA(1,JFRC3) = 0.                                              40.00
+        COMPDA(1,JFRC2) = EXCFLD(4)                                       40.65 40.00
+        COMPDA(1,JFRC3) = EXCFLD(4)                                       40.65 40.00
       ENDIF
       IF (VARWI) THEN
         COMPDA(1,JWX2) = 0.                                               40.00
@@ -2817,6 +2871,7 @@
         COMPDA(1,JASTD2) = 0.                                             40.03
         COMPDA(1,JASTD3) = 0.                                             40.03
       ENDIF
+      COMPDA(1,JBOTLV) = EXCFLD(1)                                        40.65
 
       DO 20 IX = 1, MXC
         DO 10 IY = 1, MYC
@@ -2835,6 +2890,7 @@
 !         ***** compute depth and water level *****
 !
           DEP = SVALQI (XP, YP, 1, DEPTH, 1, IX, IY)                      40.31 30.90
+          COMPDA(INDX,JBOTLV) = DEP                                       40.65
 !
           IF (VARWLV) THEN                                                20.38
             WLVL = SVALQI (XP, YP, 7, WLEVL, 1 ,IX ,IY)                   40.31 30.90
@@ -2959,15 +3015,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3357,15 +3410,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3491,15 +3541,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3621,15 +3668,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3782,15 +3826,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3884,15 +3925,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3969,7 +4007,7 @@
 !
 !  8. Subroutines used
 !
-!     MSGERR : Handles error messeges according to severity
+!     MSGERR : Handles error messages according to severity
 !     NUMSTR : Converts integer/real to string
 !     TXPBLA : Removes leading and trailing blanks in string
 !
@@ -4065,11 +4103,6 @@
      &  CALL MSGERR (3, 'MXC must be >=3 for REPeating option')           33.09
       ENDIF
 !
-      IF (OPTG.NE.1 .AND. KSPHER.NE.0) THEN                               40.51
-         CALL MSGERR (3, 'Spherical coordinates must be given in')        40.51
-         CALL MSGERR (3, 'uniform, recti-linear computational grid')      40.51
-      END IF                                                              40.51
-!
       IF (PROPSC.EQ.2 .AND. NSTATC.GT.0) THEN                             33.10
         CALL MSGERR (3, 'SORDUP scheme only in stationary run')           33.10
       ENDIF
@@ -4132,24 +4165,12 @@
 !
       END IF                                                              30.72
 !
-!     Check whether limiter should be de-activated                        40.51
+!     Check whether limiter should be de-activated
 !
-      IF ( PNUMS(20).LT.100. ) THEN                                       40.51
-         IF ( IGEN.EQ.3 ) THEN
-!        --- third generation mode
-            IF ( IQUAD.EQ.0 .AND. ITRIAD.EQ.0 ) THEN
-               CALL MSGERR(1,'Limiter is de-activated in case of')
-               CALL MSGERR(1,'no wave-wave interactions')
-               PNUMS(20) = 1.E+20
-            END IF
-         ELSE IF ( IGEN.LT.3 ) THEN
-!        --- first or second generation mode
-            IF ( ITRIAD.EQ.0 ) THEN
-               CALL MSGERR(1,'Limiter is de-activated in case of')
-               CALL MSGERR(1,'first or second generation mode')
-               PNUMS(20) = 1.E+20
-            END IF
-         END IF
+      IF (IQUAD.EQ.0 .AND. PNUMS(20).LT.100.) THEN                        40.41
+         CALL MSGERR(1,
+     &              'Limiter is de-activated in case of no quadruplets')  40.41
+         PNUMS(20) = 1.E+20
       END IF
 !
 !     Check resolution in frequency-space when DIA is used                40.41
@@ -4236,15 +4257,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4674,15 +4692,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4710,6 +4725,7 @@
 !     40.05: Ekaterini E. Kriezi
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.61: Roop Lalbeharry
 !
 !  1. Updates
 !
@@ -4726,6 +4742,7 @@
 !                     changed
 !     40.31, Nov. 03: removing POOL-mechanism, reconsidering this subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.61, Nov. 06: variables USNEW, THWNEW no longer written in WAM4.5
 !
 !  2. Purpose
 !
@@ -5005,7 +5022,7 @@
 !             heading line                                                40.03
                 IF (BTYPE.EQ.'WAMW') THEN                                 40.03
                   READ(NDSD, END=380, ERR=920) XLON, XLAT, CDATE,
-     &               EMEAN, THQ, FMEAN, USNEW, THWNEW
+     &               EMEAN, THQ, FMEAN
                   TIMSTR = CDATE
 !                 convert time string to time in seconds
                   CALL DTRETI (TIMSTR, BFILED(6), TIMF2)                  40.03 40.05
@@ -5270,15 +5287,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5305,6 +5319,7 @@
 !     40.31: Tim Campbell and John Cazes
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.61: Roop Lalbeharry
 !
 !  1. Update
 !
@@ -5319,6 +5334,7 @@
 !     40.31, Nov. 03: removing POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.41, Nov. 04: small corrections
+!     40.61, Nov. 06: boundary spectra are read as written in WAM4.5
 !
 !  2. Purpose
 !
@@ -5543,15 +5559,11 @@
         IF (UNFORM) THEN
 !          unformatted reading
            IF (DORDER.LT.0) THEN                                          40.55
-              READ (NDSD,END=940,ERR=920)
-     &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,1)
               READ (NDSD,END=930,ERR=920)
-     &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=2,NFRE)
+     &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)
            ELSE
-              READ (NDSD,END=940,ERR=920)
-     &               ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,1)
               READ (NDSD,END=930,ERR=920)
-     &               ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=2,NFRE)
+     &               ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)
            ENDIF
         ELSEIF ((.NOT.UNFORM).AND.(BTYPE.EQ.'WW3N')) THEN                 40.05
 !
@@ -5572,15 +5584,11 @@
         ELSE
 !         format reading (except WW3)
           IF (DORDER.LT.0) THEN                                           40.31
-            READ (NDSD,*,END=940,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,1)           40.31
-            READ (NDSD,*,END=930,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=2,NFRE)        40.31
+            READ (NDSD,*,END=930,ERR=920)                                 40.61
+     &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)        40.61
           ELSE                                                            40.31
-            READ (NDSD,*,END=940,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,1)              40.31
-            READ (NDSD,*,END=930,ERR=920)                                 40.31
-     &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=2,NFRE)           40.31
+            READ (NDSD,*,END=930,ERR=920)                                 40.61
+     &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)           40.61
           ENDIF                                                           40.31
         ENDIF
 !
@@ -5701,15 +5709,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6008,15 +6013,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6248,7 +6250,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2004-2005  Delft University of Technology
+!     Copyright (C) 2007  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
