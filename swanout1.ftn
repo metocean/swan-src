@@ -682,9 +682,8 @@
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
      &       IVTYPE.eq.54 .OR. IVTYPE.eq.55 .OR. IVTYPE.eq.56 .OR.
-     &       IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR. IVTYPE.EQ.44      )      40.51 40.41 40.00
      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
-     &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
+     &       IVTYPE.EQ.60                                          )      40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
 !
 !        for some quantities also compute Depth, current, K and Cg
