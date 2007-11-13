@@ -62,10 +62,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -199,10 +196,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -329,10 +323,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -431,10 +422,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -588,10 +576,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -764,10 +749,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -832,10 +814,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1066,10 +1045,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1416,10 +1392,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1607,10 +1580,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1830,10 +1800,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1986,10 +1953,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2111,10 +2075,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2325,10 +2286,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2544,10 +2502,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2811,6 +2766,7 @@
 !***********************************************************************
 
       USE OCPCOMM4                                                        40.41
+      USE SWCOMM2                                                         40.66
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE M_OBSTA                                                         40.31
@@ -2826,10 +2782,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2865,6 +2818,7 @@
 !     40.30  Marcel Zijlema
 !     40.31  Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.66: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -2889,6 +2843,7 @@
 !                     with other subroutines
 !     40.31, Oct. 03: changes w.r.t. obstacles
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.66, Mar. 07: extension with d'Angremond and Van der Meer transmission
 !
 !  2. Purpose
 !
@@ -2899,6 +2854,7 @@
 !
 !      compute the transmision coeficient in case obstacle DAM
 !      based on Goda (1967) [from Seelig (1979)]
+!      or d'Angremond and Van der Meer formula's (1996)                   40.66
 !
 !      if reflections are switched on, calculate sourceterm in            40.09
 !      subroutine REFLECT                                                 40.09
@@ -2954,13 +2910,14 @@
 !  6. Local variables
 !
 !     ALOW     Lower limit for FVH
+!     BK       crest width                                                40.66
 !     BUPL     Upper limit for FVH
+!     BVH      Bk/Hsin                                                    40.66
 !     FD1      Coeff. for freq. dep. reflection: vertical displacement    40.28
 !     FD2      Coeff. for freq. dep. reflection: shape parameter          40.28
 !     FD3      Coeff. for freq. dep. reflection: directional coefficient  40.28
 !     FD4      Coeff. for freq. dep. reflection: bending point of freq.   40.28
-!     FVH      WATHIG/Hsin (= F/Hi in formulation of Goda/Seelig
-!              (1967/1979))
+!     FVH      WATHIG/Hsin
 !     HGT      elevation of top of obstacle above reference level
 !     HSIN     incoming significant wave height
 !     ID       counter in directional space
@@ -2968,9 +2925,12 @@
 !     ILINK    indicates which link is analyzed: 1 -> neighbour in x
 !                                                2 -> neighbour in y
 !     IS       counter in frequency space
-!     ITRAS    indicates kind of obstacle: 0 -> transm
-!                                          1 -> dam
+!     ITRAS    indicates kind of obstacle: 0 -> constant transm
+!                                          1 -> dam, Goda
+!                                          2 -> dam, d'Angremond and      40.66
+!                                                    Van der Meer         40.66
 !     JP       counter for number of corner points of obstacles
+!     L0P      wave length in deep water                                  40.66
 !     LREFDIFF indicates whether reflected energy should be               40.18
 !              scattered (1) or not (0)                                   40.18
 !     LREFL    if LREFL=0, no reflection; if LREFL=1, constant            40.13
@@ -2987,6 +2947,7 @@
 !     POWN     user defined power of redistribution function              40.28
 !     REFLCOEF reflection coefficient in terms of action density
 !     REFLTST  used to test Refl^2+Transm^2 <=1                           40.13
+!     SLOPE    slope of obstacle                                          40.66
 !     SQRTREF  dummy variable
 !     TRCF     transmission coefficient in terms of action density
 !              (user defined or calculated (in terms of waveheight))
@@ -2995,15 +2956,17 @@
 !     X3, Y3   user coordinates of one end of obstacle side
 !     X4, Y4   user coordinates of other end of obstacle side
 !     XCGRID   Coordinates of computational grid in x-direction
+!     XI0P     breaker parameter                                          40.66
 !     XONOBST  Indicates whether computational point (X1,Y1) is on        40.14
 !              obstacle                                                   40.14
 !     YCGRID   Coordinates of computational grid in y-direction
 !     WATHIG   freeboard of the dam (= HGT-waterlevel)
 !
       INTEGER    ID, IENT, ILINK, ITRAS, IS, JP, ICGRD, LREFL,
-     &           NUMCOR, NMPO
+     &           NUMCOR, NMPO, ISIGM
       INTEGER    LREFDIFF, LRFRD                                          40.31
       REAL       ALOW, BUPL, FVH, HGT, HSIN, OBET, OBHKT,
+     &           SLOPE, BK, L0P, XI0P, BVH, EMAX, ETD, TP,                40.66
      &           POWN, OGAM, REFLCOEF,                                    40.18 40.09
      &           TRCF, X1, X2, X3, X4, Y1, Y2, Y3, Y4, WATHIG
       REAL       FD1, FD2, FD3, FD4                                       40.31 40.28
@@ -3080,7 +3043,7 @@
           HGT    =  COBST%TRCOEF(1)                                       40.31
           OGAM   =  COBST%TRCOEF(2)                                       40.31
           OBET   =  COBST%TRCOEF(3)                                       40.31
-!         level of dam above the water (freeboard):
+!         level of dam above the water surface (freeboard):
           WATHIG =  HGT - WLEV2(KCGRD(1)) - WLEV                          40.14 30.70
 !
 !         *** Here the transmission coeff. is that of Goda and Seelig ***
@@ -3102,6 +3065,64 @@
 !
 !         Formulation of Goda/Seelig concerns ratio of waveheights.       40.09
 !         Here we use action density so:                                  40.09
+          TRCF = OBHKT*OBHKT
+        ELSE IF (ITRAS.EQ.2) THEN                                         40.66
+!       d'Angremond and Van der Meer formulae (1996)                      40.66
+          HGT   = COBST%TRCOEF(1)
+          SLOPE = COBST%TRCOEF(2)
+          BK    = COBST%TRCOEF(3)
+!
+!         level of dam above the water surface:
+          WATHIG =  HGT - WLEV2(KCGRD(1)) - WLEV
+!
+!         compute peak frequency of incoming wave
+          EMAX = 0.
+          ISIGM = -1
+          DO IS = 1, MSC
+             ETD = 0.
+             DO ID = 1, MDC
+                ETD = ETD + SPCSIG(IS)*AC2(ID,IS,KCGRD(ILINK+1))*DDIR
+             END DO
+             IF (ETD.GT.EMAX) THEN
+                EMAX  = ETD
+                ISIGM = IS
+             END IF
+          END DO
+          IF (ISIGM.LE.0) ISIGM=MSC
+          TP=2.*PI/SPCSIG(ISIGM)
+!
+!         compute breaker parameter
+          L0P  = MAX(1.E-8,1.5613*TP*TP)
+          XI0P = TAN(SLOPE*PI/180.)/SQRT(HSIN/L0P)
+!
+!         compute transmission coefficient
+          FVH = WATHIG/HSIN
+          BVH = BK/HSIN
+          IF (BVH.EQ.0.) THEN
+             OBHKT= -0.40*FVH
+             IF (OBHKT.LT.0.075) OBHKT = 0.075
+             IF (OBHKT.GT.0.900) OBHKT = 0.9
+          ELSE IF (BVH.LT.10.) THEN
+             OBHKT= -0.40*FVH + 0.64*(BVH**(-0.31))*(1.-EXP(-0.50*XI0P))
+             IF (OBHKT.LT.0.075) OBHKT = 0.075
+             IF (OBHKT.GT.0.900) OBHKT = 0.9
+          ELSE
+             OBHKT= -0.35*FVH + 0.51*(BVH**(-0.65))*(1.-EXP(-0.41*XI0P))
+             IF (OBHKT.GT.0.93-0.006*BVH) OBHKT = 0.93-0.006*BVH
+             IF (OBHKT.LT.0.05          ) OBHKT = 0.05
+          END IF
+          WRITE (PRINTF, 23)
+     &       XCGRID(IXCGRD(1),IYCGRD(1))+XOFFS,
+     &       YCGRID(IXCGRD(1),IYCGRD(1))+YOFFS,
+     &       ILINK, HGT, WATHIG, HSIN, SQRT(L0P/1.5613), XI0P, OBHKT      40.66
+  23      FORMAT (' Transmission: ', 2X, 2F12.4, I5, ' dam level=',F6.2,
+     &            ' board=', F6.2, ' Hs=', F6.2, ' Tp=', F6.2,
+     &            ' Xi0p=', F6.3, ' Kt=', F6.3)                           40.66
+          IF (TESTFL .AND. ITEST.GE.140) WRITE (PRTEST, 22)
+     &           TAN(SLOPE*PI/180.), FVH, BVH, L0P, XI0P
+!
+!         Formulation of d'Angremond concerns ratio of waveheights
+!         Here we use action density so:
           TRCF = OBHKT*OBHKT
         ENDIF
 !       assign values to array OBREDF
@@ -3202,10 +3223,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3349,7 +3367,6 @@
 !  8. Subroutines used                                                    40.09
 !                                                                         40.09
       LOGICAL :: STPNOW                                                   40.09
-      INTEGER :: IABS
 !
 !  9. Subroutines calling                                                 40.09
 !                                                                         40.09
@@ -3510,21 +3527,21 @@
 !               only outgoing reflected waves, i.e. not towards obstacle
                 IF (COS(TH_NORM-SPCDIR(IDA,1)) .GT. 0.)
      &          AC2REF = AC2REF +
-     &          REF0 * W1 * PRDIF(IABS(IDR)) * AC2(IDA,IS,KCGRD(1))
+     &          REF0 * W1 * PRDIF(ABS(IDR)) * AC2(IDA,IS,KCGRD(1))
                 IDB = 1+MOD(2*MDC+IDB-1,MDC)
                 IF (COS(TH_NORM-SPCDIR(IDB,1)) .GT. 0.)
      &          AC2REF = AC2REF +
-     &          REF0 * W2 * PRDIF(IABS(IDR)) * AC2(IDB,IS,KCGRD(1))
+     &          REF0 * W2 * PRDIF(ABS(IDR)) * AC2(IDB,IS,KCGRD(1))
               ELSE
                 IF (IDA.GE.1 .AND. IDA.LE.MDC) THEN
                   IF (COS(TH_NORM-SPCDIR(IDA,1)) .GT. 0.)
      &            AC2REF = AC2REF +
-     &            REF0 * W1 * PRDIF(IABS(IDR)) * AC2(IDA,IS,KCGRD(1))
+     &            REF0 * W1 * PRDIF(ABS(IDR)) * AC2(IDA,IS,KCGRD(1))
                 ENDIF
                 IF (IDB.GE.1 .AND. IDB.LE.MDC) THEN
                   IF (COS(TH_NORM-SPCDIR(IDB,1)) .GT. 0.)
      &            AC2REF = AC2REF +
-     &            REF0 * W2 * PRDIF(IABS(IDR)) * AC2(IDB,IS,KCGRD(1))
+     &            REF0 * W2 * PRDIF(ABS(IDR)) * AC2(IDB,IS,KCGRD(1))
                 ENDIF
               ENDIF
             ENDDO
@@ -3557,10 +3574,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4393,10 +4407,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4521,10 +4532,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4622,10 +4630,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4726,10 +4731,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -5216,10 +5218,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
