@@ -50,10 +50,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -307,10 +304,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -926,10 +920,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1216,10 +1207,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -1960,10 +1948,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2137,10 +2122,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2439,10 +2421,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -2776,10 +2755,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3227,10 +3203,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3531,10 +3504,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -3902,10 +3872,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4183,10 +4150,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4426,10 +4390,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4613,9 +4574,9 @@
       SUBROUTINE ADDDIS (DISSXY     ,LEAKXY     ,
      &                   AC2        ,ANYBIN     ,
      &                   DISC0      ,DISC1      ,
-     &                   DISBOT     ,DSXBOT     ,                         40.61
-     &                   DISSRF     ,DSXSRF     ,                         40.61
-     &                   DISWCP     ,DSXWCP     ,                         40.61
+     &                   DSXBOT     ,                                     40.67 40.61
+     &                   DSXSRF     ,                                     40.67 40.61
+     &                   DSXWCP     ,                                     40.67 40.61
      &                   LEAKC1     ,SPCSIG     )                         30.72
 !
 !*******************************************************************
@@ -4629,10 +4590,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -4659,6 +4617,7 @@
 !
 !     30.72: IJsbrand Haagsma
 !     40.61: Marcel Zijlema
+!     40.67: Nico Booij
 !
 !  1. Updates
 !
@@ -4666,6 +4625,7 @@
 !     30.74, Nov. 97: Prepared for version with INCLUDE statements
 !     30.72, Feb. 98: Introduced generic names XCGRID, YCGRID and SPCSIG for SWAN
 !     40.61, Sep. 06: introduction of all separate dissipation coefficients
+!     40.67, Jun. 07: more accurate computation of dissipation terms
 !
 !  2. Purpose
 !
@@ -4721,38 +4681,44 @@
 !
 ! 13. Source text
 !
+      INTEGER :: II               ! counter                               40.67
+      REAL    :: ADISSIP(1:MDISP)                                         40.67
       REAL     DISSXY(MCGRD)    ,LEAKXY(MCGRD)      ,
-     &         DISC0(MDC,MSC)   ,DISC1(MDC,MSC)     ,
+     &         DSXBOT(MCGRD)      ,                                       40.67 40.61
+     &         DSXSRF(MCGRD)      ,                                       40.67 40.61
+     &         DSXWCP(MCGRD)      ,                                       40.67 40.61
      &         DISBOT(MDC,MSC)  ,DSXBOT(MCGRD)      ,                     40.61
      &         DISSRF(MDC,MSC)  ,DSXSRF(MCGRD)      ,                     40.61
      &         DISWCP(MDC,MSC)  ,DSXWCP(MCGRD)      ,                     40.61
      &         LEAKC1(MDC,MSC)  ,AC2(MDC,MSC,MCGRD)                       30.21
+      REAL :: DISC0(1:MDC,1:MSC,1:MDISP)       ! dissipation coeff.       40.67
+      REAL :: DISC1(1:MDC,1:MSC,1:MDISP)       ! dissipation coeff.       40.67
 !
       LOGICAL  ANYBIN(MDC,MSC)
       INTEGER, SAVE :: IENT=0
       CALL STRACE (IENT, 'ADDDIS')
 !
+      ADISSIP(1:MDISP) = 0.                                               40.67
       DO 100 ISC = 1, MSC
         DSDD = DDIR * FRINTF * SPCSIG(ISC)**2
         DO 90 IDC = 1, MDC
           IF (ANYBIN(IDC,ISC)) THEN
-            DISSXY(KCGRD(1)) = DISSXY(KCGRD(1)) + DSDD*(DISC0(IDC,ISC) +
-     &                      DISC1(IDC,ISC) * AC2(IDC,ISC,KCGRD(1)))
             LEAKXY(KCGRD(1)) = LEAKXY(KCGRD(1)) + DSDD *
      &                      LEAKC1(IDC,ISC) * AC2(IDC,ISC,KCGRD(1))
 !
 !           --- compute for each dissipation term                         40.61
 !
-            DSXBOT(KCGRD(1)) = DSXBOT(KCGRD(1)) + DSDD * DISBOT(IDC,ISC)  40.61
-     &                                           * AC2(IDC,ISC,KCGRD(1))  40.61
-            DSXSRF(KCGRD(1)) = DSXSRF(KCGRD(1)) + DSDD * DISSRF(IDC,ISC)  40.61
-     &                                           * AC2(IDC,ISC,KCGRD(1))  40.61
-            DSXWCP(KCGRD(1)) = DSXWCP(KCGRD(1)) + DSDD * DISWCP(IDC,ISC)  40.61
-     &                                           * AC2(IDC,ISC,KCGRD(1))  40.61
-!
+            DO II = 1, MDISP                                              40.67
+              ADISSIP(II) =  ADISSIP(II) + DSDD * (DISC0(IDC,ISC,II) +    40.67
+     &                      DISC1(IDC,ISC,II) * AC2(IDC,ISC,KCGRD(1)))    40.67
+            ENDDO                                                         40.67
           ENDIF
   90    CONTINUE
  100  CONTINUE
+      DSXWCP(KCGRD(1)) = DSXWCP(KCGRD(1)) + ADISSIP(1)     ! whitecapping 40.67
+      DSXSRF(KCGRD(1)) = DSXSRF(KCGRD(1)) + ADISSIP(2)     ! surf break   40.67
+      DSXBOT(KCGRD(1)) = DSXBOT(KCGRD(1)) + ADISSIP(3)     ! bottom fric  40.67
+      DISSXY(KCGRD(1)) = DISSXY(KCGRD(1)) + SUM(ADISSIP)   ! total dissip 40.67
       RETURN
       END
 !
@@ -5088,10 +5054,7 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmers: R.C. Ris, N. Booij,                          |
-!     |              IJ.G. Haagsma, A.T.M.M. Kieftenburg,         |
-!     |              M. Zijlema, E.E. Kriezi,                     |
-!     |              R. Padilla-Hernandez, L.H. Holthuijsen       |
+!     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
 !
 !
@@ -5118,12 +5081,14 @@
 !
 !     40.21: Agnieszka Herman, Nico Booij
 !     40.41: Marcel Zijlema
+!     40.68: Marcel Zijlema
 !
 !  1. Updates
 !
 !     40.21, Aug. 01: New subroutine
 !     40.41, Mar. 04: parallelization of diffraction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.68, Aug. 07: extension to spherical coordinates
 !
 !  2. Purpose
 !
@@ -5179,7 +5144,7 @@
       INTEGER           :: MXCL, MYCL, IXX, IYY, IXXL, IXXR, IYYB, IYYT
       REAL              :: CETAIL, PPTAIL, CKTAIL
       REAL              :: ETOT, EKTOTL, ECGTOT, TMP
-      REAL              :: EAD, TMP_X, TMP_Y
+      REAL              :: EAD, TMP_X, TMP_Y, CSLAT
       REAL              :: DXLOC, DYLOC
       REAL              :: KLOC(1:MSC), CGLOC(1:MSC), N(1:MSC),
      &                     ND(1:MSC)
@@ -5390,16 +5355,7 @@
       DIFPARDY(1:MCGRD) = 0.
       
       
-      if (OPTG.EQ.1) then
-         DXLOC = DX
-         DYLOC = DY
-         if (KSPHER.EQ.1) then
-            LLCONVX=LENDEG*COS(DEGRAD*(YOFFS+YCGRID(1,1)))
-            DXLOC = DXLOC * LLCONVX
-            DYLOC = DYLOC * LENDEG
-         endif
-       endif
-                  
+   
 
 !     --- loop over all X-connections
       DO IX = MAX(IX1,2), MIN(IX2+1,MXC)                                  40.41
@@ -5427,10 +5383,15 @@
      &                             YCGRID(IX,IY-1) )
                   END IF
                END IF
+	       IF (EQREAL(DXLOC,0.)) DXLOC = 0.01
+               IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
+               IF ( KSPHER.GT.0 ) THEN                                    40.68
+                  CSLAT = COS(DEGRAD*(YOFFS+YCGRID(IX,IY)))               40.68
+                  DXLOC = DXLOC * LENDEG * CSLAT                          40.68
+                  DYLOC = DYLOC * LENDEG                                  40.68
+               ENDIF                                                      40.68
                DXLOC = ABS(DXLOC)
                DYLOC = ABS(DYLOC)
-               IF (EQREAL(DXLOC,0.)) DXLOC = 0.01
-               IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
                TMP = 0.5*(CG(INDL)/K(INDL)+CG(IND)/K(IND)) *
      &                   DYLOC * (EN(IND)-EN(INDL)) / DXLOC
                LAPE (INDL) = LAPE (INDL) + TMP
@@ -5479,13 +5440,22 @@
                   IF (EQREAL(DXLOC,0.)) DXLOC = 0.01
                   IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
                END IF
-               EAD = DXLOC * DYLOC * EN(IND)*CG(IND)*K(IND)
+               IF ( KSPHER.GT.0 ) THEN                                    40.68
+                  CSLAT = COS(DEGRAD*(YOFFS+YCGRID(IX,IY)))               40.68
+                  DXLOC = DXLOC * LENDEG * CSLAT                          40.68
+                  DYLOC = DYLOC * LENDEG                                  40.68
+               ENDIF                                                      40.68
+               DXLOC = ABS(DXLOC)
+               DYLOC = ABS(DYLOC)
+               IF (EQREAL(DXLOC,0.)) DXLOC = 0.01
+               IF (EQREAL(DYLOC,0.)) DYLOC = 0.01
+	       EAD = DXLOC * DYLOC * EN(IND)*CG(IND)*K(IND)
                if(iy.gt.1)then
-                TMP = 0.5*(CG(INDB)/K(INDB)+CG(IND)/K(IND)) *
-     &                   DXLOC * (EN(IND)-EN(INDB)) / DYLOC
+		TMP = 0.5*(CG(INDB)/K(INDB)+CG(IND)/K(IND)) *
+     &                   DXLOC * (EN(IND)-EN(INDB)) / DYLOC	
                 LAPE (INDB) = LAPE (INDB) + TMP
                 LAPE (IND ) = LAPE (IND ) - TMP
-               endif
+	       endif
                DENOM(IND ) = DENOM(IND ) + EAD
             END IF
          END DO
@@ -5532,14 +5502,22 @@
                if (KSPHER.EQ.1.AND.OPTG.EQ.1) then
                 TMP = (DIFPARAM(INDR) - DIFPARAM(INDL))/(2.*DX*LLCONVX)
                ELSEIF ( OPTG.EQ.1 ) THEN
-                  TMP = (DIFPARAM(INDR) - DIFPARAM(INDL))/(2.*DX)
+                  DXLOC = DX
                ELSE
                   DXLOC = 0.5*(XCGRID(IX+1,IY)-XCGRID(IX-1,IY))
                   DXLOC = ABS(DXLOC)
                   IF (EQREAL(DXLOC,0.)) DXLOC=0.01
                   TMP = (DIFPARAM(INDR) - DIFPARAM(INDL))/
      &                 (2.*DXLOC)
+                  DXLOC = 0.5*(XCGRID(IX+1,IY)-XCGRID(IX-1,IY))
                END IF
+               IF ( KSPHER.GT.0 ) THEN                                    40.68
+                  CSLAT = COS(DEGRAD*(YOFFS+YCGRID(IX,IY)))               40.68
+                  DXLOC = DXLOC * LENDEG * CSLAT                          40.68
+               ENDIF                                                      40.68
+               DXLOC = ABS(DXLOC)
+               IF (EQREAL(DXLOC,0.)) DXLOC=0.01
+               TMP = (DIFPARAM(INDR) - DIFPARAM(INDL))/(2.*DXLOC)
                DIFPARDX(IND) = DIFPARDX(IND) + TMP
             END IF
          END DO
@@ -5565,14 +5543,19 @@
                IF (KSPHER.EQ.1.AND.OPTG.EQ.1) THEN
                 TMP = (DIFPARAM(INDT) - DIFPARAM(INDB))/(2.*DY*LENDEG)
                ELSEIF ( OPTG.EQ.1 ) THEN
-                  TMP = (DIFPARAM(INDT) - DIFPARAM(INDB))/(2.*DY)
+                  DYLOC = DY
                ELSE
                   DYLOC = 0.5*(YCGRID(IX,IY+1)-YCGRID(IX,IY-1))
                   DYLOC = ABS(DYLOC)
                   IF (EQREAL(DYLOC,0.)) DYLOC=0.01
                   TMP = (DIFPARAM(INDT) - DIFPARAM(INDB))/
      &                 (2.*DYLOC)
+                  DYLOC = 0.5*(YCGRID(IX,IY+1)-YCGRID(IX,IY-1))
                END IF
+               IF ( KSPHER.GT.0 ) DYLOC = DYLOC * LENDEG                  40.68
+               DYLOC = ABS(DYLOC)
+               IF (EQREAL(DYLOC,0.)) DYLOC=0.01
+               TMP = (DIFPARAM(INDT) - DIFPARAM(INDB))/(2.*DYLOC)
                DIFPARDY(IND) = DIFPARDY(IND) + TMP
             END IF
          END DO
