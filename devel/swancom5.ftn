@@ -4687,9 +4687,6 @@
      &         DSXBOT(MCGRD)      ,                                       40.67 40.61
      &         DSXSRF(MCGRD)      ,                                       40.67 40.61
      &         DSXWCP(MCGRD)      ,                                       40.67 40.61
-     &         DISBOT(MDC,MSC)  ,DSXBOT(MCGRD)      ,                     40.61
-     &         DISSRF(MDC,MSC)  ,DSXSRF(MCGRD)      ,                     40.61
-     &         DISWCP(MDC,MSC)  ,DSXWCP(MCGRD)      ,                     40.61
      &         LEAKC1(MDC,MSC)  ,AC2(MDC,MSC,MCGRD)                       30.21
       REAL :: DISC0(1:MDC,1:MSC,1:MDISP)       ! dissipation coeff.       40.67
       REAL :: DISC1(1:MDC,1:MSC,1:MDISP)       ! dissipation coeff.       40.67
