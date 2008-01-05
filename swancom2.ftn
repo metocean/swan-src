@@ -1028,7 +1028,7 @@
 !                     m    = 2                                            40.41
 !                                                                         40.41
 !     C_CSM = A*C_st S(sig,th)                                            40.41
-!
+!REAL, INTENT(INOUT) :: DISSC0(MDC,MSC,MDISP),DISSC1(MDC,MSC,MDISP)
 !     where
 !
 !     C_st is a tuneable coefficient and
