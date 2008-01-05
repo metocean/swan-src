@@ -6001,9 +6001,6 @@
       REAL  :: ZELEN(MCGRD)
       REAL  :: DISSC0(1:MDC,1:MSC,1:MDISP)                                40.67
       REAL  :: DISSC1(1:MDC,1:MSC,1:MDISP)                                40.67
-      REAL  :: DISBOT(MDC,MSC)                                            40.61
-      REAL  :: DISSRF(MDC,MSC)                                            40.61
-      REAL  :: DISWCP(MDC,MSC)                                            40.61
       REAL  :: URSELL(MCGRD)                                              40.03
       REAL  :: FRCOEF(MCGRD)                                              20.68
       REAL  :: REFLSO(MDC,MSC)                                            40.41
