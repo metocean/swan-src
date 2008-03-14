@@ -45,7 +45,7 @@
       logical ydivide, verbose, haloflag, exists, stomp, nonstat
       real, allocatable :: x(:,:),y(:,:)
       integer, allocatable :: locations(:),index(:), source(:)
-      namelist /arg_nml/ basefile,halo,verbose,stomp
+!      namelist /arg_nml/ basefile,halo,verbose,stomp
 
  33   FORMAT('-',I3.3,A)
  35   FORMAT(A)
@@ -59,9 +59,14 @@
       stomp = .FALSE.
 
 !.....Aquire arguments via arg_nml namelist read from hcat.nml file (non-Fortran 2003)
-      OPEN(10,FILE='hcat.nml',STATUS='OLD')
-      READ(10,NML=arg_nml)
-      CLOSE(10)
+!      OPEN(10,FILE='hcat.nml',STATUS='OLD')
+!      READ(10,NML=arg_nml)
+!      CLOSE(10)
+	if (iargc().gt.0) then
+	      call getarg(1,basefile)
+	else
+	      print*,'Usage: Hotconcat <basefile>'
+	endif
 
 !.....Process command-line arguments (Fortran 2003)
 !     haloflag = .FALSE.
