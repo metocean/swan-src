@@ -612,11 +612,11 @@
 !
 !  6. Parameter variables
 !
-!     NMOVAR [  61]  maximum number of output variables                   40.64 40.61 40.51 40.21 40.41
+!     NMOVAR [  72]  maximum number of output variables                   MSL 40.64 40.61 40.51 40.21 40.41
 !     MOUTPA [   5]  number of output parameters
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 61, MOUTPA=5)                                   40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 72, MOUTPA=5)                                   MSL 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -673,14 +673,14 @@
 !  (51) [  'WATL']
 !  (52) [  'BOTL']
 !  (53) [   'TPS']
-!  (54) [   'DPM']
-!  (55) ['DPMSEA']
-!  (56) [   'SWE']
-!  (57) [  'DISB']
-!  (58) [ 'DISSU']
-!  (59) [  'DISW']
-!  (60) [    'QP']
-!  (61) [   'BFI']
+!  (54) [  'DISB']
+!  (55) [ 'DISSU']
+!  (56) [  'DISW']
+!  (68) [    'QP']
+!  (59) [   'BFI']
+!  (70) [   'DPM']
+!  (71) ['DPMSEA']
+!  (72) [   'SWE']
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -730,14 +730,14 @@
 !  (51) ['Watlev']
 !  (52) ['Botlev']
 !  (53) ['TPsmoo']
-!  (54) [   'Dpm']
-!  (55) ['Dpmsea']
-!  (56) [   'SWe']
-!  (57) ['Disbot']
-!  (58) ['Dissrf']
-!  (59) ['Diswcp']
-!  (60) [    'Qp']
-!  (61) [   'BFI']
+!  (54) ['Disbot']
+!  (55) ['Dissrf']
+!  (56) ['Diswcp']
+!  (58) [    'Qp']
+!  (59) [   'BFI']
+!  (70) [   'Dpm']
+!  (71) ['Dpmsea']
+!  (72) [   'SWe']
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
 !  ( 2) [                        'Y user coordinate']
@@ -787,14 +787,14 @@
 !  (51) [                              'Water level']
 !  (52) [                             'Bottom level']
 !  (53) [            'Relative peak period (smooth)']
-!  (54) [          'Mean direction of spectral peak']
-!  (55) [      'Mean direction of sea spectral peak']
-!  (56) [                       'Spectral bandwidth']
-!  (57) [              'Bottom friction dissipation']
-!  (58) [                'Wave breaking dissipation']
-!  (59) [                 'Whitecapping dissipation']
+!  (54) [              'Bottom friction dissipation']
+!  (55) [                'Wave breaking dissipation']
+!  (56) [                 'Whitecapping dissipation']
 !  (58) [                               'Peakedness']
 !  (59) [                      'Benjamin-Feir index']
+!  (70) [          'Mean direction of spectral peak']
+!  (71) [      'Mean direction of sea spectral peak']
+!  (72) [                       'Spectral bandwidth']
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
 !  ( 2) [CALCULAT] =UL
@@ -2204,7 +2204,7 @@
       REAL                SPPARM(MSPPAR),SY0,       U10
       REAL                WDIC,          WDIP,      HSRERR
       REAL                PQUAD(MQUAD)
-      REAL                RCOMPT(50,5)
+      REAL                RCOMPT(5000,5)
       REAL                PDIFFR(MDIFFR)                                  40.21
       LOGICAL             ACUPDA
       LOGICAL             BNDCHK,      BNAUT,       ONED,        BRESCL

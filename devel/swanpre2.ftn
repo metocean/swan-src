@@ -3747,7 +3747,6 @@
       ALLOCATE (SPAUX(NANG*NFRE))                                         40.31
 
 !     read geographical locations and determine DXWAM and DYWAM           40.13
-
       IIPT2 = 0                                                           40.03
       DXWAM = 180.
       DYWAM = 180.

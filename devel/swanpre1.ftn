@@ -843,8 +843,8 @@
 
         IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)                   40.00
         NCOMPT = NCOMPT + 1                                               40.41
-        IF (NCOMPT.GT.50) CALL MSGERR (2,                                 40.41
-     &                   'No more than 50 COMPUTE commands are allowed')  40.41
+        IF (NCOMPT.GT.5000) CALL MSGERR (2,                               40.41
+     &                 'No more than 5000 COMPUTE commands are allowed')  40.41
         RCOMPT(NCOMPT,1) = REAL(NSTATC)                                   40.41
         RCOMPT(NCOMPT,2) = REAL(MTC)                                      40.41
         RCOMPT(NCOMPT,3) = TFINC                                          40.41

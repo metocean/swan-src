@@ -1,0 +1,86 @@
+!***********************************************************************
+!                                                                      *
+      PROGRAM NCSWAN
+!                                                                      *
+!***********************************************************************
+!
+
+
+      USE TIMECOMM                                                        40.41
+      USE OCPCOMM1                                                        40.41
+      USE OCPCOMM2                                                        40.41
+      USE OCPCOMM4                                                        40.41
+      USE OUTP_DATA                                                       40.51
+      USE M_GENARR                                                        40.31
+      USE M_PARALL                                                        40.31
+
+      IMPLICIT NONE
+
+      LOGICAL KEYWIS
+      INTEGER   IUNIT,IARGC
+      INTEGER NLEN
+      CHARACTER*40 INPFIL
+
+      INTEGER, ALLOCATABLE :: DAT(:,:)
+      
+      INPUTF=99
+
+      if (iargc().eq.0) GOTO 900
+       
+      call getarg(1,INPFIL)
+      OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',ERR=910)
+      CALL RDINIT
+      print*,INPFIL,ELTYPE
+                  
+ 100  CALL NWLINE
+      
+      CALL INKEYW ('REQ',' ')
+      print*,'Keyword: ',KEYWRD
+      
+      IF (KEYWIS ('STOP')) THEN
+        print*,'End of command file'
+        stop
+      ENDIF
+
+      IF (KEYWIS ('PROJ')) THEN
+        CALL INCSTR ('NAME', PROJID, 'UNC', BLANK)
+        CALL INCSTR ('NR', PROJNR, 'REQ', BLANK)
+        GOTO 100
+      ENDIF
+      print*,'ProjID: ',PROJID,PROJNR
+!     ============================================================
+
+!      OUTPut OPTIons  'comment'  (TABle [field])  (BLOck  [ndec]  [len])   &
+
+!      (SPEC  [ndec])
+
+!     ============================================================
+
+      IF (KEYWIS('OUTP')) THEN                                            
+        CALL IGNORE ('OPT')
+        CALL INCSTR ('COMMENT', OUT_COMMENT, 'UNC', ' ')
+        CALL INKEYW ('STA', ' ')
+        IF (KEYWIS('BLO')) THEN
+          CALL ININTG ('NDEC', DEC_BLOCK, 'STA', 4)
+          IF (DEC_BLOCK.GT.9) CALL MSGERR (2, '[ndec] is too large')
+          CALL ININTG ('LEN', NLEN, 'STA', 200)
+          IF (NLEN.GT.9999) CALL MSGERR (2, '[len] is too large')
+          WRITE (FLT_BLOCK, 242) NLEN, DEC_BLOCK+7, DEC_BLOCK
+ 242      FORMAT ('(', I4, '(1X,E', I2, '.', I1, '))')
+ 244      FORMAT (' Format floating point block: ', A)
+          CALL INKEYW ('STA', ' ')
+        ENDIF
+        GOTO 100
+      ENDIF                                                               
+      STOP
+
+  900 CALL MSGERR(4,'Usage: ncswan <cmdfile>')
+      STOP
+
+  910 CALL MSGERR(4,'Input file missing')
+      STOP                     
+
+      END PROGRAM
+	
+                                              
+
