@@ -1,86 +1,286 @@
-!***********************************************************************
-!                                                                      *
-      PROGRAM NCSWAN
-!                                                                      *
-!***********************************************************************
+      MODULE NCSWAN
+	use SWCOMM1
+	use SWCOMM3
+	include 'netcdf.inc'
+
+	integer ncfid,dimxid,dimyid,dimtid,vartid
+	character (len=80) ncfile
+	integer varind(maxncvar)
+
+	type ncvar
+	    character (len=8) :: idx,idy
+	    character (len=40) :: descriptionx,descriptiony
+	    character (len=10) :: units
+	    integer :: vtype,vidx,vidy
+	    real :: fillvalue
+	end type ncvar
+
+	contains 
+	  subroutine makencvar(varnc,vind)
+	    type(ncvar) :: varnc
+	    integer vind
+	    if (vind.eq.10) then
+	      varnc%idx='hs'
+	    else
+	      if (OVSVTY(vind).eq.3) then
+		varnc%idx = OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_x'
+		varnc%idy = OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_y'
+		varnc%descriptionx = OVLNAM(vind)(1:LEN_TRIM(OVLNAM(vind)))//' comp-x'
+		varnc%descriptiony = OVLNAM(vind)(1:LEN_TRIM(OVLNAM(vind)))//' comp-y'
+		varnc%vtype=3
+	      else
+		varnc%idx = OVSNAM(vind)
+		varnc%descriptionx=OVLNAM(vind)
+		varnc%vtype=OVSVTY(vind)
+	      endif
+	    end if
+	    varnc%fillvalue=OVEXCV(vind)
+	    varnc%units=OVUNIT(vind)
+	  end subroutine
+
+	  function closenc()
+	    integer closenc
+	    closenc=NF_CLOSE(nfid)
+	  end function
+
+	  function initnc(xp,yp,mxc,myc)
+	    integer mxc,myc
+	    real xp(mxc),yp(myc)
+	    integer varxid,varyid
+	    integer initnc
+	    initnc=NF_OPEN(ncfile, NC_CLOBBER, ncfid)
+	      if (initnc.lt.0) return
+	    initnc=NF_DEF_DIM (ncfid, 'lon',mxc,dimxid)
+	      if (initnc.lt.0) return
+	    initnc=NF_DEF_DIM (ncfid, 'lat',myc,dimyid)
+	      if (initnc.lt.0) return
+	    initnc=NF_DEF_DIM (ncfid, 'time',NF_UNLIMITED,dimtid)
+	      if (initnc.lt.0) return
+	    initnc= NF_DEF_VAR(ncfid, 'longitude',NF_FLOAT, 1, dimxid, varxid)
+	      if (initnc.lt.0) return
+	    initnc= NF_DEF_VAR(ncfid, 'latitude',NF_FLOAT, 1, dimyid, varyid)
+	      if (initnc.lt.0) return
+	    initnc= NF_DEF_VAR(ncfid, 'time',NF_DOUBLE, 1, dimtid, vartid)
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_ATT_TEXT
+     &(ncfid, varxid, 'units', 12, 'degrees_east')
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_ATT_TEXT
+     &(ncfid, varyid, 'units', 12, 'degrees_north')
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_ATT_TEXT
+     &(ncfid, vartid, 'units', 16, 'days since 1-1-1')
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_VAR_REAL(ncfid, varxid,xp)
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_VAR_REAL(ncfid, varyid,yp)
+	      if (initnc.lt.0) return
+	  end function
+
+	  function defncvar(varnc)
+	    integer defncvar,vardims(3),ndum
+	    type(ncvar) :: varnc
+	    
+	    vardims(1)=dimxid
+	    vardims(2)=dimyid
+	    vardims(3)=dimtid
+	    if (varnc%vtype.eq.0) then
+	      defncvar= NF_DEF_VAR
+     &(ncfid, TRIM(varnc%idx) ,NF_REAL, 2, vardims(1:2), varnc%vidx)
+	    else
+	      defncvar= NF_DEF_VAR
+     &(ncfid, TRIM(varnc%idx) ,NF_REAL, 3, vardims, varnc%vidx)
+	    endif
+	    if (defncvar.lt.0) return
+	    ndum=LEN_TRIM(varnc%units)
+	    defncvar=NF_PUT_ATT_TEXT
+     &(ncfid, varnc%vidx, 'units', ndum, TRIM(varnc%units))
+	      if (defncvar.lt.0) return
+	    ndum=LEN_TRIM(varnc%descriptionx)
+	    defncvar=NF_PUT_ATT_TEXT
+     &(ncfid, varnc%vidx, 'long_name', ndum, TRIM(varnc%descriptionx))
+	      if (defncvar.lt.0) return
+	    defncvar=NF_PUT_ATT_REAL
+     &(ncfid, varnc%vidx, '_FillValue', NF_REAL, 1, varnc%fillvalue)
+	      if (defncvar.lt.0) return
+	    if (varnc%vtype.eq.3) then
+	      defncvar= NF_DEF_VAR
+     &(ncfid, TRIM(varnc%idy) ,NF_REAL, 3, vardims, varnc%vidy)
+		if (defncvar.lt.0) return
+	      ndum=LEN_TRIM(varnc%units)
+	      defncvar=NF_PUT_ATT_TEXT
+     &(ncfid, varnc%vidy, 'units', ndum, TRIM(varnc%units))
+		if (defncvar.lt.0) return
+	      ndum=LEN_TRIM(varnc%descriptiony)
+	      defncvar=NF_PUT_ATT_TEXT
+     &(ncfid, varnc%vidy, 'long_name', ndum, TRIM(varnc%descriptiony))
+		if (defncvar.lt.0) return
+	      defncvar=NF_PUT_ATT_REAL
+     &(ncfid, varnc%vidy, '_FillValue', NF_REAL, 1, varnc%fillvalue)
+		if (defncvar.lt.0) return
+	    endif
+	  end function
+
+	  function writeslab(varnc,itime,dat,nx,ny)
+	    integer writeslab
+	    type(ncvar) :: varnc
+	    integer ivar,itime,nx,ny
+	    integer start(3),ndat(3)
+	    real dat(nx,ny)
+	    start(1)=1
+	    start(2)=1
+	    start(3)=itime
+	    ndat(1)=nx
+	    ndat(2)=ny
+	    ndat(3)=1
+	    if (varnc%vtype.eq.3) ny=ny/2
+	    if (varnc%vtype.eq.0) then
+	      writeslab=NF_PUT_VARA_REAL 
+     &(ncfid, varnc%vidx, start(1:2), ndat(1:2), dat(1:nx,1:ny))
+	    else 
+	      writeslab=NF_PUT_VARA_REAL 
+     &(ncfid, varnc%vidx, start, ndat, dat(1:nx,1:ny))
+	      if (varnc%vtype.eq.3) then
+		writeslab=NF_PUT_VARA_REAL 
+     &(ncfid, varnc%vidy, start, ndat, dat(1:nx,ny+1:2*ny))
+	      endif
+	    endif
+	  end function
+      
+      END MODULE
+
+
+!****************************************************************
 !
-
-
+      SUBROUTINE WRITENC ( OURQT )			                  	
+!
+!****************************************************************
+!
+!Based on swanparll.ftn parallel collect subroutines
+!/Variables collected and put ot NetCDF instead.
+!
+      USE NCSWAN
       USE TIMECOMM                                                        40.41
-      USE OCPCOMM1                                                        40.41
-      USE OCPCOMM2                                                        40.41
       USE OCPCOMM4                                                        40.41
-      USE OUTP_DATA                                                       40.51
-      USE M_GENARR                                                        40.31
-      USE M_PARALL                                                        40.31
-
+      USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         MSL
+      USE SWCOMM3                                                         40.41
+      USE OUTP_DATA
+      USE M_GENARR, ONLY : XCGRID,YCGRID
+      
       IMPLICIT NONE
 
-      LOGICAL KEYWIS
-      INTEGER   IUNIT,IARGC
-      INTEGER NLEN
-      CHARACTER*40 INPFIL
+      INTEGER   IC, IP, IRQ, IT, IT0, IT1
+      REAL      DIF, TNEXT 
+      REAL, ALLOCATABLE :: DAT(:,:)
+      LOGICAL   OPENED,ivec
+      TYPE(ORQDAT), POINTER :: CORQ
+      REAL    OURQT(MAX_OUTP_REQ)
+      real lonp(mxc), latp(myc)
+      integer ncerr,iblk,itime,ivar
+      type(ncvar) :: varnc
 
-      INTEGER, ALLOCATABLE :: DAT(:,:)
+      IF ( NREOQ.EQ.0 ) RETURN
+!Check if any blocks
+      CORQ => FORQ
+      iblk=0
+      do irq=1,nreoq
+	if (CORQ%RQTYPE(1:3).eq.'BLK'.and.CORQ%OQI(3).eq.1) iblk=iblk+1
+	CORQ => CORQ%NEXTORQ
+      enddo
+
+      if (iblk.eq.0) return
+
+      call getarg(2,ncfile)
+      print*,ncfile,':ncerr=initnc(lonp,latp,mxc,myc)'
+
+      if (ncerr.lt.0) then
+	CALL MSGERR (1, 'NetCDF error')
+	return
+      endif
+
+!     --- do for all output requests
+      iblk=0
+      CORQ => FORQ
+      DO 100 IRQ = 1, NREOQ
+
+      IF ( CORQ%RQTYPE(1:3).NE.'BLK' ) GOTO 100
+      iblk=iblk+1
+      itime=0
+      ivar=CORQ%IVTYP(1)
+      ivec=(OVSVTY(ivar).eq.3)
+
+      lonp=xcgrid(:,1)
+      latp=ycgrid(1,:)
+      print*, iblk,ivar,ivec,latp
+
+      if (ivec) then
+	allocate(dat(mxc,2*myc))
+      else
+	allocate(dat(mxc,myc))
+      endif
       
-      INPUTF=99
+!     --- do for all COMPUTE commands
 
-      if (iargc().eq.0) GOTO 900
-       
-      call getarg(1,INPFIL)
-      OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',ERR=910)
-      CALL RDINIT
-      print*,INPFIL,ELTYPE
-                  
- 100  CALL NWLINE
-      
-      CALL INKEYW ('REQ',' ')
-      print*,'Keyword: ',KEYWRD
-      
-      IF (KEYWIS ('STOP')) THEN
-        print*,'End of command file'
-        stop
-      ENDIF
+      DO IC = 1, NCOMPT
+         NSTATC = NINT(RCOMPT(IC,1))
+         IF ( NSTATC.EQ.1 ) THEN
+            IT0 = 0
+         ELSE
+            IT0 = 1
+         END IF
+         IT1   = NINT(RCOMPT(IC,2))
+         TFINC = RCOMPT(IC,3)
+         TINIC = RCOMPT(IC,4)
+         DT    = RCOMPT(IC,5)
+         TIMCO = TINIC
 
-      IF (KEYWIS ('PROJ')) THEN
-        CALL INCSTR ('NAME', PROJID, 'UNC', BLANK)
-        CALL INCSTR ('NR', PROJNR, 'REQ', BLANK)
-        GOTO 100
-      ENDIF
-      print*,'ProjID: ',PROJID,PROJNR
-!     ============================================================
+!        --- do for all time steps
 
-!      OUTPut OPTIons  'comment'  (TABle [field])  (BLOck  [ndec]  [len])   &
+         DO IT = IT0, IT1
+	    DIF = TFINC - TIMCO
+	    IF ( IT.EQ.IT0 .AND. IC.EQ.1 ) THEN
+!	      CORQ%OQR(1) = OURQT(IRQ)
+	      call makencvar(varnc,ivar)
+	      print*,varnc%idx,varnc%descriptionx,varnc%units
+	      print*,'ncerr=defncvar(varnc)'
+	    endif
+		
+	    TNEXT = CORQ%OQR(1)
+	    IF ( ABS(DIF).LT.0.5*DT .AND. CORQ%OQR(2).LT.0. ) THEN
+	      CORQ%OQR(1) = TIMCO
+	    ELSE IF ( CORQ%OQR(2).GT.0. .AND. TIMCO.GE.TNEXT ) THEN
+	      CORQ%OQR(1) = TIMCO + CORQ%OQR(2)
+	    ELSE
+	      GOTO 50
+	    END IF
 
-!      (SPEC  [ndec])
+	    itime=itime+1
+!	    print*,'ncerr=writeslab(varnc,itime,dat,nx,ny)'
 
-!     ============================================================
+  50        CONTINUE
+               
 
-      IF (KEYWIS('OUTP')) THEN                                            
-        CALL IGNORE ('OPT')
-        CALL INCSTR ('COMMENT', OUT_COMMENT, 'UNC', ' ')
-        CALL INKEYW ('STA', ' ')
-        IF (KEYWIS('BLO')) THEN
-          CALL ININTG ('NDEC', DEC_BLOCK, 'STA', 4)
-          IF (DEC_BLOCK.GT.9) CALL MSGERR (2, '[ndec] is too large')
-          CALL ININTG ('LEN', NLEN, 'STA', 200)
-          IF (NLEN.GT.9999) CALL MSGERR (2, '[len] is too large')
-          WRITE (FLT_BLOCK, 242) NLEN, DEC_BLOCK+7, DEC_BLOCK
- 242      FORMAT ('(', I4, '(1X,E', I2, '.', I1, '))')
- 244      FORMAT (' Format floating point block: ', A)
-          CALL INKEYW ('STA', ' ')
-        ENDIF
-        GOTO 100
-      ENDIF                                                               
-      STOP
+            IF ( NSTATC.EQ.1.AND.IT.LT.IT1 ) TIMCO = TIMCO + DT
 
-  900 CALL MSGERR(4,'Usage: ncswan <cmdfile>')
-      STOP
+         END DO
+	END DO
 
-  910 CALL MSGERR(4,'Input file missing')
-      STOP                     
+	deallocate(dat)
+	CLOSE(IRQ)
 
-      END PROGRAM
+	CORQ => CORQ%NEXTORQ
+
+! --- next output request
+ 100        CONTINUE
+
+!     --- close all files and delete process files
+      print*,'ncerr=closenc()'
+
+      RETURN
+      END
+
+
 	
                                               
 
