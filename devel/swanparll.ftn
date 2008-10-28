@@ -3030,7 +3030,6 @@
 !     --- do for all COMPUTE commands
 
       DO IC = 1, NCOMPT
-
          NSTATC = NINT(RCOMPT(IC,1))
          IF ( NSTATC.EQ.1 ) THEN
             IT0 = 0
