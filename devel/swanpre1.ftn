@@ -36,6 +36,7 @@
       USE M_GENARR                                                        40.31
       USE M_OBSTA                                                         40.31
       USE M_PARALL                                                        40.31
+!SWAN		USE NCSWAN
 !NCOM           USE PASS
 !
 !
@@ -405,6 +406,22 @@
 !     ------------------------------------------------------------------
 !                 PROCESSING OF COMMANDS
 !     ------------------------------------------------------------------
+!
+!
+!     NCOUT                                                                30.21
+!
+! ============================================================
+!
+! NCOUT                                                                    MSL
+!
+! ============================================================
+!
+      IF (KEYWIS ('NCOUT')) THEN
+	  procnc=1
+	  CALL INCSTR ('NCFILE',ncfile,'STA','swan.nc')
+          WRITE (PRINTF,*)' ** NETCDF file request: ',ncfile
+	  GOTO 100
+      ENDIF
 !
 !     STOP                                                                30.21
 !
@@ -1071,7 +1088,7 @@
      &    .OR. KEYWIS('SAVE')) THEN                                       40.00
         IF (MXC.LE.0) THEN
           CALL MSGERR (2, 'command CGRID must precede this command')
-        ELSEIF (iargc().lt.3)then
+        ELSEIF (iargc().lt.2)then
           CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID )      40.31 30.90
           IF (STPNOW()) RETURN                                            34.01
         ENDIF

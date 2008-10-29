@@ -27,6 +27,7 @@ SWAN_OBJS = \
 swmod1.$(EXTO) \
 swmod2.$(EXTO) \
 swmod3.$(EXTO) \
+ncswan.$(EXTO) \
 swanmain.$(EXTO) \
 swanpre1.$(EXTO) \
 swanpre2.$(EXTO) \
@@ -41,8 +42,8 @@ swanser.$(EXTO) \
 swanparll.$(EXTO) \
 ocpids.$(EXTO) \
 ocpcre.$(EXTO) \
-ocpmix.$(EXTO) \
-ncswan.$(EXTO)
+ocpmix.$(EXTO)
+
 
 .SUFFIXES: .f .F .for
 
