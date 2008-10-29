@@ -401,7 +401,6 @@
 !TIMG        CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
 !       --- if last command was STOP then exit from repeat
-!SWAN	if (iargc().gt.2) COMPUT='STOP'
 
         IF (COMPUT.EQ.'STOP') THEN                                        40.13
           IUNIT  = 0                                                      40.13
@@ -486,6 +485,10 @@
  6011     FORMAT(' ** To ignore this error, change [maxerr] with the',    30.72
      &           ' SET command')                                          30.72
 
+!SWAN      ELSE IF (iargc().gt.2) THEN
+!SWAN	     WRITE (PRINTF, 6020)
+!SWAN        PARLL=.FALSE.
+!SWAN 6020       FORMAT(' ** POSTPROCESS ONLY ')
         ELSE
 !
           IF (ITEST.GE.40) THEN                                           40.00
@@ -662,6 +665,11 @@
 !TIMG      CALL SWPRTI                                                         40.23
 
       if (iargc().gt.1) then                                                    MSL
+	   IF ( .NOT.ALLOCATED(OURQT) ) THEN             
+               ALLOCATE (OURQT(MAX_OUTP_REQ))                             
+               OURQT = -9999.                                             
+            ENDIF
+          write(printf,*), 'Postprocessing NETCDF'
           call writenc(ourqt)                                                   MSL
       end if                                                                    MSL
 
