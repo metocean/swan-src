@@ -3,6 +3,7 @@
 	use SWCOMM3
 	include 'netcdf.inc'
 
+	integer procnc
 	integer ncfid,dimxid,dimyid,dimtid,vartid
 	character (len=80) ncfile
 	integer varind(maxncvar)
@@ -257,7 +258,6 @@
 	do i=1,myk
 	  youtp(i)=yoffs+rdx*(i-1)
 	enddo
-	call getarg(2,ncfile)
 	ncerr=initnc(xoutp,youtp,mxk,myk)
       elseif (corq%psname.ne.psname)then
 	WRITE (PRINTF,1112),OVSNAM(ivar),corq%psname
@@ -268,7 +268,7 @@
 
 1111	FORMAT('Packing variable ',A,' on grid ',A)
 1112	FORMAT('Skipping variable ',A,' on grid ',A)
-1113	FORMAT('Cannot allocate angled grid ',A)
+1113	FORMAT('Cannot postprocess angled grid ',A)
 
       OPEN(UNIT=funit,FILE=OUTP_FILES(CORQ%OQI(2)),STATUS='OLD',ERR=100)
       
