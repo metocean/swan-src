@@ -89,7 +89,7 @@ omp:
 mpi:
 	@perl switch.pl $(swch) -mpi *.ftn
 	$(MAKE) FOR=$(F90_MPI) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_MPI)" \
-                INCS="$(INCS_MPI) " LIBS="$(LIBS_MPI)" $(SWAN_EXE)
+                INCS="$(INCS_MPI) $(INCS_NC)" LIBS="$(LIBS_MPI) $(LIBS_NC)" $(SWAN_EXE)
 
 doc:
 	$(MAKE) -f Makefile.latex TARGET=swanuse doc

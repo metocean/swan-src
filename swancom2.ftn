@@ -271,7 +271,6 @@
      &         UX2(MCGRD)                ,
      &         UY2(MCGRD)                ,
      &         DISSC1(MDC,MSC,1:MDISP)   ,                                40.67
-     &         DISBOT(MDC,MSC)           ,                                40.61
      &         FRCOEF(MCGRD)                                              20.68
 !
       INTEGER  IDCMIN(MSC)               ,
@@ -373,7 +372,6 @@
               IMATDA(ID,IS) = IMATDA(ID,IS) + SBOTEO
               IF (TESTFL) PLBTFR(ID,IS,IPTST) = -1.* SBOTEO               40.00
               DISSC1(ID,IS,3) = DISSC1(ID,IS,3) + SBOTEO                  40.67
-              DISBOT(ID,IS) = DISBOT(ID,IS) + SBOTEO                      40.61
  690        CONTINUE
           END IF
  700    CONTINUE
@@ -739,7 +737,6 @@
 !                       (meant for output)
 !     DISSC1  output:   Dissipation coefficient as implicit part
 !                       (meant for output)
-!     DISSRF  output:   Total surf dissipation for output purposes
 !     ETOT    input :   Total energy per spatial gridpoint
 !     HM      input :   Maximum wave height
 !     ICMAX   input :   Maximum number of elements in KCGRD array
@@ -759,7 +756,6 @@
       REAL     AC2(MDC,MSC,MCGRD)   ,
      &         DISSC0(MDC,MSC,MDISP),                                     40.67
      &         DISSC1(MDC,MSC,MDISP),                                     40.67
-     &         DISSRF(MDC,MSC)      ,                                     40.61
      &         IMATDA(MDC,MSC)      ,
      &         IMATRA(MDC,MSC)      ,
      &         PLWBRK(MDC,MSC,NPTST)                                      40.00
@@ -865,7 +861,6 @@
           IF (TESTFL) PLWBRK(ID,IS,IPTST) = REAL(SURFA0-SURFA1)           40.13
           DISSC0(ID,IS,2) = DISSC0(ID,IS,2) - REAL(DIS0)                  40.67 30.82
           DISSC1(ID,IS,2) = DISSC1(ID,IS,2) + REAL(SURFA1)                40.67 30.82
-          DISSRF(ID,IS) = DISSRF(ID,IS) + REAL(SURFA1-SURFA0)             40.61
  100    CONTINUE
  101  CONTINUE
 !
@@ -1028,7 +1023,7 @@
 !                     m    = 2                                            40.41
 !                                                                         40.41
 !     C_CSM = A*C_st S(sig,th)                                            40.41
-!REAL, INTENT(INOUT) :: DISSC0(MDC,MSC,MDISP),DISSC1(MDC,MSC,MDISP)
+!
 !     where
 !
 !     C_st is a tuneable coefficient and
@@ -1074,7 +1069,6 @@
 !     DEP2  : Array containing water-depth
 !     DISSC0: Array containing implicit part of the dissipation
 !     DISSC1: Array containing dissipation
-!     DISWCP: Total whitecapping dissipation for output purposes
 !     ETOT  : Total wave energy density
 !     IDCMIN: Counter that indicates the minimum direction that is propagated in the sweep
 !     IDCMAX: Counter that indicates the maximum direction that is propagated in the sweep
@@ -1421,7 +1415,6 @@
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1
             IMATDA(ID,IS)   = IMATDA(ID,IS)   + WCAP(IS)
             DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + WCAP(IS)                  40.67 40.12
-            DISWCP(ID,IS) = DISWCP(ID,IS) + WCAP(IS)-WCIMPL(IS)           40.61
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*(WCAP(IS)-WCIMPL(IS))
           END DO
         END DO
@@ -1436,7 +1429,6 @@
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1                            40.30
             IMATDA(ID,IS)   = IMATDA(ID,IS)   + CUMSTP(IS,ID)             40.30
             DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + CUMSTP(IS,ID)             40.67 40.30
-            DISWCP(ID,IS) = DISWCP(ID,IS) + CUMSTP(IS,ID)                 40.61
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*CUMSTP(IS,ID)           40.30
           END DO                                                          40.30
         END DO                                                            40.30
