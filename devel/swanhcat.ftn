@@ -40,7 +40,7 @@
       implicit none
       character(256) RLINE
       character*128 arg_str, basefile, tmp
-      integer ios,i,j,k,l,numfiles, sum, halo,haloindex
+      integer ios,i,j,k,l,numfiles, sum, halo,haloindex,iargc
       integer prevsource,freq,cdir, version
       logical ydivide, verbose, haloflag, exists, stomp, nonstat
       real, allocatable :: x(:,:),y(:,:)

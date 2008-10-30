@@ -584,7 +584,7 @@
 !       computational period and the user do not ask for a periodic plots
         DIF = TFINC - TIMCO
         TNEXT = OUTR(1)
-        IF ( PARLL.AND.OURQT.EQ.-9999.) OURQT = OUTR(1)                   40.51 40.30
+        IF ( OURQT.EQ.-9999.) OURQT = OUTR(1)                              40.51 40.30
         IF (ITEST.GE.60) WRITE (PRTEST, *) ' output times ', TNEXT,
      &        OUTR(2), DT, TFINC, TIMCO
         IF (ABS(DIF).LT.0.5*DT .AND. OUTR(2).LT.0.) THEN                  40.00
@@ -663,16 +663,16 @@
 !
 !        for BFI add steepness and Qp as output quantities                40.64
 !
-         IF (IVTYPE.EQ.61) THEN
+         IF (IVTYPE.EQ.59) THEN
            IF (.NOT.OQPROC(18)) THEN
              NVOQP = NVOQP + 1
              VOQR(18) = NVOQP
              OQPROC(18) = .TRUE.
            ENDIF
-           IF (.NOT.OQPROC(60)) THEN
+           IF (.NOT.OQPROC(58)) THEN
              NVOQP = NVOQP + 1
-             VOQR(60) = NVOQP
-             OQPROC(60) = .TRUE.
+             VOQR(58) = NVOQP
+             OQPROC(58) = .TRUE.
            ENDIF
          ENDIF
 !
@@ -681,9 +681,9 @@
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
-     &       IVTYPE.eq.54 .OR. IVTYPE.eq.55 .OR. IVTYPE.eq.56 .OR.
+     &       IVTYPE.eq.70 .OR. IVTYPE.eq.71 .OR. IVTYPE.eq.72 .OR.
      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
-     &       IVTYPE.EQ.60                                          )      40.64 40.61 40.51 40.41 40.00
+     &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
 !
 !        for some quantities also compute Depth, current, K and Cg
@@ -691,7 +691,7 @@
          IF (IVTYPE.EQ.15 .OR. IVTYPE.EQ.17 .OR. IVTYPE.EQ.18 .OR.
      &       IVTYPE.EQ.19 .OR. IVTYPE.EQ.20 .OR. IVTYPE.EQ.28 .OR.        10.10
      &       IVTYPE.EQ.32 .OR. IVTYPE.EQ.33 .OR. IVTYPE.EQ.42 .OR.
-     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.61                        )      40.64 40.41 40.00
+     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59                        )      40.64 40.41 40.00
      &   BKC = 2
 !
          IF (IVTYPE.EQ.11 .AND. ICUR.GT.0) BKC = 2                        20.36
@@ -1599,51 +1599,6 @@
         ENDIF
       ENDIF
 !
-!     bottom friction dissipation
-!
-      IF (OQPROC(54)) THEN                                                40.61
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 54,
-     &  VOQR(54)
-        CALL SWIPOL (COMPDA(1,JDSXB), OVEXCV(54), XC, YC, MIP,
-     &               VOQ(1,VOQR(54)) ,KGRPNT, COMPDA(1,JDP2))
-        IF (INRHOG.EQ.1) THEN
-          DO IP = 1, MIP
-            F1 = VOQ(IP,VOQR(54))
-            IF (.NOT.EQREAL(F1,OVEXCV(54))) VOQ(IP,VOQR(54))=F1*RHO*GRAV
-          END DO
-        ENDIF
-      ENDIF
-!
-!     wave breaking dissipation
-!
-      IF (OQPROC(55)) THEN                                                40.61
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 55,
-     &  VOQR(55)
-        CALL SWIPOL (COMPDA(1,JDSXS), OVEXCV(55), XC, YC, MIP,
-     &               VOQ(1,VOQR(55)) ,KGRPNT, COMPDA(1,JDP2))
-        IF (INRHOG.EQ.1) THEN
-          DO IP = 1, MIP
-            F1 = VOQ(IP,VOQR(55))
-            IF (.NOT.EQREAL(F1,OVEXCV(55))) VOQ(IP,VOQR(55))=F1*RHO*GRAV
-          END DO
-        ENDIF
-      ENDIF
-!
-!     whitecapping dissipation
-!
-      IF (OQPROC(56)) THEN                                                40.61
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 56,
-     &  VOQR(56)
-        CALL SWIPOL (COMPDA(1,JDSXW), OVEXCV(56), XC, YC, MIP,
-     &               VOQ(1,VOQR(56)) ,KGRPNT, COMPDA(1,JDP2))
-        IF (INRHOG.EQ.1) THEN
-          DO IP = 1, MIP
-            F1 = VOQ(IP,VOQR(56))
-            IF (.NOT.EQREAL(F1,OVEXCV(56))) VOQ(IP,VOQR(56))=F1*RHO*GRAV
-          END DO
-        ENDIF
-      ENDIF
-!
 !     Qb
 !
       IF (OQPROC(8)) THEN
@@ -2325,7 +2280,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 54, 55, 56, 60, 61/                                 MSL 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59, 70, 71, 72/                                 MSL 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -2388,7 +2343,6 @@
         IF (OQPROC(IVTYPE)) THEN
           ETOT = 0.
           FSWELL = PI2 * OUTPAR(5)
-c          print*,'Calc HS_SW',FSWELL
           DO IS = 2, MSC
             DS = SPCSIG(IS)-SPCSIG(IS-1)
             IF (SPCSIG(IS).LT.FSWELL) THEN
@@ -2502,14 +2456,13 @@ c          print*,'Calc HS_SW',FSWELL
      &             VOQ(IP,VOQR(IVTYP2)) = OVEXCV(IVTYP2)
            ENDIF
         ENDIF
-        
-    
+
 !
 !       peak period -also get for dpm
 !
         IVTYPE = 12
-        IVTYP2 = 54
-        IVTYP3 = 55
+        IVTYP2 = 70
+        IVTYP3 = 71
         IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2).OR.OQPROC(IVTYP3)) THEN       MSL
            EMAX = 0.
            ISIGM = -1
@@ -2523,7 +2476,7 @@ c          print*,'Calc HS_SW',FSWELL
                 ISIGM = IS
               ENDIF
            ENDDO
-           if (OQPROC(IVTYPE)) then
+           if (OQPROC(IVTYPE)) then                                       MSL
            IF (ISIGM.GT.0) THEN
              VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)                   30.72
            ELSE
@@ -2623,7 +2576,7 @@ c          print*,'Calc HS_SW',FSWELL
 !
 !       mean direction at peak frequency
 !
-        IVTYP1 = 54
+        IVTYP1 = 70
         IF (OQPROC(IVTYP1)) THEN
           if (OQPROC(IVTYP2)) then
             FSWELL = PI2 * OUTPAR(5)
@@ -2666,7 +2619,7 @@ c          print*,isigm,SPCSIG(isigm)
           
         ENDIF
         
-        IVTYP2 = 55
+        IVTYP2 = 71
         IF (OQPROC(IVTYP2)) THEN
           FSWELL = PI2 * OUTPAR(5)
           if (SPCSIG(ISIGM).LT.FSWELL)then
@@ -2804,7 +2757,7 @@ c          print*,isigm,SPCSIG(isigm)
 !
 !       spectral bandwidth
 !
-        IVTYPE = 56
+        IVTYPE = 72
         IF (OQPROC(IVTYPE)) THEN
           ETOT = 0.
           EM2=0.
@@ -2833,7 +2786,7 @@ c          print*,isigm,SPCSIG(isigm)
 !
 !       peakedness (Qp)                                                   40.64
 !
-        IVTYPE = 60
+        IVTYPE = 58
         IF (OQPROC(IVTYPE)) THEN
            ETOT  = 0.
            ESTOT = 0.
@@ -3201,11 +3154,11 @@ c          print*,isigm,SPCSIG(isigm)
 !
 !       Benjamin-Feir Index (BFI)                                         40.64
 !
-        IVTYPE = 61
+        IVTYPE = 59
         IF (OQPROC(IVTYPE)) THEN
            STPNS = VOQ(IP,VOQR(18))
-           QP    = VOQ(IP,VOQR(60))
-           IF ( STPNS.NE.OVEXCV(18) .AND. QP.NE.OVEXCV(60) ) THEN
+           QP    = VOQ(IP,VOQR(58))
+           IF ( STPNS.NE.OVEXCV(18) .AND. QP.NE.OVEXCV(58) ) THEN
               VOQ(IP,VOQR(IVTYPE)) = SQRT(PI2)*STPNS*QP
            ELSE
               VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)

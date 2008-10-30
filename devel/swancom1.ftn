@@ -3071,7 +3071,6 @@
      &                 RDX              ,RDY               ,OBREDF    )   40.00
            LPREDT=.FALSE.
         END IF
-        LPREDT=.FALSE.
 !
 !       Calculate various integral parameters for use in the source terms
 !

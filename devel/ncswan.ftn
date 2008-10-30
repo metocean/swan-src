@@ -21,21 +21,35 @@
 	    type(ncvar) :: varnc
 	    integer vind
 	    varnc%vtype=OVSVTY(vind)
-	    varnc%descriptionx=OVLNAM(vind)
 	    if (vind.eq.10) then
 	      varnc%idx='hs'
+	    elseif (vind.eq.44) then
+	      varnc%idx='hs_sw'
+	    elseif (vind.eq.53) then
+	      varnc%idx='tp'
+	    elseif (vind.eq.12) then
+	      varnc%idx='tp'
+	    elseif (vind.eq.70) then
+	      varnc%idx='dpm'
+	    elseif (vind.eq.71) then
+	      varnc%idx='dpm_sea'
 	    elseif (vind.eq.4) then
 	      varnc%idx='dep'
 	      varnc%vtype=0
+	    elseif (vind.eq.26) then
+	      varnc%idx='ugrd10m'
+	      varnc%idy='vgrd10m'
+	      varnc%descriptionx='East component 10m wind'
+	      varnc%descriptiony='North component 10m wind'
 	    else
 	      if (OVSVTY(vind).eq.3) then
-		varnc%idx = OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_x'
-		varnc%idy = OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_y'
+		varnc%idx = strtolower(OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_x')
+		varnc%idy = strtolower(OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_y')
 		varnc%descriptionx = OVLNAM(vind)(1:LEN_TRIM(OVLNAM(vind)))//' comp-x'
 		varnc%descriptiony = OVLNAM(vind)(1:LEN_TRIM(OVLNAM(vind)))//' comp-y'
 		varnc%vtype=3
 	      else
-		varnc%idx = OVSNAM(vind)
+		varnc%idx = strtolower(OVSNAM(vind))
 	      endif
 	    end if
 	    varnc%fillvalue=OVEXCV(vind)
@@ -140,7 +154,6 @@
 	    ndat(1)=nx
 	    ndat(2)=ny
 	    ndat(3)=1
-	    if (varnc%vtype.eq.3) ny=ny/2
 	    if (varnc%vtype.eq.0) then
 	      writeslab=NF_PUT_VARA_REAL 
      &(ncfid, varnc%vidx, start(1:2), ndat(1:2), dat(1:nx,1:ny))
@@ -158,6 +171,20 @@
 	  real*8 time
 	  integer writetime,itime
 	   writetime=NF_PUT_VARA_DOUBLE(ncfid, vartid, itime, 1, time)
+	  end function
+
+	  function strtolower(string)
+	    character (len=*) :: string
+	    character (len=len(string)) :: strtolower
+	    character (len=26),parameter :: 
+     &  UPPER='ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+     &  lower='abcdefghijklmnopqrtsuvwxyz'
+	    integer :: j,k
+	    strtolower=string
+	    do j=1, len(string)
+	      k=index (UPPER, string(j:j))
+	      if (k.ne.0) strtolower(j:j)=lower(k:k)
+	    enddo
 	  end function
       
       END MODULE
@@ -293,8 +320,9 @@
          DT    = RCOMPT(IC,5)
          TIMCO = TINIC
 
-!        --- do for all time steps
+	
 
+!        --- do for all time steps
          DO IT = IT0, IT1
 	    DIF = TFINC - TIMCO
 	    IF ( IT.EQ.IT0 .AND. IC.EQ.1 ) THEN
@@ -315,7 +343,6 @@
 	    READ(funit,*,ERR=50,END=50) dat
 	    itime=itime+1
 	    ncerr=writeslab(varnc,itime,dat,mxk,myk)
-!	    print*,NF_STRERROR(ncerr)
 	    ttime=DBLE(726469.+(TIMCO-t0)/86400.)
 	    if (iblk.eq.1) ncerr=writetime(itime,ttime)
   50        CONTINUE
