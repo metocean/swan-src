@@ -16,7 +16,7 @@
 !
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWREAD (COMPUT)                                          40.31 30.90
+      SUBROUTINE SWREAD (COMPUT,ncproc)                                          40.31 30.90 MSL
 !                                                                      *
 !***********************************************************************
 
@@ -378,6 +378,8 @@
       INTEGER, SAVE :: LWINDR = 0     ! if non-zero, there is wind
       INTEGER, SAVE :: LWINDM = 3     ! type of wind growth formulation
       INTEGER, ALLOCATABLE :: IARR(:)                                     40.31
+      integer ncproc                                                            MSL
+
 
       CALL STRACE (IENT, 'SWREAD')
 !
@@ -417,7 +419,7 @@
 ! ============================================================
 !
       IF (KEYWIS ('NCOUT')) THEN
-	  procnc=1
+	  ncproc=1
 	  CALL INCSTR ('NCFILE',ncfile,'STA','swan.nc')
           WRITE (PRINTF,*)' ** NETCDF file request: ',ncfile
 	  GOTO 100

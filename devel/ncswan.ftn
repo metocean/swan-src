@@ -3,7 +3,6 @@
 	use SWCOMM3
 	include 'netcdf.inc'
 
-	integer procnc
 	integer ncfid,dimxid,dimyid,dimtid,vartid
 	character (len=80) ncfile
 	integer varind(maxncvar)

@@ -316,7 +316,7 @@
 !     TXPBLA : Removes leading and trailing blanks in string              40.41
 !
       LOGICAL STPNOW                                                      34.01
-      integer iargc
+      integer :: iargc,ncproc=1                                                 MSL
 !
 !  9. Subroutines calling
 !
@@ -371,7 +371,6 @@
       MAXERR=1                                                            34.01
       ITRACE=0                                                            40.23
       INERR =0                                                            40.31
-      procnc=0                                                            MSL
 
 !TIMG      CALL SWTSTA(2)                                                      40.23
       CALL SWINIT (INERR)                                                 40.31 34.01
@@ -393,7 +392,7 @@
 
 ! master program change -fyshi
 !NCOM        if(Master_Start.eq.1)then
-                CALL SWREAD (COMPUT)
+                CALL SWREAD (COMPUT,ncproc)
 !NCOM           return
 !NCOM        else
 ! master_time_ctr was modified from SWREAD in swanpre1.f -fyshi
@@ -666,7 +665,7 @@
 !
 !TIMG      CALL SWPRTI                                                         40.23
 
-      if (procnc.gt.0) then                                                    	MSL
+      if (ncproc.gt.0) then                                                    	MSL
 	   IF ( .NOT.ALLOCATED(OURQT) ) THEN             
                ALLOCATE (OURQT(MAX_OUTP_REQ))                             
                OURQT = -9999.                                             
