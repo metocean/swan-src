@@ -5644,10 +5644,10 @@
         IF (UNFORM) THEN
 !          unformatted reading
            IF (DORDER.LT.0) THEN                                          40.55
-              READ (NDSD,END=930,ERR=920)
+              READ (NDSD,*,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)
            ELSE
-              READ (NDSD,END=930,ERR=920)
+              READ (NDSD,*,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)
            ENDIF
         ELSEIF ((.NOT.UNFORM).AND.(BTYPE.EQ.'WW3N')) THEN                 40.05
@@ -5669,10 +5669,10 @@
         ELSE
 !         format reading (except WW3)
           IF (DORDER.LT.0) THEN                                           40.31
-            READ (NDSD,END=930,ERR=920)                                 40.61
+            READ (NDSD,*,END=930,ERR=920)                                 40.61
      &             ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)        40.61
           ELSE                                                            40.31
-            READ (NDSD,END=930,ERR=920)                                 40.61
+            READ (NDSD,*,END=930,ERR=920)                                 40.61
      &             ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)           40.61
           ENDIF                                                           40.31
         ENDIF
