@@ -665,7 +665,7 @@
 !
 !TIMG      CALL SWPRTI                                                         40.23
 
-      if (ncproc.gt.0) then                                                    	MSL
+      if (ncproc.gt.0.AND.INODE.EQ.MASTER) then                                                    	MSL
 	   IF ( .NOT.ALLOCATED(OURQT) ) THEN             
                ALLOCATE (OURQT(MAX_OUTP_REQ))                             
                OURQT = -9999.                                             
