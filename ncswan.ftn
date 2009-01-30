@@ -22,18 +22,25 @@
 	    varnc%vtype=OVSVTY(vind)
 	    if (vind.eq.10) then
 	      varnc%idx='hs'
+              varnc%descriptionx='Total significant wave height'
 	    elseif (vind.eq.44) then
 	      varnc%idx='hs_sw'
+              varnc%descriptionx='Swell significant wave height'
 	    elseif (vind.eq.53) then
 	      varnc%idx='tp'
+              varnc%descriptionx='Peak spectral period'
 	    elseif (vind.eq.12) then
 	      varnc%idx='tp'
+              varnc%descriptionx='Peak spectral period'
 	    elseif (vind.eq.70) then
 	      varnc%idx='dpm'
+              varnc%descriptionx='Mean direction at peak period'
 	    elseif (vind.eq.71) then
 	      varnc%idx='dpm_sea'
+              varnc%descriptionx='Mean direction at peak sea period'
 	    elseif (vind.eq.4) then
 	      varnc%idx='dep'
+              varnc%descriptionx='Depth'
 	      varnc%vtype=0
 	    elseif (vind.eq.26) then
 	      varnc%idx='ugrd10m'
@@ -54,6 +61,7 @@
 		varnc%vtype=3
 	      else
 		varnc%idx = strtolower(OVSNAM(vind))
+                varnc%descriptionx = OVLNAM(vind)
 	      endif
 	    end if
 	    varnc%fillvalue=OVEXCV(vind)
@@ -78,9 +86,9 @@
 	      if (initnc.lt.0) return
 	    initnc=NF_DEF_DIM (ncfid, 'time',NF_UNLIMITED,dimtid)
 	      if (initnc.lt.0) return
-	    initnc= NF_DEF_VAR(ncfid, 'longitude',NF_FLOAT, 1, dimxid, varxid)
+	    initnc= NF_DEF_VAR(ncfid, 'lon',NF_FLOAT, 1, dimxid, varxid)
 	      if (initnc.lt.0) return
-	    initnc= NF_DEF_VAR(ncfid, 'latitude',NF_FLOAT, 1, dimyid, varyid)
+	    initnc= NF_DEF_VAR(ncfid, 'lat',NF_FLOAT, 1, dimyid, varyid)
 	      if (initnc.lt.0) return
 	    initnc= NF_DEF_VAR(ncfid, 'time',NF_DOUBLE, 1, dimtid, vartid)
 	      if (initnc.lt.0) return
@@ -88,7 +96,7 @@
      &(ncfid, varxid, 'units', 12, 'degrees_east')
 	      if (initnc.lt.0) return
 	    initnc=NF_PUT_ATT_TEXT
-     &(ncfid, varyid, 'units', 12, 'degrees_north')
+     &(ncfid, varyid, 'units', 13, 'degrees_north')
 	      if (initnc.lt.0) return
 	    initnc=NF_PUT_ATT_TEXT
      &(ncfid, vartid, 'units', 16, 'days since 1-1-1')
