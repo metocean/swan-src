@@ -133,7 +133,7 @@
      &(ncfid, varnc%vidx, 'long_name', ndum, TRIM(varnc%descriptionx))
 	      if (defncvar.lt.0) return
 	    defncvar=NF_PUT_ATT_REAL
-     &(ncfid, varnc%vidx, '_FillValue', NF_REAL, 1, varnc%fillvalue)
+     &(ncfid, varnc%vidx, 'missing_value', NF_REAL, 1, varnc%fillvalue)
 	      if (defncvar.lt.0) return
 	    if (varnc%vtype.eq.3) then
 	      defncvar= NF_DEF_VAR
@@ -148,7 +148,7 @@
      &(ncfid, varnc%vidy, 'long_name', ndum, TRIM(varnc%descriptiony))
 		if (defncvar.lt.0) return
 	      defncvar=NF_PUT_ATT_REAL
-     &(ncfid, varnc%vidy, '_FillValue', NF_REAL, 1, varnc%fillvalue)
+     &(ncfid, varnc%vidy, 'missing_value', NF_REAL, 1, varnc%fillvalue)
 		if (defncvar.lt.0) return
 	    endif
 	    defncvar=NF_ENDDEF(ncfid)
