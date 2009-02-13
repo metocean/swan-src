@@ -55,8 +55,8 @@
 !.....Set command-line argument defaults
       basefile='NULL'
       halo=3
-      verbose = .FALSE.
-      stomp = .FALSE.
+      verbose = .TRUE.
+      stomp = .TRUE.
 
 !.....Aquire arguments via arg_nml namelist read from hcat.nml file (non-Fortran 2003)
 !      OPEN(10,FILE='hcat.nml',STATUS='OLD')
