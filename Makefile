@@ -59,12 +59,18 @@ help:
 	@echo "make clean     -- removes compiled objects and modules"
 	@echo "make allclean  -- removes compiled objects, modules and $(SWAN_EXE)"
 	@echo "make cleandoc  -- removes all SWAN documents"
+	@echo "make hotcat    -- makes the hotfile concatenator"
+	@echo "make ncom      -- makes the SWAN NCOM lib"
 
 config:
 	@perl platform.pl
 
 install:
 	@perl platform.pl
+
+hotcat:
+	@perl switch.pl $(swch) swanhcat.ftn
+	$(F90_SER) swanhcat.f $(FLAGS_OPT) $(FLAGS_SER) $(INCS_SER) $(LIBS_SER) $(OUT)swan_hotcat.exe
 
 ncom:	
 	@perl switch.pl $(swch) -ncom *.ftn
@@ -79,7 +85,7 @@ ser:
 ser_db:
 	@perl switch.pl $(swch) *.ftn
 	$(MAKE) FOR=$(F90_DB) FFLAGS="-g $(FLAGS_MSC) $(FLAGS_SER)" \
-                INCS="$(INCS_SER) $(INCS_NC)" LIBS="$(LIBS_SER)" $(SWAN_EXE)
+                INCS="$(INCS_SER) $(INCS_NC)" LIBS="$(LIBS_SER) $(LIBS_NC)" $(SWAN_EXE)
 
 omp:
 	@perl switch.pl $(swch) -omp *.ftn
