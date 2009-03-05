@@ -97,6 +97,12 @@ mpi:
 	$(MAKE) FOR=$(F90_MPI) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_MPI)" \
                 INCS="$(INCS_MPI) $(INCS_NC)" LIBS="$(LIBS_MPI) $(LIBS_NC)" $(SWAN_EXE)
 
+mpi_db:
+	@perl switch.pl $(swch) -mpi *.ftn
+	$(MAKE) FOR=$(F90_DB) FFLAGS="-g $(FLAGS_MSC) $(FLAGS_SER)" \
+                INCS="$(INCS_SER) $(INCS_NC)" LIBS="$(LIBS_MPI) $(LIBS_NC)" $(SWAN_EXE)
+
+
 doc:
 	$(MAKE) -f Makefile.latex TARGET=swanuse doc
 	$(MAKE) -f Makefile.latex TARGET=swantech doc
