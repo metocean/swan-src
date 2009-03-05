@@ -116,13 +116,13 @@
       IF(verbose) PRINT *,'Halosize is',halo
 
 !.....Open basefile
-      IF (stomp) THEN
+!      IF (stomp) THEN
          OPEN(unit=10, file=TRIM(basefile), iostat=ios)
-      ELSE
-         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
-      ENDIF
+!      ELSE
+!         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
+!      ENDIF
       IF ( ios /= 0 ) then
-         PRINT*,'Could not open ',trim(basefile),' or it already exists'
+         PRINT*,'Could not open ',trim(basefile)
          STOP
       ENDIF
 
