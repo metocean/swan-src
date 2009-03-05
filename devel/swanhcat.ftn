@@ -40,12 +40,12 @@
       implicit none
       character(256) RLINE
       character*128 arg_str, basefile, tmp
-      integer ios,i,j,k,l,numfiles, sum, halo,haloindex,iargc
+      integer ios,i,j,k,l,numfiles, sum, halo,haloindex
       integer prevsource,freq,cdir, version
       logical ydivide, verbose, haloflag, exists, stomp, nonstat
       real, allocatable :: x(:,:),y(:,:)
       integer, allocatable :: locations(:),index(:), source(:)
-!      namelist /arg_nml/ basefile,halo,verbose,stomp
+      namelist /arg_nml/ basefile,halo,verbose,stomp
 
  33   FORMAT('-',I3.3,A)
  35   FORMAT(A)
@@ -55,18 +55,13 @@
 !.....Set command-line argument defaults
       basefile='NULL'
       halo=3
-      verbose = .TRUE.
-      stomp = .TRUE.
+      verbose = .FALSE.
+      stomp = .FALSE.
 
 !.....Aquire arguments via arg_nml namelist read from hcat.nml file (non-Fortran 2003)
-!      OPEN(10,FILE='hcat.nml',STATUS='OLD')
-!      READ(10,NML=arg_nml)
-!      CLOSE(10)
-	if (iargc().gt.0) then
-	      call getarg(1,basefile)
-	else
-	      print*,'Usage: Hotconcat <basefile>'
-	endif
+      OPEN(10,FILE='hcat.nml',STATUS='OLD')
+      READ(10,NML=arg_nml)
+      CLOSE(10)
 
 !.....Process command-line arguments (Fortran 2003)
 !     haloflag = .FALSE.
@@ -121,13 +116,13 @@
       IF(verbose) PRINT *,'Halosize is',halo
 
 !.....Open basefile
-      IF (stomp) THEN
+!      IF (stomp) THEN
          OPEN(unit=10, file=TRIM(basefile), iostat=ios)
-      ELSE
-         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
-      ENDIF
+!      ELSE
+!         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
+!      ENDIF
       IF ( ios /= 0 ) then
-         PRINT*,'Could not open ',trim(basefile),' or it already exists'
+         PRINT*,'Could not open ',trim(basefile)
          STOP
       ENDIF
 
