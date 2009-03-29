@@ -4757,9 +4757,14 @@
           if (inode.eq.1) then
             jxmin=mxf
             jymin=myf
+          elseif (inode.eq.nproc) then
+            jxmax=mxl
+            jymax=myl
           endif
 !MPI          call mpi_bcast(jxmin,1,SWINT,0,MPI_COMM_WORLD,IERR)
 !MPI          call mpi_bcast(jymin,1,SWINT,0,MPI_COMM_WORLD,IERR)
+!MPI          call mpi_bcast(jxmax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
+!MPI          call mpi_bcast(jymax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
           CALL IGNORE ('SING')                                            40.62
         ELSE                                                              40.62
           SINGLEHOT = .FALSE.                                             40.62
@@ -4854,7 +4859,6 @@
  210      FORMAT (' initial condition read for time: ', A)
         ENDIF
 !
-        print*,INODE,MXF,MXL,JXMIN,JXMAX
         DO 290 JX = JXMIN, JXMAX                                              40.62
           IF (SINGLEHOT) THEN                                             40.62
              IX = JX-MXF+1
