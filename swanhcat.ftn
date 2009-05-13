@@ -40,28 +40,33 @@
       implicit none
       character(256) RLINE
       character*128 arg_str, basefile, tmp
-      integer ios,i,j,k,l,numfiles, sum, halo,haloindex
+      integer ios,i,j,k,l,numfiles, sum, halo,haloindex,iargc
       integer prevsource,freq,cdir, version
       logical ydivide, verbose, haloflag, exists, stomp, nonstat
-      real, allocatable :: x(:,:),y(:,:)
+      real*8, allocatable :: x(:,:),y(:,:)
       integer, allocatable :: locations(:),index(:), source(:)
-      namelist /arg_nml/ basefile,halo,verbose,stomp
+!      namelist /arg_nml/ basefile,halo,verbose,stomp
 
  33   FORMAT('-',I3.3,A)
  35   FORMAT(A)
- 36   FORMAT(F14.4,F14.4)
+ 36   FORMAT(F14.6,F14.6)
  37   FORMAT(I6,A)
 
 !.....Set command-line argument defaults
       basefile='NULL'
       halo=3
-      verbose = .FALSE.
-      stomp = .FALSE.
+      verbose = .TRUE.
+      stomp = .TRUE.
 
 !.....Aquire arguments via arg_nml namelist read from hcat.nml file (non-Fortran 2003)
-      OPEN(10,FILE='hcat.nml',STATUS='OLD')
-      READ(10,NML=arg_nml)
-      CLOSE(10)
+!      OPEN(10,FILE='hcat.nml',STATUS='OLD')
+!      READ(10,NML=arg_nml)
+!      CLOSE(10)
+	if (iargc().gt.0) then
+	      call getarg(1,basefile)
+	else
+	      print*,'Usage: Hotconcat <basefile>'
+	endif
 
 !.....Process command-line arguments (Fortran 2003)
 !     haloflag = .FALSE.
@@ -116,13 +121,13 @@
       IF(verbose) PRINT *,'Halosize is',halo
 
 !.....Open basefile
-!      IF (stomp) THEN
+      IF (stomp) THEN
          OPEN(unit=10, file=TRIM(basefile), iostat=ios)
-!      ELSE
-!         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
-!      ENDIF
+      ELSE
+         OPEN(unit=10, file=TRIM(basefile), iostat=ios, STATUS='NEW')
+      ENDIF
       IF ( ios /= 0 ) then
-         PRINT*,'Could not open ',trim(basefile)
+         PRINT*,'Could not open ',trim(basefile),' or it already exists'
          STOP
       ENDIF
 
@@ -158,6 +163,8 @@
             IF(verbose) PRINT *,TRIM(tmp),' opened succesfully'
          ENDIF
       ENDDO
+
+!      open(99,file='gpout.txt')
 
 !.....Specifiy the number of location for each hotfile including
 !.....the one being created at location(0)
@@ -303,6 +310,7 @@
 !.....Write grid points to basefile
       DO i=1,index(0)
          WRITE (10,36) x(0,i),y(0,i)
+!!         write(99,36) x(0,i),y(0,i)
       ENDDO
 
 !.....Process FREQ
@@ -379,7 +387,7 @@
                         ELSE
                            PRINT *,'Unable to process'
                            PRINT *,RLINE
-                           EXIT
+                           STOP
                         ENDIF
                      ENDDO
                   ENDIF
@@ -405,7 +413,7 @@
                      ELSE
                         PRINT *,'Unable to process'
                         PRINT *,RLINE
-                        EXIT
+                        STOP
                      ENDIF
                      prevsource=j
                   ENDDO
@@ -425,7 +433,7 @@
                         ELSE
                            PRINT *,'Unable to process'
                            PRINT *,RLINE
-                           EXIT
+                           STOP
                         ENDIF
                      ENDDO
                   ENDIF
@@ -471,14 +479,17 @@
                         ENDDO
                         index(j)=index(j)+1
                         index(0)=index(0)+1
+!!                        write(99,*) 1,j
                      ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
                         WRITE(10,35) TRIM(RLINE)
                         index(j)=index(j)+1
                         index(0)=index(0)+1
+!!                        write(99,*) 0,j
                      ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0) THEN
                         WRITE(10,35) TRIM(RLINE)
                         index(j)=index(j)+1
                         index(0)=index(0)+1
+!!                        write(99,*) -1,j
                      ELSE IF (ios/=0) THEN
                         PRINT *,'End of file error'
                         PRINT *,'ios:',ios
@@ -500,6 +511,8 @@
       DO i=1,numfiles
          CLOSE (unit=10+i)
       ENDDO
+
+!!      close(99)
 
       END PROGRAM HotConcat
 
