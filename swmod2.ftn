@@ -25,7 +25,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -146,7 +146,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -287,7 +287,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -395,12 +395,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -540,12 +540,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -652,12 +652,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -745,10 +745,10 @@
       REAL   , SAVE, ALLOCATABLE :: AC2(:,:,:)
       REAL   , SAVE, ALLOCATABLE :: XCGRID(:,:), YCGRID(:,:)
       REAL   , SAVE, ALLOCATABLE :: SPCSIG(:)  , SPCDIR(:,:)
-      REAL   , SAVE, ALLOCATABLE :: DEPTH(:,:) , FRIC(:,:)
-      REAL   , SAVE, ALLOCATABLE :: UXB(:,:)   , UYB(:,:)
-      REAL   , SAVE, ALLOCATABLE :: WXI(:,:)   , WYI(:,:)
-      REAL   , SAVE, ALLOCATABLE :: WLEVL(:,:) , ASTDF(:,:)
+      REAL   , SAVE, ALLOCATABLE :: DEPTH(:) , FRIC(:)
+      REAL   , SAVE, ALLOCATABLE :: UXB(:)   , UYB(:)
+      REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
+      REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
 
 !  8. Subroutines and functions used
 !
@@ -783,12 +783,12 @@
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
-!     | Programmer: M. Zijlema                                    |
+!     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -967,7 +967,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2007  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
