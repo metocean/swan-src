@@ -54,10 +54,14 @@
 	      varnc%descriptiony='North component energy flux'
 	    else
 	      if (OVSVTY(vind).eq.3) then
-		varnc%idx = strtolower(OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_x')
-		varnc%idy = strtolower(OVSNAM(vind)(1:LEN_TRIM(OVSNAM(vind)))//'_y')
-		varnc%descriptionx = OVLNAM(vind)(1:LEN_TRIM(OVLNAM(vind)))//' comp-x'
-		varnc%descriptiony = OVLNAM(vind)(1:LEN_TRIM(OVLNAM(vind)))//' comp-y'
+		varnc%idx = strtolower(OVSNAM(vind)
+     &(1:LEN_TRIM(OVSNAM(vind)))//'_x')
+		varnc%idy = strtolower(OVSNAM(vind)
+     &(1:LEN_TRIM(OVSNAM(vind)))//'_y')
+		varnc%descriptionx = OVLNAM(vind)
+     &(1:LEN_TRIM(OVLNAM(vind)))//' comp-x'
+		varnc%descriptiony = OVLNAM(vind)
+     &(1:LEN_TRIM(OVLNAM(vind)))//' comp-y'
 		varnc%vtype=3
 	      else
 		varnc%idx = strtolower(OVSNAM(vind))
@@ -383,7 +387,7 @@
 1111	FORMAT('Packing variable ',A,' on grid ',A)
 1112	FORMAT('Skipping variable ',A,' on grid ',A)
 1113	FORMAT('Cannot postprocess angled grid ',A)
-1114	FORMAT('Cannot open file ',A,' errorcode: ',I)
+1114	FORMAT('Cannot open file ',A,' errorcode: ',I2)
 
       RETURN
       END
