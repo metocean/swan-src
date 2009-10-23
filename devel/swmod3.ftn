@@ -1760,7 +1760,7 @@
       real px,py       ! components of difference k1-k3 wave number
       real pmag        ! magnitude of P-vector
       real pang        ! angle related of P-vector, Pang = atan2(py,px), (radians)
-      real sang        ! angle of symmytry axis of locus, SANG = PANG +/ pi° (radians)
+      real sang        ! angle of symmytry axis of locus, SANG = PANG +/ piï¿½ (radians)
       real xang        ! angle of locus for the case that w1=w3, Xang=atan2(-px,py), (radians)
       real q           ! difference of radian frequencies, used in Resio-Tracy method
       real kmin_loc    ! minimum wave number of locus along symmetry axis
@@ -9315,7 +9315,7 @@
 !  7. Remarks
 !
 !     Routine based on modified version of routine SHLOCX of Resio and Tracy
-!     On 15/4/2002 a bug fixed in computation of THR when angle of k3 is larger than 90°
+!     On 15/4/2002 a bug fixed in computation of THR when angle of k3 is larger than 90ï¿½
 !
 !     In addition, the assumption that k1y=0 and thus dir1=0 is removed
 !     In bug fix of 20/8/2002 this restriction is removed.
