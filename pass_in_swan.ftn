@@ -2,18 +2,10 @@
       SUBROUTINE PASS_IN_SWAN (COMPDA,KGRPNT,XCGRID,YCGRID)
  
 !
-      USE OUTP_DATA                                                       40.31
+      USE OUTP_DATA                                                       
       USE M_PARALL  
-      USE PASS                                                            40.31
-!      
-
-      USE timecomm                                              
-               
-      USE ocpcomm4                                              
-      USE swcomm1                                               
-      USE swcomm2                                               
+      USE PASS                                                                                                    
       USE swcomm3                                               
-      USE swcomm4 
 
       REAL COMPDA(MCGRD,MCMVAR),XCGRID(MXC,MYC),YCGRID(MXC,MYC)
       integer IX,IY, INDX,KGRPNT(MXC,MYC)
@@ -51,22 +43,17 @@
 ! COMPDA has only active points + 1.
 !
         DO INDX = 2, MCGRD
+	  COMPDA(INDX,JDP1)=COMPDA(INDX,JDP2)
           COMPDA(INDX,JWLV1)=COMPDA(INDX,JWLV2)
           COMPDA(INDX,JVX1)=COMPDA(INDX,JVX2)
           COMPDA(INDX,JVY1)=COMPDA(INDX,JVY2)
         ENDDO
-!
-!        DO INDX = 2, MCGRD
-!          COMPDA(INDX,JWLV2)=0.0
-!          COMPDA(INDX,JVX2)=0.5
-!          COMPDA(INDX,JVY2)=0.5
-!        ENDDO
 
          DO IX=1,MXC
          DO IY=1,MYC
           INDX=KGRPNT(IX,IY)
           IF(INDX.GT.1)THEN
-          COMPDA(INDX,JDP1)=Depth_Wave(IX,IY)
+          COMPDA(INDX,JDP2)=Depth_Wave(IX,IY)
           COMPDA(INDX,JWLV2)=Intp_eta_Wave(IX,IY)
           COMPDA(INDX,JVX2)=Intp_U_Wave(IX,IY)*COS(ANG(IX,IY))
      &                     +Intp_V_Wave(IX,IY)*SIN(ANG(IX,IY))
