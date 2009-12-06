@@ -140,6 +140,11 @@
 !DOS          DIRCH2 = CHAR(92)                                               40.03
 !UNIX          DIRCH1 = CHAR(92)                                               40.41 40.30
 !UNIX          DIRCH2 = CHAR(47)                                               40.30
+      if (iargc().gt.0) then
+              call getarg(1,INPFIL)
+              OUTFIL=trim(INPFIL) // '.log'
+      endif
+
         ENDIF
         IF (INIVEF.LT.3) THEN
            READ (11, 140, ERR=930, END=930) PLTOPT
@@ -200,7 +205,7 @@
 !UNIX        DIRCH1 =  CHAR(92)                                                40.41 40.30
 !UNIX        DIRCH2 =  CHAR(47)                                                40.30
 !       INST = name of institute, max. 40 characters
-        INST = 'Delft University of Technology'
+        INST = 'MetOcean Solutions'
         ITMOPT = 1
 !
       ENDIF

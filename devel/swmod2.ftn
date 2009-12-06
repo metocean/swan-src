@@ -199,7 +199,7 @@
 !
 !  7. Local variables
 
-      INTEGER, PARAMETER :: MAX_OUTP_REQ = 250 ! max. number of output requests
+      INTEGER, PARAMETER :: MAX_OUTP_REQ = 999 ! max. number of output requests
 
       CHARACTER (LEN=1)  :: OUT_COMMENT = '%' ! comment sign for heading lines
 

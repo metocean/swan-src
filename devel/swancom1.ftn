@@ -8617,6 +8617,7 @@
 !
       USE OCPCOMM4                                                        40.41
       USE SWCOMM3                                                         40.41
+!NCOM      USE PASS
 !
       IMPLICIT NONE
 !
@@ -9064,6 +9065,9 @@
               END IF
            END DO
         END DO
+!NCOM                 Pass_Wave_Fx(IX,IY)=grav*SETPDA(INDX,1)
+!NCOM                 Pass_Wave_Fy(IX,IY)=grav*SETPDA(INDX,2)
+
 !
 !       --- compute set-up in two dimensions
 !

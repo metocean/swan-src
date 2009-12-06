@@ -26,10 +26,12 @@
 !
 !***********************************************************************
 !                                                                      *
-      PROGRAM SWAN
+!SWAN      PROGRAM SWAN
+!NCOM      Subroutine WaveModule()
 !                                                                      *
 !***********************************************************************
 !
+!NCOM     USE PASS
       IMPLICIT NONE
 !
 !
@@ -102,12 +104,17 @@
 !
 !     --- initialize the MPI execution environment                        40.30
 
+!NCOM      if (Master_start.eq.1) then
       CALL SWINITMPI                                                      40.30
       IF (STPNOW()) GOTO 999                                              40.30
-
+!NCOM      else
 !     --- start SWAN run
+!NCOM      print*, 'Run SWAN loop ',int((istep-1)/N_Interval_CallWave)
+!NCOM      endif
 
       CALL SWMAIN                                                         40.31 34.01
+!NCOM      print*,'Out fo SWAN loop'
+!NCOM      RETURN
 
 999   CONTINUE
 
@@ -134,8 +141,9 @@
       USE OUTP_DATA                                                       40.51
       USE M_GENARR                                                        40.31
       USE M_PARALL                                                        40.31
+!NCOM      USE PASS
       USE SwanGriddata                                                    40.80
-!
+!SWAN      USE ncswan
       IMPLICIT NONE
 !
 !
@@ -302,6 +310,7 @@
 !     TXPBLA : Removes leading and trailing blanks in string              40.41
 !
       LOGICAL STPNOW                                                      34.01
+      integer :: iargc,ncproc=1                                           MSL
 !
 !  9. Subroutines calling
 !
@@ -343,6 +352,7 @@
 !
 ! 13. Source text
 !
+!NCOM      if (Master_Start.eq.1) then
 !     --- initialize various data
 !TIMG
 !TIMG      DCUMTM(:,1:2) = 0D0                                                 40.23
@@ -364,12 +374,21 @@
 
 !     --- repeat
 
-      DO
+!NCOM      endif
+!SWAN      DO
 
 !       --- read and process user commands
 
 !TIMG        CALL SWTSTA(3)                                                    40.23
-        CALL SWREAD (COMPUT)                                              40.31 30.90
+
+!NCOM        if(Master_Start.eq.1)then
+                 CALL SWREAD (COMPUT,ncproc)
+!NCOM           return
+!NCOM        else
+!NCOM           CALL MASTER_TIME_CTR(COMPUT)
+!NCOM        endif
+
+
 !TIMG        CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
 
@@ -468,6 +487,12 @@
  6011     FORMAT(' ** To ignore this error, change [maxerr] with the',    30.72
      &           ' SET command')                                          30.72
 
+!SWAN      ELSE IF (iargc().gt.1) THEN
+!SWAN      WRITE (PRINTF, 6020)
+!SWAN        PARLL=.FALSE.
+!SWAN 6020       FORMAT(' ** POSTPROCESS ONLY ')
+
+
         ELSE
 !
           IF (ITEST.GE.40) THEN                                           40.00
@@ -508,7 +533,7 @@
           IF (STPNOW()) RETURN                                            40.30
 
 !         --- loop over time steps                                        40.00
-
+!NCOM          call pass_in_swan(COMPDA,KGRPNT,XCGRID,YCGRID)
           DO 500 IT = IT0, MTC                                            40.00
 !
             IF (LEVERR.GT.MAXERR) THEN                                    30.82
@@ -616,16 +641,20 @@
 
         END IF
 
-      END DO
+!SWAN      END DO
 !
  900  CONTINUE
+
+!NCOM       call PASS_OUT_SWAN(COMPDA,KGRPNT,XCGRID,YCGRID,AC2,SPCDIR,SPCSIG)
+!NCOM       return
+
 !
 !TIMG      CALL SWTSTO(1)                                                      40.23
 !
-      DO IUNIT=1,HIOPEN                                                   34.01
-        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
-        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
-      END DO                                                              34.01
+!SWAN      DO IUNIT=1,HIOPEN                                                   34.01
+!SWAN        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
+!SWAN        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
+!SWAN      END DO                                                              34.01
 
 !     --- collect contents of individual process files for                40.30
 !         output requests in case of parallel computation                 40.30
@@ -647,6 +676,16 @@
 !
 !TIMG      CALL SWPRTI                                                         40.23
 !
+!SWAN      if (ncproc.gt.0.AND.INODE.EQ.MASTER.AND.OPTG.NE.5) then                                                            MSL
+!SWAN            IF ( .NOT.ALLOCATED(OURQT) ) THEN
+!SWAN               ALLOCATE (OURQT(MAX_OUTP_REQ))
+!SWAN               OURQT = -9999.
+!SWAN            ENDIF
+!SWAN          write(SCREEN,*), 'Postprocessing blocks to NETCDF'
+!SWAN          call writenc(ourqt)                                                   MSL
+!SWAN      end if                                                                    MSL
+
+
       INQUIRE(UNIT=PRINTF,OPENED=LOPEN)                                   40.30
       IF (LOPEN) CLOSE(PRINTF)                                            40.30
 !
@@ -2034,6 +2073,43 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 1000.
       OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 70                                                         MSL                                                    
+      OVKEYW(IVTYPE) = 'DPM'                                                                                                     
+      OVSNAM(IVTYPE) = 'Dpm'                                                                                                     
+      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'                                                                         
+      OVUNIT(IVTYPE) = UDI                                                30.72                                                  
+      OVSVTY(IVTYPE) = 2                                                                                                         
+      OVLLIM(IVTYPE) = 0.                                                                                                        
+      OVULIM(IVTYPE) = 360.                                                                                                      
+      OVLEXP(IVTYPE) = 0.                                                                                                        
+      OVHEXP(IVTYPE) = 360.                                                                                                      
+      OVEXCV(IVTYPE) = -999.                                                                                                     
+!                                                                                                                                
+      IVTYPE = 71                                                         MSL                                                    
+      OVKEYW(IVTYPE) = 'DPMSEA'                                                                                                  
+      OVSNAM(IVTYPE) = 'Dpm_sea'                                                                                                 
+      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'                                                                     
+      OVUNIT(IVTYPE) = UDI                                                30.72                                                  
+      OVSVTY(IVTYPE) = 2                                                                                                         
+      OVLLIM(IVTYPE) = 0.                                                                                                        
+      OVULIM(IVTYPE) = 360.                                                                                                      
+      OVLEXP(IVTYPE) = 0.                                                                                                        
+      OVHEXP(IVTYPE) = 360.                                                                                                      
+      OVEXCV(IVTYPE) = -999.                                                                                                     
+!                                                                                                                                
+      IVTYPE = 72                                                         MSL                                                    
+      OVKEYW(IVTYPE) = 'SWE'                                                                                                     
+      OVSNAM(IVTYPE) = 'SWe'                                                                                                     
+      OVLNAM(IVTYPE) = 'Spectral bandwidth'                                                                                      
+      OVUNIT(IVTYPE) = ' '                                                                                                       
+      OVSVTY(IVTYPE) = 1                                                                                                         
+      OVLLIM(IVTYPE) = 0.                                                                                                        
+      OVULIM(IVTYPE) = 1.                                                                                                        
+      OVLEXP(IVTYPE) = 0.                                                                                                        
+      OVHEXP(IVTYPE) = 1.                                                                                                        
+      OVEXCV(IVTYPE) = -9                                                         
+
 !
 !     various parameters for computation of output quantities             40.00
 !
@@ -4818,11 +4894,11 @@
 
 !     field 7: water level
       IF (IFLDYN(7) .EQ. 1) THEN
-        CALL FLFILE ( 7, 0, WLEVL, 0.,                                    40.31
-     &               JWLV1, JWLV2, JWLV3, 0, 0, 0,
-     &               1., 0.,                                              40.31 30.90
-     &               COMPDA, XCGRID, YCGRID,
-     &               KGRPNT, IERR)
+!SWAN        CALL FLFILE ( 7, 0, WLEVL, 0.,                                    40.31
+!SWAN     &               JWLV1, JWLV2, JWLV3, 0, 0, 0,
+!SWAN     &               1., 0.,                                              40.31 30.90
+!SWAN     &               COMPDA, XCGRID, YCGRID,
+!SWAN     &               KGRPNT, IERR)
         IF (STPNOW()) RETURN                                              34.01
 !       Add bottom level to obtain depth
 !       structured grid                                                   40.80
