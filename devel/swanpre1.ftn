@@ -16,7 +16,7 @@
 !
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWREAD (COMPUT,ncproc)                                          40.31 30.90 MSL
+      SUBROUTINE SWREAD (COMPUT)                                          40.31 30.90
 !                                                                      *
 !***********************************************************************
 
@@ -36,9 +36,7 @@
       USE M_GENARR                                                        40.31
       USE M_OBSTA                                                         40.31
       USE M_PARALL                                                        40.31
-!SWAN		USE NCSWAN
       USE SwanGriddata                                                    40.80
-!NCOM           USE PASS
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -52,7 +50,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -284,7 +282,7 @@
       INTEGER, SAVE     :: INCNUM(1:MXINCL) = 0                           40.03
       INTEGER, SAVE     :: INCLEV = 1                                     40.03
 !
-      INTEGER           :: IOSTAT = 0                                     40.02
+      INTEGER           :: IERR = 0                                       40.02
       INTEGER           :: ICNL4, ILAMBDA                                 40.17
       INTEGER           :: ITMP1, ITMP2, ITMP3, ITMP4                     40.31
 !
@@ -295,8 +293,6 @@
       REAL           :: POWN, DUM                                         40.31 40.18
       REAL           :: FD1, FD2, FD3, FD4                                40.31 40.28
       REAL, ALLOCATABLE :: RLAMBDA(:)                                     40.17
-      
-!NCOM      REAL           :: MasterDt
 
       CHARACTER*6  QOVSNM                                                 40.87
       CHARACTER*40 QOVLNM                                                 40.87
@@ -396,8 +392,6 @@
       INTEGER, SAVE :: LWINDR = 0     ! if non-zero, there is wind
       INTEGER, SAVE :: LWINDM = 3     ! type of wind growth formulation
       INTEGER, ALLOCATABLE :: IARR(:)                                     40.31
-      integer ncproc                                                            MSL
-
       INTEGER IVOTP(NVOTP), INDX(1)                                       40.87
       DATA IVOTP /10, 11, 13, 15, 16, 17, 18, 19,                         40.87
      &            28, 32, 33, 42, 43, 47, 48    /                         40.87
@@ -429,22 +423,6 @@
 !     ------------------------------------------------------------------
 !                 PROCESSING OF COMMANDS
 !     ------------------------------------------------------------------
-!
-!
-!     NCOUT                                                                30.21
-!
-! ============================================================
-!
-! NCOUT                                                                    MSL
-!
-! ============================================================
-!
-      IF (KEYWIS ('NCOUT')) THEN
-	  ncproc=1
-	  CALL INCSTR ('NCFILE',ncfile,'STA','swan.nc')
-          WRITE (PRINTF,*)' ** NETCDF file request: ',ncfile
-	  GOTO 100
-      ENDIF
 !
 !     STOP                                                                30.21
 !
@@ -508,8 +486,8 @@
           CALL MSGERR (4, 'too many INCLUDE levels')                      40.03
           RETURN
         ENDIF
-        IOSTAT = 0
-        CALL FOR (INCNUM(INCLEV), FILENM, 'OF', IOSTAT)                   40.03
+        IERR   = 0
+        CALL FOR (INCNUM(INCLEV), FILENM, 'OF', IERR)                     40.03
         INPUTF = INCNUM(INCLEV)
         GOTO 100
       ENDIF
@@ -560,6 +538,7 @@
           MPTST  = 50
           IPP    = 2                                                      40.80
           IF (OPTG.EQ.5) IPP = 1                                          40.80
+          IERR   = 0                                                      40.00
           IF (.NOT.ALLOCATED(IARR)) ALLOCATE(IARR(IPP*MPTST))             40.80 40.31
 !
           CALL RETSTP (IPP*MPTST, IARR, KGRPNT, KGRBND, XCGRID, YCGRID,   40.80 40.31
@@ -752,7 +731,7 @@
           PROPSN = 1                                                      40.02
           PROPSS = 1                                                      40.02
         ELSE IF (KEYWIS ('GSE')) THEN                                     40.02
-          IF (OPTG.NE.5 .AND. PROPSN.NE.3) THEN                           41.00 40.02
+          IF (PROPSN.NE.3) THEN                                           40.02
             CALL MSGERR(2,                                                40.02
      &      'Anti-GSE only allowed for S&L scheme.')                      40.02
           ENDIF                                                           40.02
@@ -876,21 +855,10 @@
      &           'DT is not a fraction of the computational period')
           TIMCO = TINIC
         ENDIF
-        
-!NCOM        MasterDT=Master_dt*N_Interval_CallWave
-!NCOM        TINIC=TINIC+Master_dt*Master_step0*N_speedup
-!NCOM        MTC = NINT (MasterDT/DT)                                 
-!NCOM        IF (MOD(MasterDT,DT).GT.0.01*DT .AND.
-!NCOM     &            MOD(MasterDT,DT).LT.0.99*DT)
-!NCOM     &           CALL MSGERR (1,
-!NCOM     &           'DT is not a fraction of the computational period')
-!NCOM        TIMCO = TINIC
-
-
         IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)                   40.00
         NCOMPT = NCOMPT + 1                                               40.41
-        IF (NCOMPT.GT.5000) CALL MSGERR (2,                               40.41
-     &                 'No more than 5000 COMPUTE commands are allowed')  40.41
+        IF (NCOMPT.GT.50) CALL MSGERR (2,                                 40.41
+     &                   'No more than 50 COMPUTE commands are allowed')  40.41
         RCOMPT(NCOMPT,1) = REAL(NSTATC)                                   40.41
         RCOMPT(NCOMPT,2) = REAL(MTC)                                      40.41
         RCOMPT(NCOMPT,3) = TFINC                                          40.41
@@ -1635,9 +1603,9 @@
 !
 ! =====================================================================
 !
-!             | -> ACCUR [drel] [dhoval] [dtoval] [npnts]            |    40.41 40.03
-!   NUMeric (<                                                        > & 40.41
-!             | STOPC [dabs] [drel] [curvat] [npnts] [dtabs] [curvt] |    40.93 40.41
+!             | -> ACCUR [drel] [dhoval] [dtoval] [npnts] |               40.41 40.03
+!   NUMeric (<                                             >          &   40.41
+!             |    STOPC [dabs] [drel] [curvat] [npnts]   |               40.41
 !
 !                    | -> STAT  [mxitst] [alfa] |                         40.23
 !                   <                            >  [limiter]   )     &   40.03
@@ -1684,8 +1652,6 @@
           CALL INREAL ('DREL'   , PNUMS(1) , 'STA', 0.01)                 40.41
           CALL INREAL ('CURVAT' , PNUMS(15), 'STA', 0.005)                40.41
           CALL INREAL ('NPNTS'  , PNUMS(4) , 'UNC', 0.)                   40.41
-          CALL INREAL ('DTABS'  , PNUMS(3) , 'STA', 1000.)                40.93
-          CALL INREAL ('CURVT'  , PNUMS(16), 'STA', 1000.)                40.93
           CALL INKEYW ('STA', 'STAT')                                     40.41
           IF (KEYWIS ('STAT')) THEN                                       40.41
             CALL ININTG ('MXITST' , MXITST   , 'STA', 50)                 40.41
@@ -1786,7 +1752,6 @@
         JSETUP = MCMVAR + 1                                               32.02
         JDPSAV = MCMVAR + 2                                               32.02
         MCMVAR = MCMVAR + 2                                               40.41 32.02
-        ALOCMP = .TRUE.                                                   40.97
         GOTO 100                                                          32.02
       ENDIF                                                               32.02
 !
@@ -1801,6 +1766,11 @@
 ! =============================================================           40.21
 !                                                                         40.21
       IF (KEYWIS ('DIFFR')) THEN                                          40.21
+        IF (OPTG.EQ.5) THEN                                               40.80
+           CALL MSGERR(2, ' No diffraction for unstructured grid')        40.80
+           IDIFFR = 0                                                     40.80
+           GOTO 100                                                       40.80
+        ENDIF                                                             40.80
         CALL ININTG ('IDIFFR', IDIFFR, 'STA', 1)                          40.21
         CALL INREAL ('SMPAR', PDIFFR(1), 'STA', 0.0)                      40.21
         CALL INREAL ('SMNUM', PDIFFR(2), 'STA', 0.)                       40.21
@@ -1981,14 +1951,8 @@
 ! ============================================================
 !
 !           | -> CONstant [alpha] [gamma]                                      |
-!           |                                                                  |
+! BREaking <                                                                    >
 !           |    VARiable [alpha] [gammin] [gammax] [gamneg] [coeff1] [coeff2] |
-!           |                                                                  |
-! BREaking <     RUEssink [alpha] [a] [b]                                       >
-!           |                                                                  |
-!           |    TG       [alpha] [gamma] [pown]                               |
-!           |                                                                  |
-!           !    BIPhase  [alpha] [pown] [bref]                                |
 !
 ! ============================================================
 !
@@ -1998,7 +1962,7 @@
           ISURF = 1
           CALL INREAL ('ALPHA', PSURF(1), 'STA', 1.0)
           CALL INREAL ('GAMMA', PSURF(2), 'STA', 0.73)
-        ELSE IF (KEYWIS('VAR') .OR. KEYWIS('NEL')) THEN                   41.03
+        ELSE IF (KEYWIS('VAR')) THEN                                      28/FEB
           ISURF = 2
           CALL INREAL ('ALPHA',  PSURF(1), 'STA', 1.5)
           CALL INREAL ('GAMMIN', PSURF(4), 'STA', 0.55)
@@ -2006,21 +1970,6 @@
           CALL INREAL ('GAMNEG', PSURF(6), 'STA', 0.73)
           CALL INREAL ('COEFF1', PSURF(7), 'STA', 0.88)
           CALL INREAL ('COEFF2', PSURF(8), 'STA', 0.012)
-        ELSE IF (KEYWIS('RUE')) THEN                                      41.03
-          ISURF = 3
-          CALL INREAL ('ALPHA', PSURF(1), 'STA', 1.0)
-          CALL INREAL ('A'    , PSURF(4), 'STA', 0.76)
-          CALL INREAL ('B'    , PSURF(5), 'STA', 0.29)
-        ELSE IF (KEYWIS('TG')) THEN                                       41.03
-          ISURF = 4
-          CALL INREAL ('ALPHA',  PSURF(1), 'STA', 1.0)
-          CALL INREAL ('GAMMA',  PSURF(2), 'STA', 0.42)
-          CALL INREAL ('POWN' ,  PSURF(4), 'STA', 4.0)
-        ELSE IF (KEYWIS('BIP')) THEN                                      41.03
-          ISURF = 5
-          CALL INREAL ('ALPHA',  PSURF(1), 'STA', 1.0)
-          CALL INREAL ('POWN' ,  PSURF(4), 'STA', 2.4)
-          CALL INREAL ('BREF' ,  PSURF(5), 'STA', -1.5708)
         ENDIF
         GOTO 100
       ENDIF
@@ -2072,7 +2021,6 @@
           JCDRAG = MCMVAR+3                                               30.22
           JTAUW  = MCMVAR+4                                               30.22
           MCMVAR = MCMVAR+4                                               30.22
-          ALOCMP = .TRUE.                                                 40.97
           CALL INREAL ('PWTAIL', PWTAIL(1), 'STA', 5.)                    30.70
           IF (PWTAIL(1).LE.1.) CALL MSGERR (3, 'Incorrect PWTAIL')        30.70
           PWTAIL(3) = PWTAIL(1) + 1.                                      30.70
@@ -2113,19 +2061,17 @@
 !
 !     ------------------------------------------------------------------
 !
-!     FRIC  setting parameters for bottom friction
+!     FRICTION  setting parameters for bottom friction
 !
 ! ===============================================
 !
-!                   |              | -> CONstant [cfjon]
-!                   | -> JONswap  <
-!                   |              |    VARiable [cfj1] [cfj2] [dsp1] [dsp2]   (NOT documented)
+!                   | -> JONSWAP       [cfjon]
 !                   |
-!                   |    COLLins   [cfw]    &
-!   FRICtion       <
-!                   |              [cfc]      (NOT documented)
+!   FRICTION       <     COLLINS       [cfw]    &
 !                   |
-!                   |    MADsen    [kn]
+!                   |                  [cfc]    (NOT documented)
+!                   |
+!                   |    MADSEN        [kn]
 !
 ! ===============================================
 !
@@ -2133,18 +2079,8 @@
         IBOT = 1
         CALL INKEYW ('STA','JON')
         IF (KEYWIS('JON')) THEN
-          CALL INKEYW ('STA', 'CON')
-          IF (KEYWIS('VAR')) THEN                                         41.04
-            IBOT = 4
-            CALL INREAL ('CFJ1', PBOT(6), 'STA', 0.038)
-            CALL INREAL ('CFJ2', PBOT(7), 'STA', 0.067)
-            CALL INREAL ('DSP1', PBOT(8), 'STA', 10.)
-            CALL INREAL ('DSP2', PBOT(9), 'STA', 30.)
-          ELSE
-            CALL IGNORE ('CON')
-            IBOT = 1
-            CALL INREAL('CFJON',PBOT(3),'UNC',0.)
-          ENDIF
+          IBOT = 1
+          CALL INREAL('CFJON',PBOT(3),'UNC',0.)
         ELSE IF (KEYWIS('COLL')) THEN                                     20.68
           IBOT = 2
           CALL INREAL('CFW',PBOT(2),'UNC',0.)
@@ -2297,7 +2233,6 @@
           JCDRAG = MCMVAR+3                                               30.72
           JTAUW  = MCMVAR+4                                               30.72
           MCMVAR = MCMVAR+4                                               30.72
-          ALOCMP = .TRUE.                                                 40.97
 !         if [pwtail] is not changed, make it 5
           IF (EQREAL(PWTAIL(1),4.)) THEN                                  40.00
             PWTAIL(1) = 5.                                                40.00
@@ -2635,7 +2570,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2732,7 +2667,7 @@
 !
 ! 13. SOURCE TEXT
 !
-      INTEGER   IGRID1
+      INTEGER   IGRID1, IERR
       CHARACTER SNAMEG *8
       LOGICAL   KEYWIS                                                    30.00
       TYPE(OPSDAT), POINTER :: OPSTMP                                     40.31
@@ -3053,7 +2988,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3203,7 +3138,6 @@
         MCMVAR = MCMVAR + 2                                               40.00
         JFRC2  = MCMVAR - 1                                               40.00
         JFRC3  = MCMVAR                                                   40.00
-        ALOCMP = .TRUE.                                                   40.97
       ELSE IF (KEYWIS ('WI')) THEN
         LWINDR = 2                                                        30.10
         IWIND  = LWINDM                                                   30.10
@@ -3231,7 +3165,6 @@
           MCMVAR = MCMVAR + 2                                             40.03
           JASTD2 = MCMVAR - 1                                             40.03
           JASTD3 = MCMVAR                                                 40.03
-          ALOCMP = .TRUE.                                                 40.97
         ENDIF                                                             40.03
       ELSE
         CALL  WRNKEY
@@ -3377,7 +3310,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3544,7 +3477,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3806,7 +3739,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4026,7 +3959,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4391,7 +4324,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4455,8 +4388,8 @@
 ! 12. Structure
 !
 !     PVALID = .TRUE.
-!     If gridcounter in x-direction is less then 1 or greater than MXC or
-!     If gridcounter in y-direction is less then 1 or greater than MYC or
+!     If gridcounter in x-direction is less then 1 or greater than mxc or
+!     If gridcounter in y-direction is less then 1 or greater than myc or
 !     If gridpoint is exception point PVALID = .FALSE.
 !
 ! 13. Source text
@@ -4501,7 +4434,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4673,7 +4606,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4788,7 +4721,7 @@
 !
       DATA      IENT /0/
       CALL STRACE (IENT,'SEPARAREA')
-!
+!      IF (MOD(IENT,2).EQ.0) THEN
 !     In case there are 3 wet neighbouring points and validbp(ix,iy,.)
 !
       IF(.NOT.PVALID(IX-1,IY+1,KGRPNT) .AND.
@@ -4819,7 +4752,6 @@
 !                                                                  *
 !*******************************************************************
 !
-!MPI       USE MPI
       USE OCPCOMM1                                                        40.41
       USE OCPCOMM2                                                        40.41
       USE OCPCOMM3                                                        40.41
@@ -4844,7 +4776,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4925,7 +4857,7 @@
 !
 !
       INTEGER    KGRPNT(MXC,MYC)                                          40.00
-      INTEGER JXMAX, JYMAX, JXMIN, JYMIN, NPTOT                           40.62 40.80 MSL
+      INTEGER JXMAX, JYMAX, NPTOT                                         40.80 40.62
       REAL       AC2(MDC,MSC,MCGRD)                                       40.31
       LOGICAL SINGLEHOT, PTNSUBGRD                                        40.62
       LOGICAL    KEYWIS, LERR                                             40.31 40.00
@@ -5062,24 +4994,11 @@
         IF (MCGRD.LE.1 .AND. nverts.LE.0) CALL MSGERR (2,                 40.80
      &        'command INIT should follow READ BOT or READ UNSTRUC')      40.80
         ICOND = 4
-        CALL INKEYW ('STA', 'MULT')
-        jxmin=1
-        jymin=1
+        CALL INKEYW ('STA', 'MULT')                                       40.62
         IF (KEYWIS ('SING')) THEN                                         40.62
           SINGLEHOT = .TRUE.                                              40.62
           JXMAX = MXCGL                                                   40.62
           JYMAX = MYCGL                                                   40.62
-          if (inode.eq.1) then
-            jxmin=mxf
-            jymin=myf
-          elseif (inode.eq.nproc) then
-            jxmax=mxl
-            jymax=myl
-          endif
-!MPI          call mpi_bcast(jxmin,1,SWINT,0,MPI_COMM_WORLD,IERR)
-!MPI          call mpi_bcast(jymin,1,SWINT,0,MPI_COMM_WORLD,IERR)
-!MPI          call mpi_bcast(jxmax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
-!MPI          call mpi_bcast(jymax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
           CALL IGNORE ('SING')                                            40.62
         ELSE                                                              40.62
           SINGLEHOT = .FALSE.                                             40.62
@@ -5087,7 +5006,7 @@
           JYMAX = MYC                                                     40.62
           CALL IGNORE ('MULT')                                            40.62
         END IF                                                            40.62
-        NPTOT =(JXMAX-JXMIN+1)*(JYMAX-JYMIN+1)                             MSL
+        NPTOT = JXMAX*JYMAX                                               40.80
         IF (OPTG.EQ.5) NPTOT = nverts                                     40.80
         CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
 !       --- append node number to FILENM in case of parallel computing    40.31
@@ -5096,9 +5015,9 @@
            WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                        40.31
   33       FORMAT('-',I3.3)                                               40.31
         END IF                                                            40.31
-        NREF   = 0
-        IOSTAT = 0
-        CALL FOR (NREF, FILENM, 'OF', IOSTAT)
+        NREF = 0
+        IERR = 0
+        CALL FOR (NREF, FILENM, 'OF', IERR)
         IF (STPNOW()) RETURN                                              34.01
  100    READ (NREF, 102) RLINE
  102    FORMAT (A)                                                        40.00
@@ -5177,16 +5096,16 @@
         ENDIF
 !
         IF (OPTG.NE.5) THEN                                               40.80
-        DO 290 JX = JXMIN, JXMAX                                              40.62
 !
 !       --- structured grid                                               40.80
 !
+          DO 290 JX = 1, JXMAX                                            40.62
             IF (SINGLEHOT) THEN                                           40.62
                IX = JX-MXF+1
             ELSE
                IX = JX
             ENDIF
-          DO 280 JY = JYMIN, JYMAX                                            40.62
+            DO 280 JY = 1, JYMAX                                          40.62
               IF (SINGLEHOT) THEN                                         40.62
                  IY = JY-MYF+1
               ELSE
@@ -5325,7 +5244,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5415,9 +5334,9 @@
          WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                          40.31
   33     FORMAT('-',I3.3)                                                 40.31
       END IF                                                              40.31
-      NREF   = 0
-      IOSTAT = 0
-      CALL FOR (NREF, FILENM, 'UF', IOSTAT)
+      NREF = 0
+      IERR = 0
+      CALL FOR (NREF, FILENM, 'UF', IERR)
       IF (STPNOW()) RETURN                                                34.01
       WRITE (NREF, 102) 'SWAN   1', 'SWAN standard file, with version'
       IF (NSTATM.EQ.1) THEN
