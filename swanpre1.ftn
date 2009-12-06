@@ -423,6 +423,22 @@
 !     ------------------------------------------------------------------
 !                 PROCESSING OF COMMANDS
 !     ------------------------------------------------------------------
+!                                                                                               
+!     NCOUT                                                                30.21                
+!                                                                                               
+! ============================================================                                  
+!                                                                                               
+! NCOUT                                                                    MSL                  
+!                                                                                               
+! ============================================================                                  
+!                                                                                               
+      IF (KEYWIS ('NCOUT')) THEN                                                                
+        ncproc=1                                                                                
+        CALL INCSTR ('NCFILE',ncfile,'STA','swan.nc')                                           
+          WRITE (PRINTF,*)' ** NETCDF file request: ',ncfile                                    
+        GOTO 100                                                                                
+      ENDIF                                                                                     
+!                    
 !
 !     STOP                                                                30.21
 !
@@ -855,6 +871,16 @@
      &           'DT is not a fraction of the computational period')
           TIMCO = TINIC
         ENDIF
+
+!NCOM        MasterDT=Master_dt*N_Interval_CallWave                                             
+!NCOM        TINIC=TINIC+Master_dt*Master_step0*N_speedup                                       
+!NCOM        MTC = NINT (MasterDT/DT)                                                           
+!NCOM        IF (MOD(MasterDT,DT).GT.0.01*DT .AND.                                              
+!NCOM     &            MOD(MasterDT,DT).LT.0.99*DT)                                             
+!NCOM     &           CALL MSGERR (1,                                                           
+!NCOM     &           'DT is not a fraction of the computational period')                       
+!NCOM        TIMCO = TINIC  
+
         IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)                   40.00
         NCOMPT = NCOMPT + 1                                               40.41
         IF (NCOMPT.GT.50) CALL MSGERR (2,                                 40.41

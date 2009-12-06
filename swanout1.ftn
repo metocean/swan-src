@@ -707,6 +707,7 @@
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
+     &       IVTYPE.EQ.70 .OR. IVTYPE.EQ.71 .OR. IVTYPE.EQ.72 .OR.
      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
      &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
@@ -2520,7 +2521,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=21)                                               40.64 40.51 40.41 40.00
+      PARAMETER  (NVOTP=24)                                               40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -2536,7 +2537,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 58, 59/                         40.64 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59, 70, 71, 72/                         40.64 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -2847,7 +2848,9 @@
 !       peak period
 !
         IVTYPE = 12
-        IF (OQPROC(IVTYPE)) THEN
+        IVTYPE = 70
+        IVTYPE = 71
+        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2).OR.OQPROC(IVTYP3)) THEN       MSL                  
            EMAX = 0.
            ISIGM = -1
            DO IS = 1, MSC
@@ -2860,11 +2863,13 @@
                 ISIGM = IS
               ENDIF
            ENDDO
+           if (OQPROC(IVTYPE)) then
            IF (ISIGM.GT.0) THEN
              VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)                   30.72
            ELSE
              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
+           endif
         ENDIF
 !
 !       peak period based on parabolic fitting                            40.51
@@ -3187,6 +3192,122 @@
            ENDIF
         ENDIF
 !
+                                                                                                                   
+!                                                                                                                  
+!       mean direction at peak frequency                                                                           
+!                                                                                                                  
+        IVTYP1 = 70                                                                                                
+        IF (OQPROC(IVTYP1)) THEN                                                                                   
+          if (OQPROC(IVTYP2)) then                                                                                 
+            FSWELL = PI2 * OUTPAR(5)                                                                               
+            if (SPCSIG(ISIGM).LT.FSWELL)then                                                                       
+              isigf=msc                                                                                            
+              do while (spcsig(isigf-1).gt.FSWELL.and.isigf.gt.1)                                                  
+                isigf=isigf-1                                                                                      
+              enddo                                                                                                
+            else                                                                                                   
+                isigf=isigm                                                                                        
+            endif                                                                                                  
+          endif                                                                                                    
+c          print*,isigm,SPCSIG(isigm)                                                                              
+          if (isigm.gt.0) then                                                                                     
+            eex=0                                                                                                  
+            eey=0                                                                                                  
+            DO ID=1, MDC                                                                                           
+              EAD = ACLOC(ID,isigm)                                                                                
+              EEX  = EEX + EAD * SPCDIR(ID,2)                                                                      
+              EEY  = EEY + EAD * SPCDIR(ID,3)                                                                      
+            enddo                                                                                                  
+            IF (ABS(EEX).GT.0.OR.ABS(EEY).GT.0) THEN                                                               
+               IF (BNAUT) THEN                                            30.70                                    
+                 DIRDEG = ATAN2(EEY,EEX) * 180./PI                        10.15                                    
+               ELSE                                                                                                
+                 DIRDEG = (ALCQ + ATAN2(EEY,EEX)) * 180./PI               10.15                                    
+               ENDIF                                                                                               
+               IF (DIRDEG.LT.0.) DIRDEG = DIRDEG + 360.                   10.15                                    
+!                                                                                                                  
+!              *** Convert (if necessary) from nautical degrees ***       32.01                                    
+!              *** to cartesian degrees                         ***       32.01                                    
+!                                                                                                                  
+               VOQ(IP,VOQR(IVTYP1)) = DEGCNV( DIRDEG )                    32.01                                    
+            ELSE                                                                                                   
+                VOQ(IP,VOQR(IVTYP1)) = OVEXCV(IVTYP1)                                                              
+            ENDIF                                                                                                  
+          else                                                                                                     
+            VOQ(IP,VOQR(IVTYP1)) = OVEXCV(IVTYP1)                                                                  
+          endif                                                                                                    
+                                                                                                                   
+        ENDIF                                                                                                      
+                                                                                                                   
+        IVTYP2 = 71                                                                                                
+        IF (OQPROC(IVTYP2)) THEN                                                                                   
+          FSWELL = PI2 * OUTPAR(5)                                                                                 
+          if (SPCSIG(ISIGM).LT.FSWELL)then                                                                         
+            isigm=msc                                                                                              
+            do while (spcsig(isigm-1).gt.FSWELL.and.isigm.gt.1)                                                    
+              isigm=isigm-1                                                                                        
+            enddo                                                                                                  
+          endif                                                                                                    
+          if (isigm.gt.0) then                                                                                     
+            eex=0                                                                                                  
+            eey=0                                                                                                  
+            DO ID=1, MDC                                                                                           
+              EAD = ACLOC(ID,isigm)                                                                                
+              EEX  = EEX + EAD * SPCDIR(ID,2)                                                                      
+              EEY  = EEY + EAD * SPCDIR(ID,3)                                                                      
+            enddo                                                                                                  
+            IF (ABS(EEX).GT.0.OR.ABS(EEY).GT.0) THEN                                                               
+               IF (BNAUT) THEN                                            30.70                                    
+                 DIRDEG = ATAN2(EEY,EEX) * 180./PI                        10.15                                    
+               ELSE                                                                                                
+                 DIRDEG = (ALCQ + ATAN2(EEY,EEX)) * 180./PI               10.15                                    
+               ENDIF                                                                                               
+               IF (DIRDEG.LT.0.) DIRDEG = DIRDEG + 360.                   10.15                                    
+!                                                                                                                  
+!              *** Convert (if necessary) from nautical degrees ***       32.01                                    
+!              *** to cartesian degrees                         ***       32.01                                    
+!                                                                                                                  
+               VOQ(IP,VOQR(IVTYP2)) = DEGCNV( DIRDEG )                    32.01
+            ELSE
+                VOQ(IP,VOQR(IVTYP2)) = OVEXCV(IVTYP2)
+            ENDIF
+          else
+            VOQ(IP,VOQR(IVTYP2)) = OVEXCV(IVTYP2)
+          endif
+        ENDIF
+
+!
+!       spectral bandwidth
+!
+        IVTYPE = 72
+        IF (OQPROC(IVTYPE)) THEN
+          ETOT = 0.
+          EM2=0.
+          EM4=0.
+          DO ID=1, MDC
+            DO IS=2,MSC
+              DS=SPCSIG(IS)-SPCSIG(IS-1)                                  30.72
+              EAD = 0.5*(SPCSIG(IS)*ACLOC(ID,IS)+                         30.72
+     &                   SPCSIG(IS-1)*ACLOC(ID,IS-1))*DS*DDIR             30.72
+              ETOT = ETOT + EAD
+              SIG1=0.5*(SPCSIG(IS)+SPCSIG(IS-1))
+              EM2=EM2+SIG1**2*EAD
+              EM4=EM4+SIG1**4*EAD
+           ENDDO
+          ENDDO
+          EZQ=EM2**2/(ETOT*EM4)
+          IF (EZQ.GE.0.AND.EZQ.LE.1) THEN                                          30.00
+            VOQ(IP,VOQR(IVTYPE)) = SQRT(1-EZQ)
+          ELSE
+            VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+          ENDIF
+          IF (ITEST.GE.100) THEN                                          40.00
+            WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
+          ENDIF
+        ENDIF
+
+
+
         IF (BKC.EQ.1) GOTO 800
 !
 !       compute k and Cg
