@@ -11,8 +11,6 @@
 !     SWBROADC
 !     SWGATHER
 !     SWREDUCE
-!     SWREDUCI
-!     SWREDUCR
 !     SWSTRIP
 !     SWPARTIT
 !     SWBLADM
@@ -50,7 +48,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -224,7 +222,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -345,7 +343,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -472,7 +470,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -607,7 +605,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -748,7 +746,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -882,7 +880,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1056,6 +1054,7 @@
 !
 !****************************************************************
 !
+!MPI      USE MPI
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
 !
@@ -1073,7 +1072,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1095,19 +1094,21 @@
 !
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
-!     40.96: Marcel Zijlema
 !
 !  1. Updates
 !
 !     40.30, Feb. 03: New subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!     40.96, Dec. 08: call SWREDUCI/R instead of passing startaddress of the array
 !
 !  2. Purpose
 !
 !     Performs a global reduction of type ITYPRD on
 !     array (IPTR) of type ITYPE to collect values from
 !     all processes
+!
+!  3. Method
+!
+!     Wrapper for MPI_ALLREDUCE
 !
 !  4. Argument variables
 !
@@ -1124,13 +1125,30 @@
 !
 !  6. Local variables
 !
+!     CHARS :     character for passing info to MSGERR
 !     IENT  :     number of entries
+!     IERR  :     error value of MPI call
+!     IF    :     first non-character in string
+!     IL    :     last non-character in string
+!     IOPTR :     pointer to first element of output array
+!     MSGSTR:     string to pass message to call MSGERR
 !
-      INTEGER IENT
+      INTEGER      IENT, IERR, IF, IL, IOPTR
+      CHARACTER*20 INTSTR, CHARS
+      CHARACTER*80 MSGSTR
 !
 !  8. Subroutines used
 !
+!     INTSTR           Converts integer to string
+!MPI!     MPI_ALLREDUCE    Combines values from all processes and
+!MPI!                      distribute the result back to all processes
+!     MSGERR           Writes error message
 !     STRACE           Tracing routine for debugging
+!     SWCOPI           Makes copy of an integer array
+!     SWCOPR           Makes copy of a real array
+!TIMG!     SWTSTA           Start timing for a section of code
+!TIMG!     SWTSTO           Stop timing for a section of code
+!     TXPBLA           Removes leading and trailing blanks in string
 !
 !  9. Subroutines calling
 !
@@ -1146,7 +1164,8 @@
 !
 ! 12. Structure
 !
-!     Performs a global reduction of data across all nodes
+!MPI!     Performs a global reduction of data across all nodes
+!MPI!     with command MPI_ALLREDUCE
 !
 ! 13. Source text
 !
@@ -1156,289 +1175,24 @@
 
 !     --- if not parallel, return
       IF (.NOT.PARLL) RETURN
-!
-!     --- actual reduction of field array based on its type
+
+!TIMG      CALL SWTSTA(202)
+!MPI      CALL MPI_ALLREDUCE ( IPTR, IOPTR, ILEN, ITYPE,
+!MPI     &                     ITYPRD, MPI_COMM_WORLD, IERR )
+!MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
+!MPI         CHARS = INTSTR(IERR)
+!MPI         CALL TXPBLA(CHARS,IF,IL)
+!MPI         MSGSTR = 'MPI produces some internal error - '//
+!MPI     &            'return code is '//CHARS(IF:IL)
+!MPI         CALL MSGERR ( 4, MSGSTR )
+!MPI         RETURN
+!MPI      END IF
       IF ( ITYPE.EQ.SWINT ) THEN
-         CALL SWREDUCI ( IPTR, ILEN, ITYPRD )
+         CALL SWCOPI ( IOPTR, IPTR, ILEN )
       ELSE IF ( ITYPE.EQ.SWREAL ) THEN
-         CALL SWREDUCR ( IPTR, ILEN, ITYPRD )
+         CALL SWCOPR ( IOPTR, IPTR, ILEN )
       END IF
-
-      RETURN
-      END
-!****************************************************************
-!
-      SUBROUTINE SWREDUCI ( IARR, ILEN, ITYPRD )
-!
-!****************************************************************
-!
-!MPI      USE MPI
-      USE OCPCOMM4
-      USE M_PARALL
-!
-      IMPLICIT NONE
-!
-!
-!   --|-----------------------------------------------------------|--
-!     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering and Geosciences              |
-!     | Environmental Fluid Mechanics Section                     |
-!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
-!     |                                                           |
-!     | Programmer: Marcel Zijlema                                |
-!   --|-----------------------------------------------------------|--
-!
-!
-!     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
-!
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
-!
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-!     GNU General Public License for more details.
-!
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-!
-!
-!  0. Authors
-!
-!     40.96: Marcel Zijlema
-!
-!  1. Updates
-!
-!     40.96, Dec. 08: New subroutine
-!
-!  2. Purpose
-!
-!     Performs a global reduction of type ITYPRD on integer
-!     array IARR to collect values from all processes
-!
-!  3. Method
-!
-!     Wrapper for MPI_ALLREDUCE
-!
-!  4. Argument variables
-!
-!     IARR        integer array
-!     ILEN        length of array to be collect
-!     ITYPRD      type of reduction
-!
-      INTEGER ILEN, ITYPRD
-      INTEGER IARR(ILEN)
-!
-!  6. Local variables
-!
-!     CHARS :     character for passing info to MSGERR
-!     IENT  :     number of entries
-!     IERR  :     error value of MPI call
-!     IF    :     first non-character in string
-!     IL    :     last non-character in string
-!     ITEMP :     temporary array to store collected data
-!     MSGSTR:     string to pass message to call MSGERR
-!
-      INTEGER      IENT, IERR, IF, IL
-      CHARACTER*20 INTSTR, CHARS
-      CHARACTER*80 MSGSTR
-
-      INTEGER, ALLOCATABLE :: ITEMP(:)
-!
-!  8. Subroutines used
-!
-!     INTSTR           Converts integer to string
-!MPI!     MPI_ALLREDUCE    Combines values from all processes and
-!MPI!                      distribute the result back to all processes
-!     MSGERR           Writes error message
-!     STRACE           Tracing routine for debugging
-!TIMG!     SWTSTA           Start timing for a section of code
-!TIMG!     SWTSTO           Stop timing for a section of code
-!     TXPBLA           Removes leading and trailing blanks in string
-!
-!  9. Subroutines calling
-!
-!     SWREDUCE
-!
-! 10. Error messages
-!
-!     ---
-!
-! 11. Remarks
-!
-!     ---
-!
-! 12. Structure
-!
-!MPI!     Performs a global reduction of integers across all nodes
-!MPI!     with command MPI_ALLREDUCE
-!
-! 13. Source text
-!
-      SAVE IENT
-      DATA IENT/0/
-      IF (LTRACE) CALL STRACE (IENT,'SWREDUCI')
-
-      ALLOCATE(ITEMP(ILEN))
-
-!TIMG      CALL SWTSTA(202)
-!MPI      CALL MPI_ALLREDUCE ( IARR, ITEMP, ILEN, SWINT,
-!MPI     &                     ITYPRD, MPI_COMM_WORLD, IERR )
-!MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
-!MPI         CHARS = INTSTR(IERR)
-!MPI         CALL TXPBLA(CHARS,IF,IL)
-!MPI         MSGSTR = 'MPI produces some internal error - '//
-!MPI     &            'return code is '//CHARS(IF:IL)
-!MPI         CALL MSGERR ( 4, MSGSTR )
-!MPI         RETURN
-!MPI      END IF
-      IARR = ITEMP
 !TIMG      CALL SWTSTO(202)
-
-      DEALLOCATE(ITEMP)
-
-      RETURN
-      END
-!****************************************************************
-!
-      SUBROUTINE SWREDUCR ( ARR, ILEN, ITYPRD )
-!
-!****************************************************************
-!
-!MPI      USE MPI
-      USE OCPCOMM4
-      USE M_PARALL
-!
-      IMPLICIT NONE
-!
-!
-!   --|-----------------------------------------------------------|--
-!     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering and Geosciences              |
-!     | Environmental Fluid Mechanics Section                     |
-!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
-!     |                                                           |
-!     | Programmer: Marcel Zijlema                                |
-!   --|-----------------------------------------------------------|--
-!
-!
-!     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
-!
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
-!
-!     This program is distributed in the hope that it will be useful,
-!     but WITHOUT ANY WARRANTY; without even the implied warranty of
-!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-!     GNU General Public License for more details.
-!
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-!
-!
-!  0. Authors
-!
-!     40.96: Marcel Zijlema
-!
-!  1. Updates
-!
-!     40.96, Dec. 08: New subroutine
-!
-!  2. Purpose
-!
-!     Performs a global reduction of type ITYPRD on real
-!     array ARR to collect values from all processes
-!
-!  3. Method
-!
-!     Wrapper for MPI_ALLREDUCE
-!
-!  4. Argument variables
-!
-!     ARR         real array
-!     ILEN        length of array to be collect
-!     ITYPRD      type of reduction
-!
-      INTEGER ILEN, ITYPRD
-      REAL    ARR(ILEN)
-!
-!  6. Local variables
-!
-!     CHARS :     character for passing info to MSGERR
-!     IENT  :     number of entries
-!     IERR  :     error value of MPI call
-!     IF    :     first non-character in string
-!     IL    :     last non-character in string
-!     MSGSTR:     string to pass message to call MSGERR
-!     TEMP  :     temporary array to store collected data
-!
-      INTEGER      IENT, IERR, IF, IL
-      CHARACTER*20 INTSTR, CHARS
-      CHARACTER*80 MSGSTR
-
-      REAL, ALLOCATABLE :: TEMP(:)
-!
-!  8. Subroutines used
-!
-!     INTSTR           Converts integer to string
-!MPI!     MPI_ALLREDUCE    Combines values from all processes and
-!MPI!                      distribute the result back to all processes
-!     MSGERR           Writes error message
-!     STRACE           Tracing routine for debugging
-!TIMG!     SWTSTA           Start timing for a section of code
-!TIMG!     SWTSTO           Stop timing for a section of code
-!     TXPBLA           Removes leading and trailing blanks in string
-!
-!  9. Subroutines calling
-!
-!     SWREDUCE
-!
-! 10. Error messages
-!
-!     ---
-!
-! 11. Remarks
-!
-!     ---
-!
-! 12. Structure
-!
-!MPI!     Performs a global reduction of reals across all nodes
-!MPI!     with command MPI_ALLREDUCE
-!
-! 13. Source text
-!
-      SAVE IENT
-      DATA IENT/0/
-      IF (LTRACE) CALL STRACE (IENT,'SWREDUCR')
-
-      ALLOCATE(TEMP(ILEN))
-
-!TIMG      CALL SWTSTA(202)
-!MPI      CALL MPI_ALLREDUCE ( ARR, TEMP, ILEN, SWREAL,
-!MPI     &                     ITYPRD, MPI_COMM_WORLD, IERR )
-!MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
-!MPI         CHARS = INTSTR(IERR)
-!MPI         CALL TXPBLA(CHARS,IF,IL)
-!MPI         MSGSTR = 'MPI produces some internal error - '//
-!MPI     &            'return code is '//CHARS(IF:IL)
-!MPI         CALL MSGERR ( 4, MSGSTR )
-!MPI         RETURN
-!MPI      END IF
-      ARR = TEMP
-!TIMG      CALL SWTSTO(202)
-
-      DEALLOCATE(TEMP)
 
       RETURN
       END
@@ -1464,7 +1218,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1516,9 +1270,8 @@
 !     MYC         maximum counter of gridpoints in y-direction
 !     NPART       number of parts to be created
 !
-      INTEGER   IDIR, MXC, MYC, NPART
-      INTEGER   IPOWN(*)
-      INTEGER*8 IWORK(2,*)
+      INTEGER IDIR, MXC, MYC, NPART
+      INTEGER IPOWN(*), IWORK(2,*)
 !
 !  6. Local variables
 !
@@ -1667,7 +1420,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1729,9 +1482,8 @@
 !     NACTP :     total number of active gridpoints
 !     NPCUM :     cumulative number of gridpoints
 !
-      INTEGER   I, IDIR, IENT, IX, IY
-      INTEGER*8 ICNT, NACTP, NPCUM
-      INTEGER*8 IWORK(2,NPROC)
+      INTEGER   I, ICNT, IDIR, IENT, IX, IY, NACTP, NPCUM
+      INTEGER   IWORK(2,NPROC)
 !
 !  8. Subroutines used
 !
@@ -1834,7 +1586,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2176,7 +1928,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2343,7 +2095,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2533,7 +2285,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2699,7 +2451,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2866,7 +2618,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3042,48 +2794,25 @@
             IOFF2 = 0
 
             DO IP = 0, NPROC-1
-               IF ( MXCGL.GT.MYCGL ) THEN
-                  IF ( IARRC(1,IP).EQ.1 .AND. IP.EQ.0 ) THEN
-                     MXFGL = 1
-                  ELSE
-                     MXFGL = IARRC(1,IP) + IHALOX
-                  END IF
-                  IF ( IARRC(3,IP).EQ.1 ) THEN
-                     MYFGL = 1
-                  ELSE
-                     MYFGL = IARRC(3,IP) + IHALOY
-                  END IF
-                  IF ( IARRC(2,IP).EQ.MXCGL .AND. IP.EQ.NPROC-1 ) THEN
-                     MXLGL = MXCGL
-                  ELSE
-                     MXLGL = IARRC(2,IP) - IHALOX
-                  END IF
-                  IF ( IARRC(4,IP).EQ.MYCGL ) THEN
-                     MYLGL = MYCGL
-                  ELSE
-                     MYLGL = IARRC(4,IP) - IHALOY
-                  END IF
+               IF ( IARRC(1,IP).EQ.1 ) THEN
+                  MXFGL = 1
                ELSE
-                  IF ( IARRC(1,IP).EQ.1 ) THEN
-                     MXFGL = 1
-                  ELSE
-                     MXFGL = IARRC(1,IP) + IHALOX
-                  END IF
-                  IF ( IARRC(3,IP).EQ.1 .AND. IP.EQ.0 ) THEN
-                     MYFGL = 1
-                  ELSE
-                     MYFGL = IARRC(3,IP) + IHALOY
-                  END IF
-                  IF ( IARRC(2,IP).EQ.MXCGL ) THEN
-                     MXLGL = MXCGL
-                  ELSE
-                     MXLGL = IARRC(2,IP) - IHALOX
-                  END IF
-                  IF ( IARRC(4,IP).EQ.MYCGL .AND. IP.EQ.NPROC-1 ) THEN
-                     MYLGL = MYCGL
-                  ELSE
-                     MYLGL = IARRC(4,IP) - IHALOY
-                  END IF
+                  MXFGL = IARRC(1,IP) + IHALOX
+               END IF
+               IF ( IARRC(3,IP).EQ.1 ) THEN
+                  MYFGL = 1
+               ELSE
+                  MYFGL = IARRC(3,IP) + IHALOY
+               END IF
+               IF ( IARRC(2,IP).EQ.MXCGL ) THEN
+                  MXLGL = MXCGL
+               ELSE
+                  MXLGL = IARRC(2,IP) - IHALOX
+               END IF
+               IF ( IARRC(4,IP).EQ.MYCGL ) THEN
+                  MYLGL = MYCGL
+               ELSE
+                  MYLGL = IARRC(4,IP) - IHALOY
                END IF
 
                ILEN = IARRC(2,IP)-IARRC(1,IP)+1
@@ -3150,7 +2879,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3202,7 +2931,7 @@
 !  6. Local variables
 !
 !     CORQ  :     current item in list of request outputs
-!     CROSS :     auxiliary logical array
+!     CROSS :     auxiliary logical array (not used)
 !     CUOPS :     current item in list of point sets
 !     DIF   :     difference between end and actual times
 !     DTTIWR:     to write time string
@@ -3295,14 +3024,10 @@
 
       IF ( NREOQ.EQ.0 ) RETURN
 
-!           --- do for all output requests
-            CORQ => FORQ
-            DO 100 IRQ = 1, NREOQ
-
-
 !     --- do for all COMPUTE commands
 
       DO IC = 1, NCOMPT
+
          NSTATC = NINT(RCOMPT(IC,1))
          IF ( NSTATC.EQ.1 ) THEN
             IT0 = 0
@@ -3317,9 +3042,14 @@
 
 !        --- do for all time steps
 
-         	DO IT = IT0, IT1
+         DO IT = IT0, IT1
 
-            	IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)
+            IF (NSTATM.GT.0) CHTIME = DTTIWR(ITMOPT, TIMCO)
+
+!           --- do for all output requests
+
+            CORQ => FORQ
+            DO 100 IRQ = 1, NREOQ
 
 !              --- processing of output instructions necessary
 !                  for collection
@@ -3369,7 +3099,10 @@
                IF (.NOT.ALLOCATED(YC)) ALLOCATE(YC(MIP))
                IF (.NOT.ALLOCATED(XP)) ALLOCATE(XP(MIP))
                IF (.NOT.ALLOCATED(YP)) ALLOCATE(YP(MIP))
-               IF (.NOT.ALLOCATED(CROSS)) ALLOCATE(CROSS(4,MIP))          40.86
+
+!              --- the next array will not be used in this routine        40.86
+
+               IF (.NOT.ALLOCATED(CROSS)) ALLOCATE(CROSS(0,0))
 
 !              --- compute coordinates of output points                   40.51
 
@@ -3400,7 +3133,7 @@
      &                      YP                  ,XC                  ,
      &                      YC                  ,KGRPGL              ,
      &                      XGRDGL              ,YGRDGL              ,
-     &                      CROSS               )                         40.86
+     &                      KGRBGL              ,CROSS               )    40.86
                MXC    = ITMP1
                MYC    = ITMP2
                MCGRD  = ITMP3
@@ -3456,31 +3189,26 @@
                IF (ALLOCATED(CROSS)) DEALLOCATE(CROSS)                    40.86
 
   50           CONTINUE
-               
+               CORQ => CORQ%NEXTORQ
+
+ 100        CONTINUE
 
             IF ( NSTATC.EQ.1.AND.IT.LT.IT1 ) TIMCO = TIMCO + DT
 
          END DO
-	END DO
+
+      END DO
 
 !     --- close all files and delete process files
 
-      INQUIRE ( UNIT=IRQ+HIOPEN, OPENED=OPENED )
-      IF (OPENED) CLOSE(IRQ+HIOPEN)
-      
-      DO IUNIT=HIOPEN+NREOQ+NPROC*(IRQ-1)+1,HIOPEN+NREOQ+(NPROC*IRQ)
+      DO IUNIT = HIOPEN+1, HIOPEN+NREOQ
+        INQUIRE ( UNIT=IUNIT, OPENED=OPENED )
+        IF (OPENED) CLOSE(IUNIT)
+      END DO
+      DO IUNIT = HIOPEN+NREOQ+1, HIOPEN+NREOQ*(NPROC+1)
         INQUIRE ( UNIT=IUNIT, OPENED=OPENED )
         IF (OPENED) CLOSE ( UNIT=IUNIT, STATUS='delete' )
       END DO
-
-	CORQ => CORQ%NEXTORQ
-
-
-! --- next output request
- 100        CONTINUE
-
-	
-	
 
       RETURN
       END
@@ -3512,7 +3240,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3842,7 +3570,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4169,7 +3897,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4394,6 +4122,7 @@
 
          IVTYPE = IVTYP(JVAR)
          DFAC   = FAC(JVAR)
+
          VOQ = OVEXCV(IVTYPE)
 
          DO IP = 1, MXK*MYK                                               40.51
