@@ -36,7 +36,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -230,7 +230,7 @@
         IF (OVSVTY(IVTYPE) .LT. 3) THEN
 !                      scalar quantities
           IF (MATLAB) THEN                                                40.30
-             IF (IL.EQ.1 .OR. IVTYPE.LT.3) THEN                           40.94 40.41
+             IF (IL.EQ.1) THEN                                            40.41
                 NAMVAR = OVSNAM(IVTYPE)                                   40.41
              ELSE                                                         40.41
                 NAMVAR = OVSNAM(IVTYPE)(1:LEN_TRIM(OVSNAM(IVTYPE)))//     40.41
@@ -309,7 +309,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -535,7 +535,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -683,7 +683,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -837,8 +837,8 @@
 !               Else if Rtype = 'TABD'
 !                    Then Format = '(E12.4)'
 !                         make lfield = 12
-!                    Else Format = '(F13.X)'
-!                         make lfield = 13
+!                    Else Format = '(F11.X)'
+!                         make lfield = 11
 !                         determine number of decimals and write into
 !                         Format
 !                    ---------------------------------------------------
@@ -891,15 +891,15 @@
               OUTLIN(1:9) = OUT_COMMENT // '        '                     40.13
               LINKAR = 9
             ELSE
-              OUTLIN(1:3) = OUT_COMMENT                                   40.13
-              LINKAR = 4                                                  40.13
+              OUTLIN(1:1) = OUT_COMMENT                                   40.13
+              LINKAR = 2                                                  40.13
             ENDIF
             DO  JVAR = 1, NVAR
               IVTYPE = IVTYP(JVAR)                                        40.31
               IF (IVTYPE.EQ.40) THEN
                 LFIELD = 18
               ELSE
-                LFIELD = 13
+                LFIELD = 11
               ENDIF
               IF (OVSVTY(IVTYPE).LE.2) THEN
                 OUTLIN(LINKAR:LINKAR+LFIELD) =
@@ -920,15 +920,15 @@
               OUTLIN(1:9) = OUT_COMMENT // '        '                     40.13
               LINKAR = 9
             ELSE
-              OUTLIN(1:3) = OUT_COMMENT                                   40.13
-              LINKAR = 4                                                  40.13
+              OUTLIN(1:1) = OUT_COMMENT                                   40.13
+              LINKAR = 2                                                  40.13
             ENDIF
             DO  JVAR = 1, NVAR
               IVTYPE = IVTYP(JVAR)                                        40.31
               IF (IVTYPE.EQ.40) THEN
                 LFIELD = 18
               ELSE
-                LFIELD = 13
+                LFIELD = 11
               ENDIF
               DO ISTR = LEN(OVUNIT(IVTYPE)), 1, -1
                 IF (OVUNIT(IVTYPE)(ISTR:ISTR) .NE. ' ') THEN
@@ -1032,8 +1032,8 @@
               FSTR = FLT_TABLE                                            40.13
               LFIELD = FLD_TABLE                                          40.13
             ELSE
-              FSTR = '(F13.X)'
-              LFIELD = 13
+              FSTR = '(F11.X)'
+              LFIELD = 11
 !             NUMDEC is number of decimals in the table for each output quantity
               NUMDEC = MAX (0, 6-NINT(LOG10(ABS(OVHEXP(IVTYPE)))))        40.03
               IF (NUMDEC.GT.9) NUMDEC = 9                                 40.00
@@ -1076,7 +1076,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1172,7 +1172,7 @@
 !***********************************************************************
 !                                                                      *
       SUBROUTINE SWSPEC (RTYPE, OQI, MIP, VOQR, VOQ, AC2, ACLOC,          40.31 20.28
-     &                   SPCSIG, SPCDIR, DEP2, KGRPNT, CROSS, IONOD)      40.90 40.31 30.72
+     &                   SPCSIG, SPCDIR, DEP2, KGRPNT, IONOD)             40.31 30.72
 !                                                                      *
 !***********************************************************************
 !
@@ -1197,7 +1197,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1225,7 +1225,6 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Agnieszka Herman
-!     40.90: Nico Booij
 !
 !  1. Updates
 !
@@ -1247,8 +1246,6 @@
 !     40.31, Dec. 03: removing POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Feb. 05: further optimization
-!     40.90, June 08: argument CROSS added to enable subroutine SWCMSP to
-!                     take into account obstacles
 !
 !  2. Purpose
 !
@@ -1272,8 +1269,6 @@
 !
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.72
-      LOGICAL, INTENT(IN) :: CROSS(1:4,1:MIP) ! true if obstacle is       40.90
-      ! between output point and computational grid point                 40.90
 !
 !     RTYPE   ch*4   input    type of output request: 'SPEC' for 2-D spectral
 !                             output, 'SPE1' for 1-D freq. spectrum
@@ -1314,7 +1309,7 @@
 !
 ! 13. Source text
 !
-      CHARACTER (LEN=*) :: RTYPE                                          40.13 30.81
+      CHARACTER (LEN=*) :: RTYPE                                              30.81 40.13
       CHARACTER (LEN=8) :: CRFORM = '(2F14.4)'                            40.13
       INTEGER       :: VOQR(*), OQI(4), OTYPE, KGRPNT(MXC,MYC)            40.31 40.13
       INTEGER       :: IONOD(*)                                           40.31
@@ -1487,8 +1482,8 @@
         CALL SWCMSP (OTYPE       ,XC         ,YC          ,               40.00
      &               AC2         ,ACLOC      ,SPCSIG      ,
      &               DEP         ,DEP2       ,UX          ,               40.00
-     &               UY          ,SPCDIR(1,2),SPCDIR(1,3) ,
-     &               OFAC        ,KGRPNT     ,CROSS(1,IP) ,IERR        )  40.90 40.00
+     &               UY          ,SPCDIR(1,2) ,SPCDIR(1,3),
+     &               OFAC        ,KGRPNT     ,IERR        )               40.00
 !
         IF (IERR.GT.0) THEN
           WRITE (NREF, 220) 'NODATA'
@@ -1519,7 +1514,7 @@
      &                   AC2       ,ACLOC     ,SPCSIG    ,
      &                   DEP       ,DEP2      ,UX        ,                40.00
      &                   UY        ,ECOS      ,ESIN      ,
-     &                   OFAC      ,KGRPNT    ,CROSS     ,IERR         )  40.90 30.21
+     &                   OFAC      ,KGRPNT    ,IERR      )                30.21
 !                                                                      *
 !***********************************************************************
 !
@@ -1541,7 +1536,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1567,7 +1562,6 @@
 !     40.00: Nico Booij
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
-!     40.90: Nico Booij
 !
 !  1. Updates
 !
@@ -1585,7 +1579,6 @@
 !     30.82, July 99: Corrected argumentlist KSCIP1
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Sep. 07: extension to unstructured grids
-!     40.90, June 08: interpolation near obstacles improved
 !
 !  2. Purpose
 !
@@ -1627,9 +1620,6 @@
 !       ECOS  real   input    cosines of spectral directions
 !       ESIN  real   input    sines of spectral directions
 !       OFAC    real   input    output factor (if INRHOG=1, equal to Rho*Grav)
-!
-      LOGICAL, INTENT(IN) :: CROSS(1:4) ! true if obstacle is between     40.90
-              ! output point and computational grid point                 40.90
 !
 !  5. SUBROUTINES CALLING
 !
@@ -1685,20 +1675,142 @@
 !
 !     the action density spectrum is interpolated
 !
-      ALLOCATE(ACL(MDC,MSC))                                              40.90
-      IF (OPTG.EQ.5) THEN                                                 40.90
+      IF (OPTG.NE.5) THEN                                                 40.80
+!
+!     determine interpolation coeff in case of structured grid
+!
+      JX1 = NINT(XC-0.5) + 1                                              33.09
+      IF (KREPTX.EQ.0) THEN                                               33.09
+        IF (JX1.LT.0) THEN
+          GOTO 800
+        ELSE IF (JX1.GT.MXC) THEN
+          GOTO 800
+        ELSE IF (JX1.EQ.0) THEN
+          IF (XC.GT.-0.01) THEN
+            JX1 = 1
+            JX2 = 2
+            SX1 = 1.
+            SX2 = 0.
+          ELSE
+            GOTO 800
+          ENDIF
+        ELSE IF (JX1.EQ.MXC) THEN
+          IF (XC.LT.REAL(MXC-1)+0.01) THEN
+            JX1 = MXC-1
+            JX2 = MXC
+            SX1 = 0.
+            SX2 = 1.
+          ELSE
+            GOTO 800
+          ENDIF
+        ELSE
+          JX2 = JX1+1
+          SX2 = XC + 1. - FLOAT(JX1)
+          SX1 = 1. - SX2
+          IF (SX1.LT.0.01) THEN
+            SX1 = 0.
+            SX2 = 1.
+          ENDIF
+          IF (SX2.LT.0.01) THEN
+            SX2 = 0.
+            SX1 = 1.
+          ENDIF
+        ENDIF
+      ELSE
+        JX2 = JX1+1
+        SX2 = XC + 1. - FLOAT(JX1)
+        SX1 = 1. - SX2
+        JX1 = MOD(MXC+JX1-1,MXC) + 1                                      33.09
+        JX2 = MOD(MXC+JX2-1,MXC) + 1                                      33.09
+      ENDIF                                                               33.09
+!
+      IF (.NOT. ONED) THEN                                                30.81
+        JY1 = INT(YC+3.) - 2
+        IF (JY1.LT.0) THEN
+          GOTO 800
+        ELSE IF (JY1.GT.MYC) THEN
+          GOTO 800
+        ELSE IF (JY1.EQ.0) THEN
+          IF (YC.GT.-0.01) THEN
+            JY1 = 1
+            JY2 = 2
+            SY1 = 1.
+            SY2 = 0.
+          ELSE
+            GOTO 800
+          ENDIF
+        ELSE IF (JY1.EQ.MYC) THEN
+          IF (YC.LT.REAL(MYC-1)+0.01) THEN
+            JY1 = MYC-1
+            JY2 = MYC
+            SY1 = 0.
+            SY2 = 1.
+          ELSE
+            GOTO 800
+          ENDIF
+        ELSE
+          JY2 = JY1+1
+          SY2 = YC + 1. - FLOAT(JY1)
+          SY1 = 1. - SY2
+          IF (SY1.LT.0.01) THEN
+            SY1 = 0.
+            SY2 = 1.
+          ENDIF
+          IF (SY2.LT.0.01) THEN
+            SY2 = 0.
+            SY1 = 1.
+          ENDIF
+        ENDIF
+      ELSE                                                                30.81
+        JY1 = 1                                                           30.81
+        JY2 = 1                                                           30.81
+        SY1 = 1.                                                          30.81
+!       SY2 = 1. - SY1  so:                                               30.81
+        SY2 = 0.                                                          30.81
+      END IF                                                              30.81
+
+!
+!     *** Using indirect addressing kgrpnt instead x and y ***
+!         *** KGRPNT(JX1,JY1) instead  (JX1,JY1)
+!         *** KGRPNT(JX1,JY2) instead  (JX1,JY2) ETC.
+      IND11 = KGRPNT(JX1,JY1)
+      IND12 = KGRPNT(JX1,JY2)
+      IND21 = KGRPNT(JX2,JY1)
+      IND22 = KGRPNT(JX2,JY2)
+      IF (IND11.LE.0 .OR. IND11.GT.MCGRD) WRITE (PRINTF, *)
+     &      ' error SWCMSP ', JX1, JY1, IND11, MCGRD
+      IF (IND12.LE.0 .OR. IND12.GT.MCGRD) WRITE (PRINTF, *)
+     &      ' error SWCMSP ', JX1, JY2, IND11, MCGRD
+      IF (IND21.LE.0 .OR. IND21.GT.MCGRD) WRITE (PRINTF, *)
+     &      ' error SWCMSP ', JX2, JY1, IND11, MCGRD
+      IF (IND22.LE.0 .OR. IND22.GT.MCGRD) WRITE (PRINTF, *)
+     &      ' error SWCMSP ', JX2, JY2, IND11, MCGRD
+      RF11 = SX1*SY1
+      RF12 = SX1*SY2
+      RF21 = SX2*SY1
+      RF22 = SX2*SY2
+      IF (DEP2(IND11).LE.DEPMIN .AND. RF11.GT.0.01) GOTO 800              40.00
+      IF (DEP2(IND12).LE.DEPMIN .AND. RF12.GT.0.01) GOTO 800              40.00
+      IF (DEP2(IND21).LE.DEPMIN .AND. RF21.GT.0.01) GOTO 800              40.00
+      IF (DEP2(IND22).LE.DEPMIN .AND. RF22.GT.0.01) GOTO 800              40.00
+!
+      IF (ITEST.GE. 250 .OR. IOUTES .GE. 30) THEN
+        WRITE (PRTEST, 69) JX1, JX2, JY1, JY2,
+     &          SX1, SX2, SY1, SY2, XC ,YC
+        WRITE (PRTEST, 70) IND11, IND12, IND21, IND22,
+     &          RF11 ,RF12 ,RF21 ,RF22
+  69    FORMAT ('   -------------------SWCMSP -------------------',/,
+     &     ' JX1,JX2,JY1,JY2,  SX1,  SX2,  SY1, SY2,     XC,      YC',/,
+     &           4I4,1X, 4(F5.2,1X),2(F8.2,1X))
+  70    FORMAT(12X, 'IND11..22       RF11    RF12    RF21    RF22 ',
+     &         /, 4I6, 2X, 4F8.4)
+      ENDIF
+!
+      ELSE                                                                40.80
+        ALLOCATE(ACL(MDC,MSC))                                            40.80
         CALL SwanInterpolateAc ( ACL, XC, YC, AC2, EXCPT )                40.80
-      ELSE                                                                40.90
-        IF (KREPTX.EQ.0) THEN                                             40.90
-!         non-repeating grid                                              40.90
-          IF (XC .LT. -0.01)            GOTO 800                          40.90
-          IF (XC .GT. REAL(MXC-1)+0.01) GOTO 800                          40.90
-        ENDIF                                                             40.90
-        IF (YC .LT. -0.01)            GOTO 800                            40.90
-        IF (YC .GT. REAL(MYC-1)+0.01) GOTO 800                            40.90
-        CALL SWOINA (XC, YC, AC2, ACL, KGRPNT, DEP2, CROSS(1), EXCPT)     40.90
-      ENDIF                                                               40.90
-      IF (EXCPT) GOTO 800                                                 40.90
+        IF (EXCPT) GOTO 800                                               40.80
+      ENDIF                                                               40.80
 !
       DO 110 ID = 1, MDC
         IF (ICUR.GT.0 .AND. OTYPE.LT.0) THEN
@@ -1706,7 +1818,26 @@
         ENDIF
         DO 100 ISIGM = 1, MSC
 !
-          ACLL = ACL(ID,ISIGM)                                            40.80
+!         interpolate local action density
+!
+          ACLL = 0.
+!
+          IF (OPTG.NE.5) THEN                                             40.80
+             IF (RF11.GT.1.E-10) THEN
+                ACLL =        RF11 * AC2(ID,ISIGM,IND11)
+             ENDIF
+             IF (RF12.GT.1.E-10) THEN
+                ACLL = ACLL + RF12 * AC2(ID,ISIGM,IND12)
+             ENDIF
+             IF (RF21.GT.1.E-10) THEN
+                ACLL = ACLL + RF21 * AC2(ID,ISIGM,IND21)
+             ENDIF
+             IF (RF22.GT.1.E-10) THEN
+                ACLL = ACLL + RF22 * AC2(ID,ISIGM,IND22)
+             ENDIF
+          ELSE                                                            40.80
+             ACLL = ACL(ID,ISIGM)                                         40.80
+          ENDIF                                                           40.80
 !
 !         energy density interpolated in space:
           ECLL = OFAC * ACLL * SPCSIG(ISIGM)                              40.00
@@ -1838,7 +1969,7 @@
  800  IERR = 1
 !
  900  CONTINUE
-      DEALLOCATE(ACL)                                                     40.90 40.80
+      IF (OPTG.EQ.5) DEALLOCATE(ACL)                                      40.80
       RETURN
 ! * end of subroutine SWCMSP *
       END
@@ -1865,7 +1996,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

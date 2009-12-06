@@ -36,7 +36,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -202,7 +202,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1039,7 +1039,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1146,12 +1146,11 @@
       CALL STRACE (IENT,'SWREOQ')
 !
 !   --------------------------------------------------------------------------
-!   BLOCK   'sname'  HEADER / NOHEADER  'fname' (LAY-OUT [idla])             &
-!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/   &
-!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/  &
-!             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/         &
-!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/DPM/DPMSEA/SWE  >      &
-!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
+!   BLOCK   'sname'  HEADER / NOHEADER  'fname' (LAY-OUT [idla])            &
+!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/  &
+!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/ &
+!             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/        &
+!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP  >      &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   BLO   block type output
@@ -1256,78 +1255,23 @@
                 IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JPBOT  = MCMVAR                                        40.65
-                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                  40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JBOTLV = MCMVAR                                        40.65
-                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXB  = MCMVAR                                        40.65
-                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.55 .AND. JDSXS.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXS  = MCMVAR                                        40.65
-                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
                 IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                   40.65
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXW  = MCMVAR                                        40.65
-                   ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
-                IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JGENR  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.61 .AND. JGSXW.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JGSXW  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.62 .AND. JREDS.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JREDS  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.63 .AND. JRSXQ.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JRSXQ  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.64 .AND. JRSXT.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JRSXT  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.65 .AND. JTRAN.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JTRAN  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.66 .AND. JTSXG.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JTSXG  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.67 .AND. JTSXT.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JTSXT  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.68 .AND. JTSXS.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JTSXS  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
-                IF (IVTYPE.EQ.69 .AND. JRADS.LE.1) THEN                   40.85
-                   MCMVAR = MCMVAR+1                                      40.85
-                   JRADS  = MCMVAR                                        40.85
-                   ALOCMP = .TRUE.                                        40.97
-                ENDIF                                                     40.85
              ENDIF
              GOTO 70
           ENDIF
@@ -1365,12 +1309,11 @@
         ENDIF                                                             32.02
       ENDIF
 !   --------------------------------------------------------------------------
-!   TABLE   'sname'  HEADER / NOHEADER / INDEXED 'fname'                     &
-!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/   &
-!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/  &
-!             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/    &
-!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/DPM/DPMSEA/SWE  >      &
-!             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS >        &
+!   TABLE   'sname'  HEADER / NOHEADER / INDEXED 'fname'                    &
+!          <  DSPR/HSIGN/DIR/PDIR/TDIR/TM01/RTM01/RTP/TM02/FSPR/DEPTH/VEL/  &
+!             FRCOEFF/WIND/DISSIP/QB/TRANSP/FORCE/UBOT/URMS/WLEN/STEEPNESS/ &
+!             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/   &
+!             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP  >      &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
 !   TABLE   output in the form of a table
@@ -1445,78 +1388,23 @@
             IF (IVTYPE.EQ.50 .AND. JPBOT.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JPBOT  = MCMVAR                                            40.65
-               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.52 .AND. JBOTLV.LE.1) THEN                      40.65
                MCMVAR = MCMVAR+1                                          40.65
                JBOTLV = MCMVAR                                            40.65
-               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.54 .AND. JDSXB.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXB  = MCMVAR                                            40.65
-               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.55 .AND. JDSXS.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXS  = MCMVAR                                            40.65
-               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
             IF (IVTYPE.EQ.56 .AND. JDSXW.LE.1) THEN                       40.65
                MCMVAR = MCMVAR+1                                          40.65
                JDSXW  = MCMVAR                                            40.65
-               ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
-            IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JGENR  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.61 .AND. JGSXW.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JGSXW  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.62 .AND. JREDS.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JREDS  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.63 .AND. JRSXQ.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JRSXQ  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.64 .AND. JRSXT.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JRSXT  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.65 .AND. JTRAN.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JTRAN  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.66 .AND. JTSXG.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JTSXG  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.67 .AND. JTSXT.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JTSXT  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.68 .AND. JTSXS.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JTSXS  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
-            IF (IVTYPE.EQ.69 .AND. JRADS.LE.1) THEN                       40.85
-               MCMVAR = MCMVAR+1                                          40.85
-               JRADS  = MCMVAR                                            40.85
-               ALOCMP = .TRUE.                                            40.97
-            ENDIF                                                         40.85
             CALL INKEYW ('STA', ' ')                                      40.00
             IF (KEYWIS('UNIT')) THEN
               CALL MSGERR (1, 'UNIT is ignored in this version')          40.00
@@ -1747,7 +1635,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1917,7 +1805,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2035,7 +1923,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2167,7 +2055,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2198,7 +2086,6 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
-!     40.92: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -2218,7 +2105,6 @@
 !     40.31, Nov. 03: removing POOL-mechanism, reconsideration of this subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Jun. 07: extension to unstructured grids
-!     40.92, Jun. 08: changes with respect to boundary polygons
 !
 !  2. Purpose
 !
@@ -2249,9 +2135,7 @@
       INTEGER   IENT,KOUNTR,IX1,IY1,IX2,IY2
       INTEGER   MM,IX,IY,ISIDM,ISIDE,KC,KC2,KC1,IX3,IY3,MP
       INTEGER   IP,II,NBSPSS,NFSEQ,IKO,IKO2,IBSPC1,IBSPC2
-      INTEGER   VM                                                        40.80
-
-      INTEGER, DIMENSION(:), ALLOCATABLE :: IARR1, IARR2                  40.92
+      INTEGER   VM, KX(1)                                                 40.80
 
       REAL      CRDP, CRDM, SOMX, SOMY
       REAL      XP,YP,XC,YC,RR,DIRSI,COSDIR,SINDIR,DIRSID,DIRREF
@@ -2360,7 +2244,7 @@
       IF (OPTG.EQ.5) THEN                                                 40.80
 !
 !        in case of unstructured grid, make list of boundary points
-!        in ascending order
+!        in ascending order (counterclockwise)
 !
          CALL SwanBpntlist                                                40.80
       ENDIF                                                               40.80
@@ -2747,18 +2631,14 @@
 !
                IF (LFRST1) THEN                                           40.80
                   IXB1 = vert(IX2)%atti(BINDX)                            40.80
-                  JBG  = vert(IX2)%atti(BPOL)                             40.92
-                  DET  = 1.                                               40.92
                   LFRST1 = .FALSE.                                        40.80
                ELSE                                                       40.80
                   IXB1 = vert(IX1)%atti(BINDX)                            40.80
-                  JBG  = vert(IX1)%atti(BPOL)                             40.92
 !
 !                 1) the wave spectrum along the given segment can be
 !                    imposed in counterclockwise or clockwise direction
-!                 2) content of array blist is ordered in counterclockwise
-!                    manner for sea/mainland boundary (JBG=1) and
-!                    clockwise for island boundary (JBG>1)
+!                 2) content of array blist is always ordered in
+!                    counterclockwise manner
 !                 3) therefore, determine orientation by means of the
 !                    determinant of two endpoints of the given segment
 !                    and an arbitrary point inside domain
@@ -2771,61 +2651,34 @@
                   X2 = vert(IX2)%attr(VERTX)                              40.80
                   Y2 = vert(IX2)%attr(VERTY)                              40.80
 !
-!                 an arbitrary internal point                             40.92
-                  DX=0.1*mingsiz
-                  DY=0.1*mingsiz
-                  DO IP=1,4
-                     X3 = X1 - DX
-                     Y3 = Y1 - DY
-                     CALL SwanFindPoint ( X3, Y3, IX )
-                     IF ( JBG>1 .AND. IX.LT.0 ) THEN
-                        X3 = X1 + DX
-                        Y3 = Y1 + DY
-                        EXIT
-                     ELSEIF ( JBG==1 .AND. IX.GT.0 ) THEN
-                        EXIT
-                     ENDIF
-                     IF ( MOD(IP,2).EQ.0 ) THEN
-                        DX = -DX
-                     ELSE
-                        DY = -DY
-                     ENDIF
-                  ENDDO
+!                 an arbitrary internal point
+                  KX = MINLOC(vert(:)%attr(VERTX),                        40.80
+     &                        vert(:)%atti(VMARKER)/=1)                   40.80
+                  X3 = vert(KX(1))%attr(VERTX)                            40.80
+                  Y3 = vert(KX(1))%attr(VERTY)                            40.80
 !
                   DET= (Y3-Y1)*(X2-X1)-(Y2-Y1)*(X3-X1)                    40.80
                   IF (DET.GT.0.) THEN                                     40.80
 !                    take next boundary point in counterclockwise
 !                    direction
-                     IXB1 = MOD(IXB1,nbpt(JBG))+1                         40.92 40.80
+                     IXB1 = MOD(IXB1,nbpt)+1                              40.80
                   ELSE                                                    40.80
 !                    take next boundary point in clockwise direction
-                     IXB1 = nbpt(JBG)-MOD(nbpt(JBG)+1-IXB1,nbpt(JBG))     40.92 40.80
+                     IXB1 = nbpt-MOD(nbpt+1-IXB1,nbpt)                    40.80
                   ENDIF                                                   40.80
                ENDIF                                                      40.80
                IXB2 = vert(IX2)%atti(BINDX)                               40.80
 !
 !              determine order of counting
                IF (IXB1.GT.IXB2 ) THEN                                    40.80
-                  IF (DET.LT.0.) THEN                                     40.92
-                     IXI  = -1                                            40.80
-                  ELSE                                                    40.92
-                     IXI  = 1                                             40.92
-                     IXB2 = IXB2+nbpt(JBG)                                40.92
-                  ENDIF                                                   40.92
+                  IXI=-1                                                  40.80
                ELSE                                                       40.80
-                  IF (DET.GT.0.) THEN                                     40.92
-                     IXI  = 1                                             40.80
-                  ELSE                                                    40.92
-                     IXI  = -1                                            40.92
-                     IXB1 = IXB1+nbpt(JBG)                                40.92
-                  ENDIF                                                   40.92
+                  IXI= 1                                                  40.80
                ENDIF                                                      40.80
 !
-               DO IPP = IXB1, IXB2, IXI                                   40.92 40.80
-                  IP = MOD(IPP,nbpt(JBG))                                 40.92
-                  IF (IP.EQ.0) IP = nbpt(JBG)                             40.92
+               DO IP = IXB1, IXB2, IXI                                    40.80
                   KOUNTR = KOUNTR + 1                                     40.80
-                  IX = blist(IP,JBG)                                      40.92 40.80
+                  IX = blist(IP)                                          40.80
                   vert(IX)%atti(VBC) = 1                                  40.80
                   ALLOCATE(TMP)                                           40.80
                   TMP%JX = IX                                             40.80
@@ -2849,7 +2702,7 @@
           CALL IGNORE ('SIDE')
 !         *** specification of side for which boundary   ***
 !         *** condition is given                         ***
-          IF (OPTG.NE.5) THEN                                             40.80
+          IF (OPTG.EQ.1) THEN                                             40.80
              CALL INKEYW ('REQ',' ')
              IF (KEYWIS ('NW')) THEN
                DIRSI = 45.
@@ -2870,7 +2723,7 @@
              ELSE
                CALL WRNKEY
              ENDIF
-          ELSE                                                            40.80
+          ELSEIF (OPTG.EQ.5) THEN                                         40.80
              CALL ININTG ('K', VM, 'REQ', 0)                              40.80
           ENDIF                                                           40.80
 !
@@ -2886,7 +2739,7 @@
 !
 !         select side in the chosen direction
 !
-          IF ( OPTG.NE.5 ) THEN                                           40.80
+          IF ( OPTG.EQ.1 ) THEN                                           40.80
              CRDM   = -1.E10
              ISIDM  = 0
              IF (ONED) THEN                                               40.00
@@ -3054,65 +2907,31 @@
                  CURR => TMP                                              40.31
                ENDIF
              ENDDO
-          ELSE                                                            40.80
+          ELSEIF ( OPTG.EQ.5 ) THEN                                       40.80
             ! unstructured grid
             !
-            DO JBG = 1, nbpol                                             40.92
-               !
-               ! first boundary polyogon is assumed an outer one
-               ! (sea/mainland boundary) and hence, content of blist
-               ! is ordered in counterclockwise manner
-               !
-               IF ( JBG==1 .EQV. CCW ) THEN                               40.92 40.80
-                  IXB1 = 1                                                40.80
-                  IXB2 = nbpt(JBG)                                        40.92 40.80
-                  IXI  = 1                                                40.80
-               ELSE                                                       40.80
-                  IXB1 = nbpt(JBG)                                        40.92 40.80
-                  IXB2 = 1                                                40.80
-                  IXI  = -1                                               40.80
+            IF ( CCW ) THEN                                               40.80
+               IXB1 = 1                                                   40.80
+               IXB2 = nbpt                                                40.80
+               IXI  = 1                                                   40.80
+            ELSE                                                          40.80
+               IXB1 = nbpt                                                40.80
+               IXB2 = 1                                                   40.80
+               IXI  = -1                                                  40.80
+            ENDIF                                                         40.80
+            !
+            DO IP = IXB1, IXB2, IXI                                       40.80
+               IX = blist(IP)                                             40.80
+               IF ( vmark(IX) == VM ) THEN                                40.80
+                  KOUNTR = KOUNTR + 1                                     40.80
+                  vert(IX)%atti(VBC) = 1                                  40.80
+                  ALLOCATE(TMP)                                           40.80
+                  TMP%JX = IX                                             40.80
+                  NULLIFY(TMP%NEXTXY)                                     40.80
+                  CURR%NEXTXY => TMP                                      40.80
+                  CURR => TMP                                             40.80
                ENDIF                                                      40.80
-               !
-               ALLOCATE(IARR1(SUM(nbpt)))
-               K = 0
-               DO IP = IXB1, IXB2, IXI                                    40.92
-                  IX = blist(IP,JBG)                                      40.92
-                  IF ( vmark(IX) == VM ) THEN                             40.92
-                     K = K+1                                              40.92
-                     IARR1(K) = IP                                        40.92
-                  ENDIF
-               ENDDO
-               !
-               IF ( K/=0 ) THEN                                           40.92
-                  !
-                  ALLOCATE(IARR2(K))                                      40.92
-                  IARR2(1:K) = IARR1(1:K)                                 40.92
-                  ISH = 0                                                 40.92
-                  DO IPP = 2, K                                           40.92
-                     IF ( IARR2(IPP)/=IARR2(IPP-1)+IXI ) THEN             40.92
-                        ISH = IPP-1                                       40.92
-                        EXIT                                              40.92
-                     ENDIF                                                40.92
-                  ENDDO                                                   40.92
-                  IARR2 = CSHIFT(IARR2,ISH)                               40.92
-                  !
-                  DO IPP = 1, K                                           40.92
-                     IP = IARR2(IPP)                                      40.92
-                     IX = blist(IP,JBG)                                   40.92 40.80
-                     KOUNTR = KOUNTR + 1                                  40.80
-                     vert(IX)%atti(VBC) = 1                               40.80
-                     ALLOCATE(TMP)                                        40.80
-                     TMP%JX = IX                                          40.80
-                     NULLIFY(TMP%NEXTXY)                                  40.80
-                     CURR%NEXTXY => TMP                                   40.80
-                     CURR => TMP                                          40.80
-                  ENDDO                                                   40.80
-                  DEALLOCATE(IARR2)                                       40.92
-                  !
-               ENDIF                                                      40.92
-               DEALLOCATE(IARR1)                                          40.92
-               !
-            ENDDO                                                         40.92
+            ENDDO                                                         40.80
             !
           ENDIF                                                           40.80
         ENDIF
@@ -3400,7 +3219,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3891,7 +3710,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4202,6 +4021,7 @@
       ALLOCATE (SPAUX(NANG*NFRE))                                         40.31
 
 !     read geographical locations and determine DXWAM and DYWAM           40.13
+
       IIPT2 = 0                                                           40.03
       DXWAM = 180.
       DYWAM = 180.
@@ -4479,7 +4299,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4940,7 +4760,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5074,36 +4894,31 @@
 !        since this grid is nested in a coarse structured or
 !        unstructured grid run
 !
-!        Note that the variable DONALL has no effect, since we
-!        searching into the whole grid
+!        Note that the variable DONALL has no effect, since the
+!        boundary of the nested run is always a closed polygon
 !
          DO IXP = 1, nverts                                               40.80
             IF ( vert(IXP)%atti(VMARKER) == 1 .AND.                       40.80
      &           vert(IXP)%atti(VBC) == 0 ) THEN                          40.80
-               RX = XP2 - vert(IXP)%attr(VERTX)
-               RY = YP2 - vert(IXP)%attr(VERTY)
-               DISXY = SQRT(RX**2 + RY**2)
-               IF (DISXY.LT.0.1) THEN
-                  vert(IXP)%atti(VBC) = 1                                 40.80
-                  NBGRPT = NBGRPT + 1                                     40.80
-                  ALLOCATE(BGPTMP)                                        40.80
-                  BGPTMP%BGP(1) = IXP                                     40.80
-                  BGPTMP%BGP(2) = 1                                       40.80
-                  BGPTMP%BGP(3) = 1000                                    40.80
-                  BGPTMP%BGP(4) = IBSP2                                   40.80
-                  BGPTMP%BGP(5) = 0                                       40.80
-                  BGPTMP%BGP(6) = IBSP2-1                                 40.80
-                  NULLIFY(BGPTMP%NEXTBGP)                                 40.80
-                  IF ( .NOT.LBGP ) THEN                                   40.80
-                     FBGP = BGPTMP                                        40.80
-                     CUBGP => FBGP                                        40.80
-                     LBGP = .TRUE.                                        40.80
-                  ELSE                                                    40.80
-                     CUBGP%NEXTBGP => BGPTMP                              40.80
-                     CUBGP => BGPTMP                                      40.80
-                  ENDIF                                                   40.80
-                  EXIT                                                    40.80
-               ENDIF
+               vert(IXP)%atti(VBC) = 1                                    40.80
+               NBGRPT = NBGRPT + 1                                        40.80
+               ALLOCATE(BGPTMP)                                           40.80
+               BGPTMP%BGP(1) = IXP                                        40.80
+               BGPTMP%BGP(2) = 1                                          40.80
+               BGPTMP%BGP(3) = 1000                                       40.80
+               BGPTMP%BGP(4) = IBSP2                                      40.80
+               BGPTMP%BGP(5) = 0                                          40.80
+               BGPTMP%BGP(6) = IBSP2-1                                    40.80
+               NULLIFY(BGPTMP%NEXTBGP)                                    40.80
+               IF ( .NOT.LBGP ) THEN                                      40.80
+                  FBGP = BGPTMP                                           40.80
+                  CUBGP => FBGP                                           40.80
+                  LBGP = .TRUE.                                           40.80
+               ELSE                                                       40.80
+                  CUBGP%NEXTBGP => BGPTMP                                 40.80
+                  CUBGP => BGPTMP                                         40.80
+               ENDIF                                                      40.80
+               EXIT                                                       40.80
             ENDIF                                                         40.80
          ENDDO                                                            40.80
          RETURN                                                           40.80
@@ -5242,7 +5057,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5404,7 +5219,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
