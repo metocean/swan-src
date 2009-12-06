@@ -1,9 +1,8 @@
 subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
-                          cgo   , cax   , cay   , cad   , cas   , &
-                          anybin, rdx   , rdy   , spcsig, spcdir, &
-                          obredf, idcmin, idcmax, iscmin, iscmax, &
-                          iddlow, iddtop, isslow, isstop, trac0 , &
-                          trac1 )
+                          cax   , cay   , cad   , cas   , anybin, &
+                          rdx   , rdy   , obredf, spcsig, idcmin, &
+                          idcmax, iscmin, iscmax, iddlow, iddtop, &
+                          isslow, isstop )
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -16,7 +15,7 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,9 +39,7 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
 !
 !   Updates
 !
-!   40.80,   August 2007: New subroutine
-!   40.85,   August 2008: add tranport terms for output purposes
-!   41.00, February 2009: add GSE correction
+!   40.80, August 2007: New subroutine
 !
 !   Purpose
 !
@@ -82,21 +79,12 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
     real, dimension(MDC,MSC), intent(in)        :: cas    ! wave transport velocity in sigma-direction
     real, dimension(MDC,MSC,ICMAX), intent(in)  :: cax    ! wave transport velocity in x-direction
     real, dimension(MDC,MSC,ICMAX), intent(in)  :: cay    ! wave transport velocity in y-direction
-    real, dimension(MSC,ICMAX), intent(in)      :: cgo    ! group velocity
     real, dimension(MDC,MSC), intent(out)       :: leakcf ! leak coefficient
     real, dimension(MDC,MSC,2), intent(in)      :: obredf ! action reduction coefficient based on transmission
     real, dimension(2), intent(in)              :: rdx    ! first component of contravariant base vector rdx(b) = a^(b)_1
     real, dimension(2), intent(in)              :: rdy    ! second component of contravariant base vector rdy(b) = a^(b)_2
     real, dimension(MDC,MSC), intent(out)       :: rhs    ! right-hand side of system of equations in (sigma,theta) space
-    real, dimension(MDC,6), intent(in)          :: spcdir ! (*,1): spectral direction bins (radians)
-                                                          ! (*,2): cosine of spectral directions
-                                                          ! (*,3): sine of spectral directions
-                                                          ! (*,4): cosine^2 of spectral directions
-                                                          ! (*,5): cosine*sine of spectral directions
-                                                          ! (*,6): sine^2 of spectral directions
     real, dimension(MSC), intent(in)            :: spcsig ! relative frequency bins
-    real, dimension(MDC,MSC,MTRNP), intent(out) :: trac0  ! explicit part of propagation in present vertex for output purposes
-    real, dimension(MDC,MSC,MTRNP), intent(out) :: trac1  ! implicit part of propagation in present vertex for output purposes
     !
     logical, dimension(MDC,MSC), intent(in)     :: anybin ! true if bin is active in considered sweep
 !
@@ -117,22 +105,16 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
     amat = 0.
     rhs  = 0.
     !
-    ! set leak and transport coefficients to zero
+    ! set leak coefficient to zero
     !
     leakcf = 0.
-    trac0  = 0.
-    trac1  = 0.
     !
     ! compute transport in x-y space
     !
 !TIMG    call SWTSTA(140)
-    call SwanTranspX ( amat   , rhs  , ac2   , ac1   , cax   , cay   , &
-                       rdx    , rdy  , obredf, idcmin, idcmax, isslow, &
-                       isstop , trac0, trac1 )
-    !
-    ! add GSE correction, if appropriate
-    !
-    if ( WAVAGE > 0. ) call SwanGSECorr ( rhs, ac2, cgo, spcdir, idcmin, idcmax, isslow, isstop, trac0 )
+    call SwanTranspX ( amat   , rhs, ac2   , ac1   , cax   , cay   , &
+                       rdx    , rdy, obredf, idcmin, idcmax, isslow, &
+                       isstop )
 !TIMG    call SWTSTO(140)
     !
     ! compute transport in theta space
@@ -142,8 +124,7 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
        !
        call STRSD ( DDIR       , idcmin     , idcmax     , cad    , &
                     amat(1,1,4), amat(1,1,1), amat(1,1,5), rhs    , &
-                    ac2        , isstop     , anybin     , leakcf , &
-                    trac0      , trac1      )
+                    ac2        , isstop     , anybin     , leakcf )
        !
     endif
 !TIMG    call SWTSTO(142)
@@ -159,8 +140,7 @@ subroutine SwanTranspAc ( amat  , rhs   , leakcf, ac2   , ac1   , &
           !
           call STRSSI ( spcsig     , cas   , amat(1,1,2), amat(1,1,1), &
                         amat(1,1,3), anybin, rhs        , ac2        , &
-                        iscmin     , iscmax, iddlow     , iddtop     , &
-                        trac0      , trac1 )
+                        iscmin     , iscmax, iddlow     , iddtop     )
           !
        else
           !
