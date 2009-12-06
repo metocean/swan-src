@@ -16,7 +16,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -37,12 +37,10 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
 !   Authors
 !
 !   40.80: Marcel Zijlema
-!   41.02: Marcel Zijlema
 !
 !   Updates
 !
-!   40.80,     July 2007: New subroutine
-!   41.02, February 2009: adaption of velocities in case of diffraction
+!   40.80, July 2007: New subroutine
 !
 !   Purpose
 !
@@ -54,7 +52,6 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
     use swcomm2
     use swcomm3
     use swcomm4
-    use m_diffr
     use SwanGriddata
     use SwanGridobjects
     use SwanCompdata
@@ -383,7 +380,6 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
           !
           cs(1) =  kwave(is,1) * spcsig(is) / sinh (2.* kd)
           cs(5) = -cgo(is,1) * kwave(is,1)
-          if ( IDIFFR /= 0 ) cs(5) = cs(5)*DIFPARAM(iv1)
           !
           cs(10) = cs(1) * cs(2)
           cs(11) = cs(1) * (cs(3)+cs(4))
@@ -454,8 +450,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
              id = mod ( iddum - 1 + MDC , MDC ) + 1
              !
              cad(id,is) = esin(id)*cd(8) - ecos(id)*cd(9)
-             if(IDIFFR /= 0 )cad(id,is)= cad(id,is)*DIFPARAM(iv1)-DIFPARDX(iv1)*cgo(is,1)*esin(id)+DIFPARDY(iv1)*cgo(is,1)*ecos(id)
-             if ( ICUR   /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*cd(10) + sinsin(id)*cd(6) - coscos(id)*cd(7)
+             if ( ICUR /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*cd(10) + sinsin(id)*cd(6) - coscos(id)*cd(7)
              !
           enddo
           !
@@ -466,8 +461,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
           id = mod ( idcmin(is) - 2 + MDC , MDC ) + 1  ! this direction belongs to sweep below considered sweep
           !
           cad(id,is) = esin(id)*cd(17) - ecos(id)*cd(18)
-          if (IDIFFR /= 0 )cad(id,is)=cad(id,is)*DIFPARAM(iv1)-DIFPARDX(iv1)*cgo(is,1)*esin(id)+DIFPARDY(iv1)*cgo(is,1)*ecos(id)
-          if ( ICUR   /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*cd(19) + sinsin(id)*cd(15) - coscos(id)*cd(16)
+          if ( ICUR /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*cd(19) + sinsin(id)*cd(15) - coscos(id)*cd(16)
           !
           cd(26) = cd( 1) * cd(20)
           cd(27) = cd( 1) * cd(21)
@@ -476,8 +470,7 @@ subroutine SwanPropvelS ( cad   , cas   , ux2   , uy2   , &
           id = mod ( idcmax(is) + MDC , MDC ) + 1      ! this direction belongs to sweep above considered sweep
           !
           cad(id,is) = esin(id)*cd(26) - ecos(id)*cd(27)
-          if (IDIFFR /= 0 )cad(id,is)=cad(id,is)*DIFPARAM(iv1)-DIFPARDX(iv1)*cgo(is,1)*esin(id)+DIFPARDY(iv1)*cgo(is,1)*ecos(id)
-          if ( ICUR   /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*cd(28) + sinsin(id)*cd(24) - coscos(id)*cd(25)
+          if ( ICUR /= 0 ) cad(id,is) = cad(id,is) + sincos(id)*cd(28) + sinsin(id)*cd(24) - coscos(id)*cd(25)
           !
        enddo
        !

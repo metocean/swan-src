@@ -11,7 +11,7 @@ subroutine SwanGridCell ( ncells, nverts, xcugrd, ycugrd, kvertc )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2009  Delft University of Technology
+!     Copyright (C) 2008  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -70,7 +70,7 @@ subroutine SwanGridCell ( ncells, nverts, xcugrd, ycugrd, kvertc )
 !
     integer                               :: icell    ! loop counter over cells / index of present cell
     integer, save                         :: ient = 0 ! number of entries in this subroutine
-    integer                               :: ivert    ! loop counter over vertices / index of present vertex
+    integer                               :: ivert    ! loop counter over vertices
     integer                               :: j        ! loop counter
     integer                               :: jcell    ! index of next cell
     integer                               :: k        ! auxiliary integer / loop counter
@@ -81,8 +81,6 @@ subroutine SwanGridCell ( ncells, nverts, xcugrd, ycugrd, kvertc )
     integer                               :: vc       ! considered vertex
     integer                               :: vn       ! first upwave vertex of next cell
     integer                               :: vp       ! last upwave vertex of present cell
-    !
-    integer, dimension(:), allocatable    :: ivlist   ! list of index vertices
     !
     real                                  :: carea    ! area of the present cell (triangles only)
     real                                  :: dx1      ! first component of covariant base vector a_(1)
@@ -230,44 +228,37 @@ subroutine SwanGridCell ( ncells, nverts, xcugrd, ycugrd, kvertc )
        !
     enddo
     !
-    allocate(ivlist(nverts))
-    !
     ! loop over all vertices
     !
     do ivert = 1, nverts
        !
-       ! identify the considered vertex and store index
+       ! identify the considered vertex
        !
        vc = vert(ivert)%atti(VERTID)
-       ivlist(vc) = ivert
        !
-       ! initialize number of cells around vertex
+       ! search for cells around that vertex
        !
-       vert(ivert)%noc = 0
-       !
-    enddo
-    !
-    do icell = 1, ncells
-       !
-       v(1) = cell(icell)%atti(CELLV1)
-       v(2) = cell(icell)%atti(CELLV2)
-       v(3) = cell(icell)%atti(CELLV3)
-       !
-       ! add present cell to each of these vertices
-       !
-       do j = 1, nov
-          !
-          ivert = ivlist(v(j))
-          noc   = vert(ivert)%noc +1
-          !
-          vert(ivert)%noc = noc
-          vert(ivert)%cell(noc)%atti(CELLID) = icell
-          !
+       noc   = 0
+       icell = 0
+ 10    continue
+       do
+          icell = icell + 1
+          if (icell > ncells) goto 20
+          v(1) = cell(icell)%atti(CELLV1)
+          v(2) = cell(icell)%atti(CELLV2)
+          v(3) = cell(icell)%atti(CELLV3)
+          if (v(1) == vc .or. v(2) == vc .or. v(3) == vc) exit
        enddo
        !
+       noc = noc + 1
+       !
+       vert(ivert)%cell(noc)%atti(CELLID) = icell
+       !
+       goto 10
+ 20    continue
+       vert(ivert)%noc = noc
+       !
     enddo
-    !
-    deallocate(ivlist)
     !
     do ivert = 1, nverts
        !
