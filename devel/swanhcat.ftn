@@ -16,7 +16,7 @@
 !     hcat.nml file.
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -40,28 +40,33 @@
       implicit none
       character(256) RLINE
       character*128 arg_str, basefile, tmp
-      integer ios,i,j,k,l,numfiles, sum, halo,haloindex
+      integer ios,i,j,k,l,numfiles, sum, halo,haloindex,iargc
       integer prevsource,freq,cdir, version
       logical ydivide, verbose, haloflag, exists, stomp, nonstat
-      real, allocatable :: x(:,:),y(:,:)
+      real*8, allocatable :: x(:,:),y(:,:)
       integer, allocatable :: locations(:),index(:), source(:)
-      namelist /arg_nml/ basefile,halo,verbose,stomp
+      integer, allocatable :: ownlocat(:)
 
  33   FORMAT('-',I3.3,A)
  35   FORMAT(A)
- 36   FORMAT(F14.4,F14.4)
+ 36   FORMAT(F14.6,F14.6)
  37   FORMAT(I6,A)
 
 !.....Set command-line argument defaults
       basefile='NULL'
       halo=3
-      verbose = .FALSE.
-      stomp = .FALSE.
+      verbose = .TRUE.
+      stomp = .TRUE.
 
 !.....Aquire arguments via arg_nml namelist read from hcat.nml file (non-Fortran 2003)
-      OPEN(10,FILE='hcat.nml',STATUS='OLD')
-      READ(10,NML=arg_nml)
-      CLOSE(10)
+!      OPEN(10,FILE='hcat.nml',STATUS='OLD')
+!      READ(10,NML=arg_nml)
+!      CLOSE(10)
+	if (iargc().gt.0) then
+	      call getarg(1,basefile)
+	else
+	      print*,'Usage: Hotconcat <basefile>'
+	endif
 
 !.....Process command-line arguments (Fortran 2003)
 !     haloflag = .FALSE.
@@ -159,7 +164,8 @@
          ENDIF
       ENDDO
 
-!.....Specifiy the number of location for each hotfile including
+!.....Specify the number of location for each hotfile including
+
 !.....the one being created at location(0)
       nonstat = .FALSE. !nonstationary unless time is found
       allocate(locations(0:numfiles))
@@ -297,12 +303,24 @@
       ENDDO
       locations(0)=index(0)
 
+!.....Specify the number of own location for each hotfile
+      allocate(ownlocat(0:numfiles))
+      ownlocat=0
+      DO j=1,numfiles
+         index(0)=1
+         DO WHILE (index(0)<=locations(0))
+            IF (source(index(0))==j) ownlocat(j)=ownlocat(j)+1
+            index(0)=index(0)+1
+         END DO
+      END DO
+
 !.....Write total number of locations to basefile
       WRITE (10,37) locations(0),TRIM(RLINE)
 
 !.....Write grid points to basefile
-      DO i=1,index(0)
+      DO i=1,locations(0)
          WRITE (10,36) x(0,i),y(0,i)
+!!         write(99,36) x(0,i),y(0,i)
       ENDDO
 
 !.....Process FREQ
@@ -379,7 +397,7 @@
                         ELSE
                            PRINT *,'Unable to process'
                            PRINT *,RLINE
-                           EXIT
+                           STOP
                         ENDIF
                      ENDDO
                   ENDIF
@@ -405,7 +423,7 @@
                      ELSE
                         PRINT *,'Unable to process'
                         PRINT *,RLINE
-                        EXIT
+                        STOP
                      ENDIF
                      prevsource=j
                   ENDDO
@@ -425,7 +443,7 @@
                         ELSE
                            PRINT *,'Unable to process'
                            PRINT *,RLINE
-                           EXIT
+                           STOP
                         ENDIF
                      ENDDO
                   ENDIF
@@ -435,7 +453,7 @@
                IF(source(index(0))==j) THEN
 !.................IF source equals 1 there are no halo points at the beginning
                   IF(j .NE. 1) THEN
-                     DO WHILE (index(j-1)<=locations(j-1))
+                     DO WHILE (index(j-1)<=ownlocat(j-1))
                         READ (10+j,35,IOSTAT=ios) RLINE
                         IF (RLINE(1:6).EQ.'FACTOR' .and. ios==0)THEN
                            DO l=1,freq+1
@@ -471,14 +489,17 @@
                         ENDDO
                         index(j)=index(j)+1
                         index(0)=index(0)+1
+!!                        write(99,*) 1,j
                      ELSE IF(RLINE(1:4).EQ.'ZERO' .and. ios==0) THEN
                         WRITE(10,35) TRIM(RLINE)
                         index(j)=index(j)+1
                         index(0)=index(0)+1
+!!                        write(99,*) 0,j
                      ELSE IF(RLINE(1:6).EQ.'NODATA' .and. ios==0) THEN
                         WRITE(10,35) TRIM(RLINE)
                         index(j)=index(j)+1
                         index(0)=index(0)+1
+!!                        write(99,*) -1,j
                      ELSE IF (ios/=0) THEN
                         PRINT *,'End of file error'
                         PRINT *,'ios:',ios
@@ -500,6 +521,8 @@
       DO i=1,numfiles
          CLOSE (unit=10+i)
       ENDDO
+
+!!      close(99)
 
       END PROGRAM HotConcat
 

@@ -11,7 +11,7 @@ subroutine SwanCheckGrid
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -112,7 +112,7 @@ subroutine SwanCheckGrid
     !
     badvertex = .false.
     do i = 1, nverts
-       if ( vcount(i) < 4 .and. vmark(i) == 0 ) badvertex = .true.
+       if ( vcount(i) > 0 .and. vcount(i) < 4 .and. vmark(i) == 0 ) badvertex = .true.
        if ( vcount(i) > 10 ) badvertex = .true.
     enddo
     !
