@@ -72,8 +72,6 @@ SwanSweepSel.$(EXTO) \
 SwanPropvelS.$(EXTO) \
 SwanTranspAc.$(EXTO) \
 SwanTranspX.$(EXTO) \
-SwanDiffPar.$(EXTO) \
-SwanGSECorr.$(EXTO) \
 SwanInterpolatePoint.$(EXTO) \
 SwanInterpolateAc.$(EXTO) \
 SwanInterpolateOutput.$(EXTO) \
@@ -83,6 +81,7 @@ SwanFindObstacles.$(EXTO) \
 SwanCrossObstacle.$(EXTO) \
 SwanComputeForce.$(EXTO) \
 SwanIntgratSpc.$(EXTO) \
+SwanGSECorr.$(EXTO) \
 SwanDiffPar.$(EXTO) \
 ocpids.$(EXTO) \
 ocpcre.$(EXTO) \
