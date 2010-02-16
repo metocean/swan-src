@@ -1193,6 +1193,7 @@
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.61: John Warner
+!     41.06: Gerbrant van Vledder
 !
 !  1. Updates
 !
@@ -1215,6 +1216,7 @@
 !     40.30, Mar. 03: correcting indices of test point with offsets MXF, MYF
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Dec. 06: correction DO loop 60 (IDCMIN, IDCMAX -> IDDLOW,IDDTOP)
+!     41.06, Mar. 09: add option of limitation of velocity in theta-direction
 !
 !  2. Purpose
 !
@@ -1362,6 +1364,9 @@
 !        CADT..        aux. quantities to compute Ctheta
 !        DPDX, DPDY    depth gradient
 !        DUXDX,DUXDY,DUYDX,DUYDY  current velocity gradients
+!        FAC           a factor
+!        FRLIM         frequency range in which limit on Ctheta is applied
+!        PP            power of the frequency dependent limiter on refraction
 !
       REAL     VLSINH ,KD1   ,COEF
       REAL     RDXL(2),RDYL(2),XC1   ,YC1    ,DET    ,
@@ -1372,6 +1377,7 @@
      &         CADT1    ,CADT2(3) ,CADT3(3) ,
      &         CADT4(3) ,CADT5(3) ,CADT6(3) ,CADT7(3)
       REAL  :: DLOC1, DLOC2, DLOC3
+      REAL  :: FAC, FRLIM, PP                                             41.06
 !     local depths corrected in view of stability                         40.02
 !
 !  5. Parameter variables
@@ -1852,6 +1858,19 @@
             CAD(ID,IS,1) = 0.0
           ENDDO
         ENDDO
+      ENDIF
+!
+!     limit Ctheta in some frequency range if requested
+!
+      IF ( INT(PNUMS(29)) .EQ. 1 ) THEN
+         FRLIM = PI2*PNUMS(26)
+         PP    =     PNUMS(27)
+         DO IS = 1, MSC
+            FAC = MIN(1.,(SPCSIG(IS)/FRLIM)**PP)
+            DO ID = 1, MDC
+               CAD(ID,IS,1) = FAC*CAD(ID,IS,1)
+            ENDDO
+         ENDDO
       ENDIF
 !
 !     *** test output ***
@@ -2544,7 +2563,7 @@
       IF (LTRACE) CALL STRACE (IENT,'SORDUP')
 !
       IF(NSTATC.EQ.1)THEN                                                 33.10
-         CALL MSGERR (4, 'SORDUP scheme is for stationary mode only.')    33.10
+         CALL MSGERR (3, 'SORDUP scheme is for stationary mode only.')    33.10
       END IF                                                              33.10
       IF (TESTFL .AND. ITEST .GE. 120) THEN
         WRITE(PRINTF,*) ' Initial matrix coefficients at SORDUP : '
@@ -2989,7 +3008,7 @@
      &        '100km or 1 deg on a side, as a rule of thumb)')            40.08
 !        --- Note that code will stop even without this line              40.08
 !            (at beginning of next time step).                            40.08
-!         IF(MAXERR.LT.2) STOP                                             40.08
+!         IF(MAXERR.LT.2) STOP                                            40.08
       END IF                                                              40.08
 !
       DO 200 IS = 1, ISSTOP
@@ -3465,7 +3484,7 @@
       SUBROUTINE STRSSB (IDDLOW  ,IDDTOP  ,
      &                   IDCMIN  ,IDCMAX  ,ISSTOP  ,CAX     ,CAY     ,
      &                   CAS     ,AC2     ,SPCSIG  ,IMATRA  ,
-     &                   ANYBLK  ,RDX     ,RDY                       )    40.41 30.21
+     &                   ANYBLK  ,RDX     ,RDY     ,TRAC0            )    41.07 40.41 30.21
 !
 !****************************************************************
 !
@@ -3507,11 +3526,13 @@
 !
 !     30.72: IJsbrand Haagsma
 !     40.41: Marcel Zijlema
+!     41.07: Marcel Zijlema
 !
 !  1. Updates
 !
 !     30.72, Feb. 98: Introduced generic names XCGRID, YCGRID and SPCSIG for SWAN
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     41.07, Jul. 09: also central scheme blended with upwind scheme
 !
 !  2. Purpose
 !
@@ -3562,18 +3583,29 @@
 !     ---------------------------------- = -----------------------
 !                   DS                                DS
 !
-!                  /  CAS(IS+0.5) * AC2(IS+1)    IF CAS(IS+0.5) < 0
+!                  /  CAS(IS+0.5) * ( (1-0.5mu)*AC2(IS+1) + 0.5mu*AC2(IS) )    IF CAS(IS+0.5) < 0
 !     F(IS+0.5) =  |
-!                  \  CAS(IS+0.5) * AC2(IS)      IF CAS(IS+0.5) > 0
+!                  \  CAS(IS+0.5) * ( (1-0.5mu)*AC2(IS) + 0.5mu*AC2(IS+1) )    IF CAS(IS+0.5) > 0
 !
-!                  /  CAS(IS-0.5) * AC2(IS-1)    IF CAS(IS-0.5) > 0
+!                  /  CAS(IS-0.5) * ( (1-0.5mu)*AC2(IS-1) + 0.5mu*AC2(IS) )    IF CAS(IS-0.5) > 0
 !     F(IS-0.5) =  |
-!                  \  CAS(IS-0.5) * AC2(IS)      IF CAS(IS-0.5) < 0
+!                  \  CAS(IS-0.5) * ( (1-0.5mu)*AC2(IS) + 0.5mu*AC2(IS-1) )    IF CAS(IS-0.5) < 0
 !
-!     WITH:
+!     with
+!
+!           0 <= mu <= 1 a blending factor
+!
+!           mu = 0 corresponds to 1st order upwind scheme
+!           mu = 1 corresponds to 2nd order central scheme
+!
+!           default value, mu = 0.5
+!
+!    and
+!
 !           CAS(IS+0.5) = ( CAS(IS+1) + CAS(IS) ) / 2.
 !
 !           CAS(IS-0.5) = ( CAS(IS) + CAS(IS-1) ) / 2.
+!
 !
 !     ------------------------------------------------------------
 !     Courant-Friedlich-Levich criterion :
@@ -3677,7 +3709,7 @@
 !
       REAL     FSA     ,FLEFT   ,FRGHT   ,DS      ,CFLMAX  ,CFLCEN  ,
      &         CAXCEN  ,CAYCEN  ,CASCEN  ,TX      ,TY      ,TS      ,
-     &         CASL    ,CASR
+     &         CASL    ,CASR    ,PN1     ,PN2
 !
       REAL     CAS(MDC,MSC,ICMAX)       ,
      &         CAX(MDC,MSC,ICMAX)       ,
@@ -3686,6 +3718,7 @@
      &         IMATRA(MDC,MSC)          ,
      &         RDX(10)                  ,                                 40.08
      &         RDY(10)                                                    40.08
+      REAL  :: TRAC0(MDC,MSC,MTRNP)                                       41.07
 !
       INTEGER  IDCMIN(MSC)              ,
      &         IDCMAX(MSC)
@@ -3696,7 +3729,12 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'STRSSB')
 !
-!     *** initialization of array and CFLMAX value ***
+!     --- determine blending factor
+!
+      PN1 = 0.5*(1.+PNUMS(7))                                             41.07
+      PN2 = 0.5*(1.-PNUMS(7))                                             41.07
+!
+!     *** initialization of ANYBLK and CFLMAX value ***
 !
       DO IS = 1, MSC
         DO ID = 1, MDC
@@ -3745,16 +3783,16 @@
               IF ( CASR .LT. 0. ) THEN
                 FRGHT = CASR * AC2(ID,IS+1,KCGRD(1))                      30.21
               ELSE
-                FRGHT = CASR * AC2(ID,IS,KCGRD(1))                        30.21
+                FRGHT = CASR * AC2(ID,IS  ,KCGRD(1))                      30.21
               END IF
               FLEFT = 0.
             ELSE IF ( IS .EQ. MSC ) THEN
 !             *** for the last discrete point in frequency space ***
 !             *** an upwind scheme is used                       ***
               CASL = CAS(ID,IS-1,1)
-              CASR = CAS(ID,IS,1  )
+              CASR = CAS(ID,IS  ,1)
               IF ( CASL .LT. 0. ) THEN
-                FLEFT = CASL * AC2(ID,IS,KCGRD(1))                        30.21
+                FLEFT = CASL * AC2(ID,IS  ,KCGRD(1))                      30.21
               ELSE
                 FLEFT = CASL * AC2(ID,IS-1,KCGRD(1))                      30.21
               END IF
@@ -3770,14 +3808,18 @@
               CASL  = 0.5 * ( CAS(ID,IS,1) + CAS(ID,IS-1,1) )
               CASR  = 0.5 * ( CAS(ID,IS,1) + CAS(ID,IS+1,1) )
               IF ( CASL .LT. 0. ) THEN
-                FLEFT = CASL * AC2(ID,IS,KCGRD(1))                        30.21
+                FLEFT = CASL * ( PN1*AC2(ID,IS  ,KCGRD(1)) +              41.07
+     &                           PN2*AC2(ID,IS-1,KCGRD(1)) )              41.07 30.21
               ELSE
-                FLEFT = CASL * AC2(ID,IS-1,KCGRD(1))                      30.21
+                FLEFT = CASL * ( PN1*AC2(ID,IS-1,KCGRD(1)) +              41.07
+     &                           PN2*AC2(ID,IS  ,KCGRD(1)) )              41.07 30.21
               END IF
               IF ( CASR .LT. 0. ) THEN
-                FRGHT = CASR * AC2(ID,IS+1,KCGRD(1))                      30.21
+                FRGHT = CASR * ( PN1*AC2(ID,IS+1,KCGRD(1)) +              41.07
+     &                           PN2*AC2(ID,IS  ,KCGRD(1)) )              41.07 30.21
               ELSE
-                FRGHT = CASR * AC2(ID,IS,KCGRD(1))                        30.21
+                FRGHT = CASR * ( PN1*AC2(ID,IS  ,KCGRD(1)) +              41.07
+     &                           PN2*AC2(ID,IS+1,KCGRD(1)) )              41.07 30.21
               END IF
             END IF
 !
@@ -3786,6 +3828,7 @@
 !           *** all the terms are known, store in IMATRA ***
 !
             IMATRA(ID,IS) = IMATRA(ID,IS) - FSA
+            TRAC0(ID,IS,3) = TRAC0(ID,IS,3) + FSA                         41.07
           ENDIF
 !
 !         *** test output ***
