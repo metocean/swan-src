@@ -11,7 +11,7 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -50,7 +50,9 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
 !   Modules used
 !
     use ocpcomm4
+    use swcomm2
     use swcomm3
+    use swcomm4
     use SwanGriddata
     use SwanGridobjects
 !
@@ -82,7 +84,8 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
     !
     integer, dimension(3)                 :: v        ! vertices in present cell
     !
-    real                                  :: area     ! twices the area of centroid dual around present vertex
+    double precision                      :: area     ! twices the area of centroid dual around present vertex
+    real                                  :: cslat    ! cosine of latitude
     real                                  :: deploc   ! local depth
     real                                  :: dsxxdx   ! x-gradient of sxx
     real                                  :: dsxydx   ! x-gradient of sxy
@@ -100,10 +103,10 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
     real                                  :: sxxsums  ! cumulated sxx over frequency space
     real                                  :: sxysums  ! cumulated sxy over frequency space
     real                                  :: syysums  ! cumulated syy over frequency space
-    real                                  :: x0       ! x-coordinate of the centroid of present cell
-    real                                  :: x1       ! x-coordinate of the centroid of next cell
-    real                                  :: y0       ! y-coordinate of the centroid of present cell
-    real                                  :: y1       ! y-coordinate of the centroid of next cell
+    double precision                      :: x0       ! x-coordinate of the centroid of present cell
+    double precision                      :: x1       ! x-coordinate of the centroid of next cell
+    double precision                      :: y0       ! y-coordinate of the centroid of present cell
+    double precision                      :: y1       ! y-coordinate of the centroid of next cell
     !
     real, dimension(1)                    :: cg       ! group velocity
     real, dimension(1)                    :: k        ! wave number
@@ -205,7 +208,7 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
        !
        ! first, compute gradients of the radiation stresses in vertices
        !
-       area   = 0.
+       area   = 0d0
        dsxxdx = 0.
        dsxydx = 0.
        dsxydy = 0.
@@ -261,28 +264,41 @@ subroutine SwanComputeForce ( fx, fy, ac2, dep2, spcsig, spcdir )
           !
           ! compute contribution to x-gradient of radiation stresses sxx and sxy
           !
-          dsxxdx = dsxxdx + ( sxx0 + sxx1 ) * ( y1 - y0 )
-          dsxydx = dsxydx + ( sxy0 + sxy1 ) * ( y1 - y0 )
+          dsxxdx = dsxxdx + ( sxx0 + sxx1 ) * real( y1 - y0 )
+          dsxydx = dsxydx + ( sxy0 + sxy1 ) * real( y1 - y0 )
           !
           ! compute contribution to y-gradient of radiation stresses sxy and syy
           !
-          dsxydy = dsxydy + ( sxy0 + sxy1 ) * ( x1 - x0 )
-          dsyydy = dsyydy + ( syy0 + syy1 ) * ( x1 - x0 )
+          dsxydy = dsxydy + ( sxy0 + sxy1 ) * real( x1 - x0 )
+          dsyydy = dsyydy + ( syy0 + syy1 ) * real( x1 - x0 )
           !
        enddo
        !
        ! if area is non-positive, give error and go to next vertex
        !
-       if ( area <= 0. ) then
+       if ( area <= 0d0 ) then
           write (msgstr, '(a,i5)') ' Area of centroid dual is negative or zero in vertex ', ivert
           call msgerr( 2, trim(msgstr) )
           cycle vertexloop
        endif
        !
-       dsxxdx =  dsxxdx/area
-       dsxydx =  dsxydx/area
-       dsxydy = -dsxydy/area
-       dsyydy = -dsyydy/area
+       dsxxdx =  dsxxdx/real(area)
+       dsxydx =  dsxydx/real(area)
+       dsxydy = -dsxydy/real(area)
+       dsyydy = -dsyydy/real(area)
+       !
+       ! in case of spherical coordinates, transform back to Cartesian coordinates
+       !
+       if ( KSPHER > 0 ) then
+          !
+          cslat = cos(DEGRAD*(vert(ivert)%attr(VERTY) + YOFFS))
+          !
+          dsxxdx = dsxxdx/(cslat * LENDEG)
+          dsxydx = dsxydx/(cslat * LENDEG)
+          dsxydy = dsxydy/LENDEG
+          dsyydy = dsyydy/LENDEG
+          !
+       endif
        !
        ! finally, compute wave-induced force
        !

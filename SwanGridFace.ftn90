@@ -11,7 +11,7 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -66,28 +66,36 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
 !
 !   Local variables
 !
-    integer                               :: icell    ! loop counter over cells
-    integer                               :: icell1   ! sequence number of cell 1 adjacent to present face
-    integer                               :: icell2   ! sequence number of cell 2 adjacent to present face
-    integer                               :: iface    ! loop counter over faces
-    integer, save                         :: ient = 0 ! number of entries in this subroutine
-    integer                               :: ivert    ! loop counter over vertices
-    integer                               :: jc       ! loop counter
-    integer                               :: jf       ! loop counter
-    integer                               :: v1       ! first vertex of present face
-    integer                               :: vl1      ! first vertex of local face for given cell
-    integer                               :: v2       ! second vertex of present face
-    integer                               :: vl2      ! second vertex of local face for given cell
+    integer                               :: icell     ! loop counter over cells
+    integer                               :: icell1    ! sequence number of cell 1 adjacent to present face
+    integer                               :: icell2    ! sequence number of cell 2 adjacent to present face
+    integer                               :: iface     ! loop counter over faces
+    integer, save                         :: ient = 0  ! number of entries in this subroutine
+    integer                               :: ivert     ! loop counter over vertices
+    integer                               :: j         ! loop counter
+    integer                               :: jf        ! loop counter
+    integer                               :: k         ! counter
+    integer                               :: v1        ! first vertex of present face
+    integer                               :: vl1       ! first vertex of local face for given cell
+    integer                               :: v2        ! second vertex of present face
+    integer                               :: vl2       ! second vertex of local face for given cell
     !
-    real                                  :: carea1   ! area of cell 1 adjacent to present face
-    real                                  :: carea2   ! area of cell 2 adjacent to present face
-    real                                  :: lengthf  ! length of present face
-    real                                  :: xdiff    ! difference in x-coordinate between vertex 2 and vertex 1
-    real                                  :: ydiff    ! difference in y-coordinate between vertex 2 and vertex 1
+    integer, dimension(:  ), allocatable  :: cntv1     ! array of vertex counter for for vertex 1
+    integer, dimension(:  ), allocatable  :: cntv2     ! array of vertex counter for for vertex 2
+    integer, dimension(:,:), allocatable  :: iflist1   ! list of index faces stored for vertex 1
+    integer, dimension(:,:), allocatable  :: iflist2   ! list of index faces stored for vertex 2
     !
-    type(celltype), dimension(:), pointer :: cell     ! datastructure for cells with their attributes
-    type(facetype), dimension(:), pointer :: face     ! datastructure for faces with their attributes
-    type(verttype), dimension(:), pointer :: vert     ! datastructure for vertices with their attributes
+    real                                  :: carea1    ! area of cell 1 adjacent to present face
+    real                                  :: carea2    ! area of cell 2 adjacent to present face
+    real                                  :: lengthf   ! length of present face
+    real                                  :: xdiff     ! difference in x-coordinate between vertex 2 and vertex 1
+    real                                  :: ydiff     ! difference in y-coordinate between vertex 2 and vertex 1
+    !
+    logical                               :: facefound ! true if face is found
+    !
+    type(celltype), dimension(:), pointer :: cell      ! datastructure for cells with their attributes
+    type(facetype), dimension(:), pointer :: face      ! datastructure for faces with their attributes
+    type(verttype), dimension(:), pointer :: vert      ! datastructure for vertices with their attributes
 !
 !   Structure
 !
@@ -141,6 +149,39 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
        !
     enddo
     !
+    allocate(cntv1  (nverts   ))
+    allocate(cntv2  (nverts   ))
+    allocate(iflist1(nverts,10))
+    allocate(iflist2(nverts,10))
+    !
+    cntv1   =  0
+    cntv2   =  0
+    iflist1 = -1
+    iflist2 = -2
+    !
+    do iface = 1, nfaces
+       !
+       v1 = face(iface)%atti(FACEV1)
+       v2 = face(iface)%atti(FACEV2)
+       !
+       k = cntv1(v1) +1
+       if ( k > 10 ) then
+          call msgerr ( 4, 'SwanGridFace: more than 10 faces around vertex ' )
+          return
+       endif
+       cntv1  (v1  ) = k
+       iflist1(v1,k) = iface
+       !
+       k = cntv2(v2) +1
+       if ( k > 10 ) then
+          call msgerr ( 4, 'SwanGridFace: more than 10 faces around vertex ' )
+          return
+       endif
+       cntv2  (v2  ) = k
+       iflist2(v2,k) = iface
+       !
+    enddo
+    !
     ! loop over all cells
     !
     do icell = 1, ncells
@@ -156,20 +197,47 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
           !
           ! search for identification number of that face
           !
-          iface = 1
-          do
-             v1 = face(iface)%atti(FACEV1)
-             v2 = face(iface)%atti(FACEV2)
-             if ((v1==vl1 .or. v1==vl2) .and. (v2==vl1 .or. v2==vl2)) exit
-             iface = iface + 1
-             if (iface > nfaces) exit
-          enddo
-          if ( iface > nfaces ) then
-             call msgerr ( 4, 'inconsistency found in SwanGridFace: no faces found ' )
+          facefound = .false.
+          !
+          kloop: do k = 1, 10
+             !
+             iface = iflist1(vl1,k)
+             !
+             do j = 1, 10
+                if ( iflist2(vl2,j) == iface ) then
+                   facefound = .true.
+                   exit kloop
+                endif
+             enddo
+             !
+          enddo kloop
+          !
+          if ( .not.facefound ) then
+             !
+             jloop: do j = 1, 10
+                !
+                iface = iflist2(vl1,j)
+                !
+                do k = 1, 10
+                   if ( iflist1(vl2,k) == iface ) then
+                      facefound = .true.
+                      exit jloop
+                   endif
+                enddo
+                !
+             enddo jloop
+             !
+          endif
+          !
+          if ( facefound ) then
+             cell(icell)%face(jf)%atti(FACEID) = iface
+          else
+             call msgerr ( 4, 'inconsistency found in SwanGridFace: no face found ' )
              return
           endif
           !
-          cell(icell)%face(jf)%atti(FACEID) = iface
+          v1 = face(iface)%atti(FACEV1)
+          v2 = face(iface)%atti(FACEV2)
           !
           ! Requirement: face(iface)%atti(FACEC1) < face(iface)%atti(FACEC2)
           !
@@ -192,6 +260,8 @@ subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
        enddo
        !
     enddo
+    !
+    deallocate(cntv1,cntv2,iflist1,iflist2)
     !
     ! loop over all faces
     !

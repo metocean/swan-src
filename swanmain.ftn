@@ -31,7 +31,7 @@
 !                                                                      *
 !***********************************************************************
 !
-!NCOM     USE PASS
+!NCOM       USE PASS
       IMPLICIT NONE
 !
 !
@@ -46,7 +46,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -104,17 +104,24 @@
 !
 !     --- initialize the MPI execution environment                        40.30
 
-!NCOM      if (Master_start.eq.1) then
+!NCOM      if (Master_Start.eq.1) then
+
+!     --- initialize the MPI execution environment                        40.30
+!         and common block SWPARALL                                       40.30
+
       CALL SWINITMPI                                                      40.30
       IF (STPNOW()) GOTO 999                                              40.30
-!NCOM      else
+
+!NCOM      else  
+
 !     --- start SWAN run
 !NCOM      print*, 'Run SWAN loop ',int((istep-1)/N_Interval_CallWave)
 !NCOM      endif
+      CALL SWMAIN                                                         
+!NCOM      print*,'Out of SWAN loop'
+                                                               
 
-      CALL SWMAIN                                                         40.31 34.01
-!NCOM      print*,'Out fo SWAN loop'
-!NCOM      RETURN
+!NCOM       RETURN
 
 999   CONTINUE
 
@@ -144,6 +151,7 @@
 !NCOM      USE PASS
       USE SwanGriddata                                                    40.80
 !SWAN      USE ncswan
+!
       IMPLICIT NONE
 !
 !
@@ -158,7 +166,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -267,7 +275,6 @@
       INTEGER   IUNIT                                                     34.01
       INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
       INTEGER   INERR                                                     40.31
-      INTEGER   IERR                                                      40.31 40.00
       INTEGER   ISTAT, IF1, IL1                                           40.41
       CHARACTER PTYPE, PNAME *8, COMPUT *4, DTTIWR*18                     40.00
       CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
@@ -310,7 +317,7 @@
 !     TXPBLA : Removes leading and trailing blanks in string              40.41
 !
       LOGICAL STPNOW                                                      34.01
-      integer :: iargc,ncproc=1                                           MSL
+      integer :: iargc,ncproc=1                                                 MSL
 !
 !  9. Subroutines calling
 !
@@ -352,7 +359,9 @@
 !
 ! 13. Source text
 !
-!NCOM      if (Master_Start.eq.1) then
+
+!NCOM       if (Master_Start.eq.1)then
+
 !     --- initialize various data
 !TIMG
 !TIMG      DCUMTM(:,1:2) = 0D0                                                 40.23
@@ -370,6 +379,7 @@
       IF (INERR.GT.0) RETURN                                              34.01
       IF (STPNOW()) RETURN                                                34.01
 !
+     
       COMPUT = '    '
 
 !     --- repeat
@@ -381,17 +391,17 @@
 
 !TIMG        CALL SWTSTA(3)                                                    40.23
 
+! master program change -fyshi
 !NCOM        if(Master_Start.eq.1)then
-                 CALL SWREAD (COMPUT,ncproc)
+                CALL SWREAD (COMPUT,ncproc)
 !NCOM           return
 !NCOM        else
+! master_time_ctr was modified from SWREAD in swanpre1.f -fyshi
 !NCOM           CALL MASTER_TIME_CTR(COMPUT)
 !NCOM        endif
-
-
+        
 !TIMG        CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
-
 !       --- if last command was STOP then exit from repeat
 
         IF (COMPUT.EQ.'STOP') THEN                                        40.13
@@ -404,7 +414,6 @@
         ENDIF                                                             40.13
 
 !       --- allocate some arrays meant for computation                    40.31
-
         IF (NUMOBS .GT. 0) THEN
            IF (OPTG.NE.5) THEN                                            40.80
 !             structured grid                                             40.80
@@ -422,7 +431,7 @@
 
 !       --- do some preparations before computation                       40.31
 
-!TIMG        CALL SWTSTA(4)                                                    40.23
+!TIMG        CALL SWTSTA(4)
         CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
      &                KGRBND, SPCDIR, SPCSIG )                            40.31
         IF (OPTG.EQ.5) CALL SwanPrepComp ( CROSS )                        40.80
@@ -438,8 +447,11 @@
 !       --- initialisation of necessary grids for depth,
 !           current, wind and friction
 
-        IF(.NOT.ALLOCATED(COMPDA))
-     &                        ALLOCATE(COMPDA(MCGRD,MCMVAR),STAT=ISTAT)   40.41 40.31
+!SWAN        IF (ALOCMP.AND.ALLOCATED(COMPDA)) DEALLOCATE(COMPDA)              40.97
+        IF (.NOT.ALLOCATED(COMPDA)) THEN                                  40.97
+           ALLOCATE(COMPDA(MCGRD,MCMVAR),STAT=ISTAT)                      40.97 40.41 40.31
+!SWAN           ALOCMP = .FALSE.                                               40.97
+        END IF                                                            40.97
         IF ( ISTAT.NE.0 ) THEN                                            40.41
            CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                           40.41
            CALL TXPBLA(CHARS(1),IF1,IL1)                                  40.41
@@ -488,11 +500,9 @@
      &           ' SET command')                                          30.72
 
 !SWAN      ELSE IF (iargc().gt.1) THEN
-!SWAN      WRITE (PRINTF, 6020)
+!SWAN	     WRITE (PRINTF, 6020)
 !SWAN        PARLL=.FALSE.
 !SWAN 6020       FORMAT(' ** POSTPROCESS ONLY ')
-
-
         ELSE
 !
           IF (ITEST.GE.40) THEN                                           40.00
@@ -533,6 +543,7 @@
           IF (STPNOW()) RETURN                                            40.30
 
 !         --- loop over time steps                                        40.00
+            print*,allocated(compda)
 !NCOM          call pass_in_swan(COMPDA,KGRPNT,XCGRID,YCGRID)
           DO 500 IT = IT0, MTC                                            40.00
 !
@@ -619,7 +630,7 @@
 
 !TIMG            CALL SWTSTA(9)                                                40.30
             CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
-     &                    KGRPNT, XCGRID, YCGRID, KGRBND, OURQT )         40.51 40.31
+     &                    KGRPNT, XCGRID, YCGRID, OURQT )                 40.51 40.31
 !TIMG            CALL SWTSTO(9)                                                40.30
             IF (STPNOW()) RETURN                                          40.30
 !
@@ -647,7 +658,6 @@
 
 !NCOM       call PASS_OUT_SWAN(COMPDA,KGRPNT,XCGRID,YCGRID,AC2,SPCDIR,SPCSIG)
 !NCOM       return
-
 !
 !TIMG      CALL SWTSTO(1)                                                      40.23
 !
@@ -664,7 +674,10 @@
       IF ( PARLL ) THEN                                                   40.30
          ALLOCATE (BLKND(MXC*MYC))                                        40.51 40.41
          BLKND = REAL(INODE)                                              40.41
-         IF ( INODE.EQ.MASTER ) ALLOCATE(BLKNDC(MXCGL*MYCGL))             40.51 40.41
+         IF ( INODE.EQ.MASTER ) THEN
+            ALLOCATE(BLKNDC(MXCGL*MYCGL))                                 40.51 40.41
+            BLKNDC = 0.                                                   40.96
+         END IF
          CALL SWCOLLECT ( BLKNDC, BLKND, .TRUE. )                         40.51 40.41
          IF (STPNOW()) RETURN                                             40.41
          IF ( INODE.EQ.MASTER ) THEN                                      40.30
@@ -675,17 +688,17 @@
 !TIMG      CALL SWTSTO(9)                                                      40.30
 !
 !TIMG      CALL SWPRTI                                                         40.23
-!
-!SWAN      if (ncproc.gt.0.AND.INODE.EQ.MASTER.AND.OPTG.NE.5) then                                                            MSL
-!SWAN            IF ( .NOT.ALLOCATED(OURQT) ) THEN
-!SWAN               ALLOCATE (OURQT(MAX_OUTP_REQ))
-!SWAN               OURQT = -9999.
+
+!SWAN      if (ncproc.gt.0.AND.INODE.EQ.MASTER.AND.OPTG.NE.5) then                                                    	MSL
+!SWAN	   IF ( .NOT.ALLOCATED(OURQT) ) THEN             
+!SWAN               ALLOCATE (OURQT(MAX_OUTP_REQ))                             
+!SWAN               OURQT = -9999.                                             
 !SWAN            ENDIF
 !SWAN          write(SCREEN,*), 'Postprocessing blocks to NETCDF'
 !SWAN          call writenc(ourqt)                                                   MSL
 !SWAN      end if                                                                    MSL
 
-
+!
       INQUIRE(UNIT=PRINTF,OPENED=LOPEN)                                   40.30
       IF (LOPEN) CLOSE(PRINTF)                                            40.30
 !
@@ -735,7 +748,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -889,7 +902,8 @@
       VERTXT = BLANK                                                      40.03
       VERNUM = 40.72
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-!FIX      CALL BUGFIX ('A')
+      CALL BUGFIX ('A')
+      CALL BUGFIX ('B')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
       IF (INERR.GT.0) RETURN                                              34.01
@@ -1327,6 +1341,16 @@
       JDSXB  = 1                                                          40.65 40.61
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
+      JGENR  = 1                                                          40.85
+      JGSXW  = 1                                                          40.85
+      JREDS  = 1                                                          40.85
+      JRSXQ  = 1                                                          40.85
+      JRSXT  = 1                                                          40.85
+      JTRAN  = 1                                                          40.85
+      JTSXG  = 1                                                          40.85
+      JTSXT  = 1                                                          40.85
+      JTSXS  = 1                                                          40.85
+      JRADS  = 1                                                          40.85
 !
 !     Next pointers are for the plot of the source terms (SWTSDA)         40.31
 !
@@ -2016,7 +2040,7 @@
 !
       IVTYPE = 54
       OVKEYW(IVTYPE) = 'DISB'                                             40.61
-      OVSNAM(IVTYPE) = 'Disbot'
+      OVSNAM(IVTYPE) = 'Sfric'                                            40.85
       OVLNAM(IVTYPE) = 'Bottom friction dissipation'
       OVUNIT(IVTYPE) = 'm2/s'
       OVSVTY(IVTYPE) = 1
@@ -2028,8 +2052,8 @@
 !
       IVTYPE = 55
       OVKEYW(IVTYPE) = 'DISSU'                                            40.61
-      OVSNAM(IVTYPE) = 'Dissrf'
-      OVLNAM(IVTYPE) = 'Wave breaking dissipation'
+      OVSNAM(IVTYPE) = 'Ssurf'                                            40.85
+      OVLNAM(IVTYPE) = 'Surf breaking dissipation'                        40.85
       OVUNIT(IVTYPE) = 'm2/s'
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -2040,7 +2064,7 @@
 !
       IVTYPE = 56
       OVKEYW(IVTYPE) = 'DISW'                                             40.61
-      OVSNAM(IVTYPE) = 'Diswcp'
+      OVSNAM(IVTYPE) = 'Swcap'                                            40.85
       OVLNAM(IVTYPE) = 'Whitecapping dissipation'
       OVUNIT(IVTYPE) = 'm2/s'
       OVSVTY(IVTYPE) = 1
@@ -2074,43 +2098,161 @@
       OVHEXP(IVTYPE) = 1000.
       OVEXCV(IVTYPE) = -9.
 !
-      IVTYPE = 70                                                         MSL                                                    
-      OVKEYW(IVTYPE) = 'DPM'                                                                                                     
-      OVSNAM(IVTYPE) = 'Dpm'                                                                                                     
-      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'                                                                         
-      OVUNIT(IVTYPE) = UDI                                                30.72                                                  
-      OVSVTY(IVTYPE) = 2                                                                                                         
-      OVLLIM(IVTYPE) = 0.                                                                                                        
-      OVULIM(IVTYPE) = 360.                                                                                                      
-      OVLEXP(IVTYPE) = 0.                                                                                                        
-      OVHEXP(IVTYPE) = 360.                                                                                                      
-      OVEXCV(IVTYPE) = -999.                                                                                                     
-!                                                                                                                                
-      IVTYPE = 71                                                         MSL                                                    
-      OVKEYW(IVTYPE) = 'DPMSEA'                                                                                                  
-      OVSNAM(IVTYPE) = 'Dpm_sea'                                                                                                 
-      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'                                                                     
-      OVUNIT(IVTYPE) = UDI                                                30.72                                                  
-      OVSVTY(IVTYPE) = 2                                                                                                         
-      OVLLIM(IVTYPE) = 0.                                                                                                        
-      OVULIM(IVTYPE) = 360.                                                                                                      
-      OVLEXP(IVTYPE) = 0.                                                                                                        
-      OVHEXP(IVTYPE) = 360.                                                                                                      
-      OVEXCV(IVTYPE) = -999.                                                                                                     
-!                                                                                                                                
-      IVTYPE = 72                                                         MSL                                                    
-      OVKEYW(IVTYPE) = 'SWE'                                                                                                     
-      OVSNAM(IVTYPE) = 'SWe'                                                                                                     
-      OVLNAM(IVTYPE) = 'Spectral bandwidth'                                                                                      
-      OVUNIT(IVTYPE) = ' '                                                                                                       
-      OVSVTY(IVTYPE) = 1                                                                                                         
-      OVLLIM(IVTYPE) = 0.                                                                                                        
-      OVULIM(IVTYPE) = 1.                                                                                                        
-      OVLEXP(IVTYPE) = 0.                                                                                                        
-      OVHEXP(IVTYPE) = 1.                                                                                                        
-      OVEXCV(IVTYPE) = -9                                                         
-
+      IVTYPE = 60
+      OVKEYW(IVTYPE) = 'GENE'                                             40.85
+      OVSNAM(IVTYPE) = 'Genera'
+      OVLNAM(IVTYPE) = 'Energy generation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 61
+      OVKEYW(IVTYPE) = 'GENW'                                             40.85
+      OVSNAM(IVTYPE) = 'Swind'
+      OVLNAM(IVTYPE) = 'Wind source term'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 62
+      OVKEYW(IVTYPE) = 'REDI'                                             40.85
+      OVSNAM(IVTYPE) = 'Redist'
+      OVLNAM(IVTYPE) = 'Energy redistribution'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 63
+      OVKEYW(IVTYPE) = 'REDQ'                                             40.85
+      OVSNAM(IVTYPE) = 'Snl4'
+      OVLNAM(IVTYPE) = 'Total absolute 4-wave interaction'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 64
+      OVKEYW(IVTYPE) = 'REDT'                                             40.85
+      OVSNAM(IVTYPE) = 'Snl3'
+      OVLNAM(IVTYPE) = 'Total absolute 3-wave interaction'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 65
+      OVKEYW(IVTYPE) = 'PROPA'                                            40.85
+      OVSNAM(IVTYPE) = 'Propag'
+      OVLNAM(IVTYPE) = 'Energy propagation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 66
+      OVKEYW(IVTYPE) = 'PROPX'                                            40.85
+      OVSNAM(IVTYPE) = 'Propxy'
+      OVLNAM(IVTYPE) = 'xy-propagation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 67
+      OVKEYW(IVTYPE) = 'PROPT'                                            40.85
+      OVSNAM(IVTYPE) = 'Propth'
+      OVLNAM(IVTYPE) = 'theta-propagation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 68
+      OVKEYW(IVTYPE) = 'PROPS'                                            40.85
+      OVSNAM(IVTYPE) = 'Propsi'
+      OVLNAM(IVTYPE) = 'sigma-propagation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 69
+      OVKEYW(IVTYPE) = 'RADS'                                             40.85
+      OVSNAM(IVTYPE) = 'Radstr'
+      OVLNAM(IVTYPE) = 'Radiation stress'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 70                                                         MSL
+      OVKEYW(IVTYPE) = 'DPM'
+      OVSNAM(IVTYPE) = 'Dpm'
+      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 71                                                         MSL
+      OVKEYW(IVTYPE) = 'DPMSEA'
+      OVSNAM(IVTYPE) = 'Dpm_sea'
+      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
+      OVUNIT(IVTYPE) = UDI                                                30.72
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 72                                                         MSL
+      OVKEYW(IVTYPE) = 'SWE'
+      OVSNAM(IVTYPE) = 'SWe'
+      OVLNAM(IVTYPE) = 'Spectral bandwidth'
+      OVUNIT(IVTYPE) = ' '
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9
 !     various parameters for computation of output quantities             40.00
 !
 !     reference time for TSEC
@@ -2166,7 +2308,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2492,7 +2634,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2624,7 +2766,7 @@
 !
 ! 13. Source text
 !
-      INTEGER  KGRPNT(MXC,MYC), IERR                                      40.02
+      INTEGER  KGRPNT(MXC,MYC)                                            40.02
       LOGICAL  SINBTG
       CHARACTER STYPE *1
       TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
@@ -2875,7 +3017,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3238,6 +3380,10 @@
       COMPDA(:,JZEL  ) = 2.E-33                                           40.41
       COMPDA(:,JUSTAR) = 1.E-15                                           40.41
 !
+!     --- initialize UBOT and TMBOT                                       40.94
+      COMPDA(:,JUBOT) = 0.                                                40.94
+      IF (JPBOT.GT.1) COMPDA(:,JPBOT) = 0.                                40.94
+!
       RETURN
 ! * end of subroutine SWRBC *
       END
@@ -3265,7 +3411,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3668,7 +3814,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3797,7 +3943,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3926,7 +4072,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4093,7 +4239,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4192,7 +4338,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4322,6 +4468,11 @@
             PNUMS(15) = 0.005                                             40.80
          ENDIF                                                            40.80
       ENDIF                                                               40.80
+!
+!     --- reset PWIND(9) and PWIND(17) if RHO has a user value            40.96
+!
+      PWIND( 9) = PWIND(16)/RHO                                           40.96
+      PWIND(17) = RHO                                                     40.96
 !
 !     -----------------------------------------------------------------
 !
@@ -4543,7 +4694,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4953,11 +5104,11 @@
 
 !     field 2 and 3: current velocity
       IF (IFLDYN(2) .EQ. 1) THEN
-        CALL FLFILE ( 2, 3, UXB, UYB,                                     40.31
-     &               JVX1, JVX2, JVX3, JVY1, JVY2, JVY3,
-     &               COSVC, SINVC,                                        40.31 30.90
-     &               COMPDA, XCGRID, YCGRID,
-     &               KGRPNT, IERR)
+!SWAN        CALL FLFILE ( 2, 3, UXB, UYB,                                     40.31
+!SWAN     &               JVX1, JVX2, JVX3, JVY1, JVY2, JVY3,
+!SWAN     &               COSVC, SINVC,                                        40.31 30.90
+!SWAN     &               COMPDA, XCGRID, YCGRID,
+!SWAN     &               KGRPNT, IERR)
         IF (STPNOW()) RETURN                                              34.01
 !       reduce current velocity if Froude number is larger than PNUMS(18)
 !       structured grid                                                   40.80
@@ -5071,7 +5222,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5309,6 +5460,7 @@
           COUNT_IT = COUNT_IT+1                                           40.05
           NDSL = BFILED(4)
           NDSD = BFILED(5)
+
 !
 !     in WW3 case rewind the boundary file
           IF(BTYPE.EQ.'WW3N') REWIND(NDSD)                                40.05
@@ -5345,7 +5497,7 @@
             IF (UNFORM) THEN
               READ (NDSD, END=380, ERR=920)
             ELSEIF ((.NOT.UNFORM).AND.(BTYPE.EQ.'WW3N')) THEN             40.05
-              READ (NDSD,*)                                               40.05
+              READ (NDSD,*, END=920)                                               40.05
             ELSE                                                          40.05
               READ (NDSD, '(A)', END=380, ERR=920) HEDLIN
               IF (ITEST.GE.90) WRITE (PRINTF, 212) HEDLIN
@@ -5424,7 +5576,7 @@
 !                   DUM_A dummy local variable used to read formatted     40.05
 !                   files                                                 40.05
 !                   this variable will be not used in any calculation     40.05
-                    READ (NDSD,901) PTNME, DUM_A, DUM_A, BDEPTH,          40.05
+                    READ (NDSD,901,END=940) PTNME, DUM_A, DUM_A, BDEPTH,          40.05
      &                              DUM_A, DUM_A, DUM_A, DUM_A            40.05
                   ENDIF                                                   40.05
                 ELSE                                                      40.05
@@ -5442,7 +5594,7 @@
 !                 exit is used because the header per spectrum in WW3     40.05
 !                 for IBOUNC>1 is one line                                40.05
 !                 DUM_A is a dummy local parameter used in formatted read 40.05
-                  READ (NDSD,901) PTNME, DUM_A, DUM_A, BDEPTH,
+                  READ (NDSD,901,END=940) PTNME, DUM_A, DUM_A, BDEPTH,
      &                            DUM_A, DUM_A, DUM_A, DUM_A              40.05
                 ELSE IF (BTYPE.EQ.'WAMF') THEN
 !                 read HEDLIN replaced because data are sometimes written 40.13
@@ -5467,7 +5619,7 @@
 !                 skip reading of values
                   CYCLE BP_LOOP                                           40.05
                 ELSE IF (HEDLIN(1:6).EQ.'FACTOR') THEN
-                  READ (NDSD, *) RFAC
+                  READ (NDSD, *, END=940) RFAC
                   UFAC = UFAC * RFAC
 !                 multiply factor read from file by UFAC (factor following from
 !                 type of file)
@@ -5501,7 +5653,7 @@
               IF (ITEST.GE.60) WRITE (PRTEST, *) ' TPAR boundary ',
      &              TIMF2, (SPPARM(JJ), JJ=1,4)
               DO II = 1, 4
-                READ (DATITM(II+1), '(G12.0)') SPPARM(II)
+                READ (DATITM(II+1), '(G12.0)', END=940) SPPARM(II)
               ENDDO
               BFILED(3) = NINT(TIMF2)
               CALL SSHAPE (BSPECS(1,1,IBSPEC,2), SPCSIG, SPCDIR,
@@ -5666,7 +5818,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5933,10 +6085,10 @@
         IF (UNFORM) THEN
 !          unformatted reading
            IF (DORDER.LT.0) THEN                                          40.55
-              READ (NDSD,END=930,ERR=920)
+              READ (NDSD,*,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)
            ELSE
-              READ (NDSD,END=930,ERR=920)
+              READ (NDSD,*,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)
            ENDIF
         ELSEIF ((.NOT.UNFORM).AND.(BTYPE.EQ.'WW3N')) THEN                 40.05
@@ -6089,7 +6241,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6410,7 +6562,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6706,7 +6858,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

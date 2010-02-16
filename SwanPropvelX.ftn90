@@ -11,7 +11,7 @@ subroutine SwanPropvelX ( cax, cay, ux2, uy2, cgo, ecos, esin )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 2008  Delft University of Technology
+!     Copyright (C) 2009  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -32,10 +32,12 @@ subroutine SwanPropvelX ( cax, cay, ux2, uy2, cgo, ecos, esin )
 !   Authors
 !
 !   40.80: Marcel Zijlema
+!   41.02: Marcel Zijlema
 !
 !   Updates
 !
-!   40.80, July 2007: New subroutine
+!   40.80,     July 2007: New subroutine
+!   41.02, February 2009: adaption of velocities in case of diffraction
 !
 !   Purpose
 !
@@ -45,6 +47,7 @@ subroutine SwanPropvelX ( cax, cay, ux2, uy2, cgo, ecos, esin )
 !
     use ocpcomm4
     use swcomm3
+    use m_diffr
     use SwanGriddata
     use SwanCompdata
 !
@@ -87,6 +90,17 @@ subroutine SwanPropvelX ( cax, cay, ux2, uy2, cgo, ecos, esin )
              cay(id,is,ic) = cgo(is,ic) * esin(id)
           enddo
        enddo
+       !
+       ! adapt the celerities in case of diffraction
+       !
+       if ( IDIFFR /= 0 .and. PDIFFR(3) /= 0. ) then
+          do is = 1, MSC
+             do id = 1 ,MDC
+                cax(id,is,ic) = cax(id,is,ic)*DIFPARAM(ivert)
+                cay(id,is,ic) = cay(id,is,ic)*DIFPARAM(ivert)
+             enddo
+          enddo
+       endif
        !
        ! ambient currents added
        !
