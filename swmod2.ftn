@@ -203,6 +203,8 @@
 
       CHARACTER (LEN=1)  :: OUT_COMMENT = '%' ! comment sign for heading lines
 
+      LOGICAL            :: LCOMPGRD
+
       ! formats for output:
       CHARACTER (LEN=40) :: FLT_BLOCK = '(6E12.4)'       ! floating point block
       CHARACTER (LEN=40) :: FLT_TABLE = '(E11.4)'        ! floating point table

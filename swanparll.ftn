@@ -3655,7 +3655,7 @@
 
 !        --- if it is not open or already open thru another request
 
-         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
+         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
 
 !           --- open generic output file or reset reference number
 
@@ -3734,14 +3734,13 @@
             END DO
          END IF
          IPLOOP : DO IP = 1, MIP                                          40.51
-            IF ( XC(IP).LT.-0.01 .OR. YC(IP).LT.-0.01 .OR.                40.51
-     &           XC(IP).GT.REAL(MXCGL-1)+0.01 .OR.                        40.51
-     &           YC(IP).GT.REAL(MYCGL-1)+0.01 ) THEN                      40.51
+            IXK = NINT(XC(IP)+100.)-99                                    41.07 40.51
+            IYK = NINT(YC(IP)+100.)-99                                    41.07 40.51
+            IF ( IXK.LT.1 .OR. IYK.LT.1 .OR. IXK.GT.MXCGL .OR.            41.07 40.51
+     &           IYK.GT.MYCGL ) THEN                                      41.07 40.51
                CALL WREXCV                                                40.51
                CYCLE IPLOOP                                               40.51
             END IF                                                        40.51
-            IXK = NINT(XC(IP)+3.)-2                                       40.51
-            IYK = NINT(YC(IP)+3.)-2                                       40.51
             IPROC = 1                                                     40.51
             PROCLOOP : DO                                                 40.51
               IF ( NINT(BLKND(IXK,IYK)).EQ.IPROC ) THEN                   40.51
@@ -3977,7 +3976,7 @@
 
 !        --- if it is not open or already open thru another request
 
-         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
+         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
 
 !           --- open generic output file or reset reference number
 
@@ -4029,8 +4028,8 @@
      &              YC(IP).GT.REAL(MYCGL-1)+0.01 ) THEN                   40.51
                   IBLKN = NPROC+1                                         40.51
                ELSE                                                       40.51
-                  IXK   = NINT(XC(IP)+3.)-2                               40.51
-                  IYK   = NINT(YC(IP)+3.)-2                               40.51
+                  IXK   = NINT(XC(IP)+100.)-99                            41.07 40.51
+                  IYK   = NINT(YC(IP)+100.)-99                            41.07 40.51
                   IBLKN = NINT(BLKND(IXK,IYK))                            40.51
                END IF                                                     40.51
                EMPTY = .TRUE.
@@ -4095,14 +4094,13 @@
       END IF
 
       IPLOOP : DO IP = 1, MIP                                             40.51
-         IF ( XC(IP).LT.-0.01 .OR. YC(IP).LT.-0.01 .OR.                   40.51
-     &        XC(IP).GT.REAL(MXCGL-1)+0.01 .OR.                           40.51
-     &        YC(IP).GT.REAL(MYCGL-1)+0.01 ) THEN                         40.51
+         IXK = NINT(XC(IP)+100.)-99                                       41.07 40.51
+         IYK = NINT(YC(IP)+100.)-99                                       41.07 40.51
+         IF ( IXK.LT.1 .OR. IYK.LT.1 .OR. IXK.GT.MXCGL .OR.               41.07 40.51
+     &        IYK.GT.MYCGL ) THEN                                         41.07 40.51
             WRITE (NREF, '(A)') 'NODATA'                                  40.51
             CYCLE IPLOOP                                                  40.51
          END IF                                                           40.51
-         IXK = NINT(XC(IP)+3.)-2                                          40.51
-         IYK = NINT(YC(IP)+3.)-2                                          40.51
          IPROC = 1                                                        40.51
          PROCLOOP : DO                                                    40.51
            IF ( NINT(BLKND(IXK,IYK)).EQ.IPROC ) THEN                      40.51
@@ -4336,7 +4334,7 @@
 
 !        --- if it is not open or already open thru another request
 
-         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
+         IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN+NREOQ ) THEN
 
 !           --- open generic output file or reset reference number
 
@@ -4350,10 +4348,10 @@
 
             MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                    40.41
      &               INDEX (FILENM, '.mat' ).NE.0                         40.41
-            IF (MATLAB) THEN
+            IF (MATLAB .AND. .NOT.OPENED) THEN
                CLOSE(NREF)
                OPEN(UNIT=NREF, FILE=FILENM, FORM='UNFORMATTED',
-     &              ACCESS='DIRECT', RECL=1)
+     &              ACCESS='DIRECT', RECL=4)                              41.08
                IREC(IRQ) = 1                                              40.51
             END IF
 
@@ -4397,8 +4395,8 @@
          VOQ = OVEXCV(IVTYPE)
 
          DO IP = 1, MXK*MYK                                               40.51
-            IXK = NINT(XC(IP)+3.)-2                                       40.51
-            IYK = NINT(YC(IP)+3.)-2                                       40.51
+            IXK = NINT(XC(IP)+100.)-99                                    41.07 40.51
+            IYK = NINT(YC(IP)+100.)-99                                    41.07 40.51
             IPROC = 1                                                     40.51
             PROCLOOP1 : DO                                                40.51
               IF ( NINT(BLKND(IXK,IYK)).EQ.IPROC ) THEN                   40.51
@@ -4419,8 +4417,8 @@
          IF ( OVSVTY(IVTYPE).GE.3 ) THEN
 
             DO IP = 1, MXK*MYK                                            40.51
-               IXK = NINT(XC(IP)+3.)-2                                    40.51
-               IYK = NINT(YC(IP)+3.)-2                                    40.51
+               IXK = NINT(XC(IP)+100.)-99                                 41.07 40.51
+               IYK = NINT(YC(IP)+100.)-99                                 41.07 40.51
                IPROC = 1                                                  40.51
                PROCLOOP2 : DO                                             40.51
                  IF ( NINT(BLKND(IXK,IYK)).EQ.IPROC ) THEN                40.51

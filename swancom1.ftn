@@ -426,7 +426,7 @@
 !
 !     PBOT(1)   = CFC      0.005    (Collins equation)
 !     PBOT(2)   = CFW      0.01     (Collins equation)
-!     PBOT(3)   = GAMJNS   0.0038   (Jonswap equation)
+!     PBOT(3)   = GAMJNS   0.067    (Jonswap equation)
 !     PBOT(4)   = MF      -0.08     (Madsen equation)
 !     PBOT(5)   = KN       0.05     (bottom roughness)
 !
@@ -1008,7 +1008,6 @@
 !$OMP+PRIVATE(IP,IDC,ISC)                                                 40.31
 !$OMP+PRIVATE(I1GRD,I2GRD,I1MYC,I2MYC)                                    40.31
 !$OMP+PRIVATE(JDUM,JJ,III)                                                40.31
-!$OMP+PRIVATE(IXGRID,IXQUAD,IQERR,J1,J2)                                  40.41
 !$OMP+PRIVATE(IS,IE,INCI,JS,JE,INCJ,JSD,JED,JNODE,JWFRS,JWFRE)            40.31
 !$OMP+COPYIN(ICMAX,CSETUP)
 !$OMP+COPYIN(COSLAT,PROPSL)
@@ -1016,7 +1015,10 @@
 !
 !$OMP MASTER                                                              40.22
 !  Print number of threads set by environment                             40.22
-!$    WRITE(SCREEN,*)"Number of OpenMP threads=",OMP_GET_NUM_THREADS()    40.22
+!$    IF ( IT.EQ.1 )                                                      41.10
+!$   +WRITE(SCREEN,'(a,i2/)')                                             41.10 40.22
+!$   +      ' Number of threads during execution of parallel region = ',  41.10 40.22
+!$   +      OMP_GET_NUM_THREADS()                                         41.10 40.22
 !$OMP END MASTER                                                          40.22
 !TIMG
 !TIMG      CALL SWTSTA(101)                                                    40.23
@@ -1173,6 +1175,7 @@
 !     *** interaction files                                    ***        40.41
 !                                                                         40.41
 !TIMG      CALL SWTSTA(135)                                                    40.41
+!$OMP MASTER
       IF (IQUAD.EQ.51.OR.IQUAD.EQ.52.OR.IQUAD.EQ.53) THEN                 40.41
          CALL init_constants                                              40.41
          IXQUAD = IQUAD - 50                                              40.41
@@ -1186,13 +1189,11 @@
          END IF                                                           40.41
 !                                                                         40.41
          IXGRID = 3                                                       40.41
-         J1 = I1GRD                                                       40.41
-         IF (J1.EQ.1) J1 = 2                                              40.41
-         J2 = I2GRD                                                       40.41
          CALL xnl_init(SPCSIG  , SPCDIR(:,1)*180./PI , MSC , MDC ,        40.41
-     &                 -PWTAIL(1), GRAV   , COMPDA(J1:J2,JDP2) ,          40.41
-     &                 J2-J1+1   , IXQUAD , IXGRID   ,INODE,IQERR )       40.41
+     &                 -PWTAIL(1), GRAV   , COMPDA(2,JDP2) ,              40.41
+     &                 MCGRD-1   , IXQUAD , IXGRID   ,INODE,IQERR )       40.41
       END IF                                                              40.41
+!$OMP END MASTER
 !TIMG      CALL SWTSTO(135)                                                    40.41
 !
 !TIMG      CALL SWTSTA(103)                                                    40.23
@@ -1227,7 +1228,9 @@
 !       initialise Ursell number to 0 for each iteration                  40.03
 !       this is done in parallel within OpenMP environment                40.31
 !
-        IF (ITRIAD.GT.0) THEN
+        IF (ITRIAD.GT.0
+     &      .OR. ISURF.EQ.5                                               41.03
+     &                 ) THEN
            DO IP = I1GRD,I2GRD                                            40.31
             COMPDA(IP,JURSEL) = 0.
           ENDDO
@@ -1655,11 +1658,7 @@
      &            CAX1             ,CAY1                                  40.22
      &                                                                 )
 !TIMG                CALL SWTSTO(104)                                          40.23
-!               This step is disallowed within a parallel region in       40.22
-!               OpenMP.                                                   40.22
-!OMP#ifndef _OPENMP                                                           40.22
-                IF (STPNOW()) RETURN                                      34.01
-!OMP#endif                                                                    40.22
+!MPI                IF (STPNOW()) RETURN                                      34.01
 
 !----------------------------------------------------------------------   40.22
 !               Once the computation is done for grid point (IX,IY) the   40.22
@@ -1830,15 +1829,10 @@
 !       *** compute wave-induced setup ***                                32.02
 !
 !TIMG        CALL SWTSTA(106)                                                  40.23
-        IF (LSETUP.GT.0) THEN                                             31.03
-          CALL SETUPP ( KGRPNT, MSTPDA, SETPDA, AC2, COMPDA(1,JDP2),      40.41
+        IF (LSETUP.GT.0)                                                  31.03
+     &    CALL SETUPP ( KGRPNT, MSTPDA, SETPDA, AC2, COMPDA(1,JDP2),      40.41
      &                  COMPDA(1,JDPSAV), COMPDA(1,JSETUP),               40.41
      &                  XCGRID, YCGRID, SPCSIG, SPCDIR )                  40.41
-!         This step is disallowed within a parallel region in OpenMP.     40.22
-!OMP#ifndef _OPENMP                                                           40.22
-          IF (STPNOW()) RETURN                                            34.01
-!OMP#endif                                                                    40.22
-        ENDIF                                                             31.03
 !TIMG        CALL SWTSTO(106)                                                  40.23
 !
 !----------------------------------------------------------------------   40.31
@@ -2958,6 +2952,7 @@
      &  MEMNL4              ,WWINT               ,WWAWG               ,
      &  WWSWG               ,CGO                 ,COMPDA(1,JUSTAR)    ,
      &  COMPDA(1,JZEL)      ,SPCDIR              ,ANYWND              ,
+     &  CAS                 ,                                             41.11
      &  SWMATR(1,1,JDIS0)   ,SWMATR(1,1,JDIS1)   ,
      &  SWMATR(1,1,JGEN0)   ,SWMATR(1,1,JGEN1)   ,                        40.85
      &  SWMATR(1,1,JRED0)   ,SWMATR(1,1,JRED1)   ,                        40.85
@@ -3031,7 +3026,6 @@
      &                   INOCNV, IDDLOW, IDDTOP, ISSTOP, IDCMIN,          40.41
      &                   IDCMAX )
 !TIMG            CALL SWTSTO(120)                                              40.23
-            IF (STPNOW()) RETURN                                          34.01
 !
           ELSE IF (INT(PNUMS(8)).EQ.2 .OR. INT(PNUMS(8)).EQ.3) THEN       40.00
 !
@@ -3048,7 +3042,6 @@
      &                    LSWMAT(1,1,JABLK)  ,IDDLOW             ,        30.90
      &                    IDDTOP                                 )        5/mar
 !TIMG            CALL SWTSTO(120)                                              40.23
-!
 !
           END IF
 !
@@ -3086,25 +3079,26 @@
 !       leak and radiation stress in present grid point
 !
 !TIMG        CALL SWTSTA(124)                                                  40.23
-        CALL ADDDIS (COMPDA(1,JDISS)    ,COMPDA(1,JLEAK)    ,
-     &               AC2                ,LSWMAT(1,1,JABIN)  ,             40.02
-     &               SWMATR(1,1,JDIS0)  ,SWMATR(1,1,JDIS1)  ,
-     &               SWMATR(1,1,JGEN0)  ,SWMATR(1,1,JGEN1)  ,             40.85
-     &               SWMATR(1,1,JRED0)  ,SWMATR(1,1,JRED1)  ,             40.85
-     &               SWMATR(1,1,JTRA0)  ,SWMATR(1,1,JTRA1)  ,             40.85
-     &               SWMATR(1,1,JMATL)  ,SWMATR(1,1,JMATU)  ,             40.85
-     &               SWMATR(1,1,JMAT5)  ,SWMATR(1,1,JMAT6)  ,             40.85
-     &               COMPDA(1,JDSXB)    ,                                 40.67 40.61
-     &               COMPDA(1,JDSXS)    ,                                 40.67 40.61
-     &               COMPDA(1,JDSXW)    ,                                 40.67 40.61
-     &               COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,             40.85
-     &               COMPDA(1,JRSXQ)    ,COMPDA(1,JRSXT)    ,             40.85
-     &               COMPDA(1,JREDS)    ,                                 40.85
-     &               COMPDA(1,JTSXG)    ,COMPDA(1,JTSXT)    ,             40.85
-     &               COMPDA(1,JTSXS)    ,COMPDA(1,JTRAN)    ,             40.85
-     &               SWMATR(1,1,JLEK1)  ,COMPDA(1,JRADS)    ,             40.85
-     &               SPCSIG                                               30.72
-     &                                                      )
+        IF ( LADDS )                                                      40.85
+     &     CALL ADDDIS (COMPDA(1,JDISS)    ,COMPDA(1,JLEAK)    ,
+     &                  AC2                ,LSWMAT(1,1,JABIN)  ,          40.02
+     &                  SWMATR(1,1,JDIS0)  ,SWMATR(1,1,JDIS1)  ,
+     &                  SWMATR(1,1,JGEN0)  ,SWMATR(1,1,JGEN1)  ,          40.85
+     &                  SWMATR(1,1,JRED0)  ,SWMATR(1,1,JRED1)  ,          40.85
+     &                  SWMATR(1,1,JTRA0)  ,SWMATR(1,1,JTRA1)  ,          40.85
+     &                  SWMATR(1,1,JMATL)  ,SWMATR(1,1,JMATU)  ,          40.85
+     &                  SWMATR(1,1,JMAT5)  ,SWMATR(1,1,JMAT6)  ,          40.85
+     &                  COMPDA(1,JDSXB)    ,                              40.67 40.61
+     &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
+     &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
+     &                  COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,          40.85
+     &                  COMPDA(1,JRSXQ)    ,COMPDA(1,JRSXT)    ,          40.85
+     &                  COMPDA(1,JREDS)    ,                              40.85
+     &                  COMPDA(1,JTSXG)    ,COMPDA(1,JTSXT)    ,          40.85
+     &                  COMPDA(1,JTSXS)    ,COMPDA(1,JTRAN)    ,          40.85
+     &                  SWMATR(1,1,JLEK1)  ,COMPDA(1,JRADS)    ,          40.85
+     &                  SPCSIG                                            30.72
+     &                                                         )
 !TIMG        CALL SWTSTO(124)                                                  40.23
 !
 !       *** if negative action density occur rescale with a factor ***
@@ -3414,10 +3408,6 @@
          WRITE(PRINTF,6136) PWCAP(6), PWCAP(7)
          WRITE(PRINTF,6137) PWCAP(8)
  6137    FORMAT('                      : KCONV  ',E12.4)
-      ELSEIF (IWCAP.EQ.6) THEN                                            40.30
-         WRITE(PRINTF,6138) PWCAP(12), PWCAP(13)                          40.30
- 6138    FORMAT(' W-cap cum. steepness : CST    ',                        40.30
-     &           E12.4,' POW   ',E12.4)                                   40.30
       ELSEIF (IWCAP.EQ.7) THEN                                            40.53
          WRITE(PRINTF,6139) PWCAP(1), PWCAP(12)                           40.53
          WRITE(PRINTF,6140) PWCAP(9), PWCAP(11)                           40.53
@@ -3862,9 +3852,7 @@
       ARR(2) = SMN2                                                       40.30
       CALL SWREDUCE( ARR, 2, SWREAL, SWSUM )                              40.30
       CALL SWREDUCE( NINDX, 1, SWINT, SWSUM )                             40.41
-!OMP#ifndef _OPENMP                                                           40.31
-      IF (STPNOW()) RETURN                                                40.30
-!OMP#endif                                                                    40.31
+!MPI      IF (STPNOW()) RETURN                                                40.30
       HSMN2 = ARR(1) / REAL(NINDX)                                        40.30 30.82
        SMN2 = ARR(2) / REAL(NINDX)                                        40.30 30.82
 !$OMP END MASTER                                                          40.31
@@ -3963,9 +3951,7 @@
 !$OMP MASTER                                                              40.31
 !
       CALL SWREDUCE ( IACCUR, 1, SWINT, SWSUM )                           40.30
-!OMP#ifndef _OPENMP                                                           40.31
-      IF (STPNOW()) RETURN                                                40.30
-!OMP#endif                                                                    40.31
+!MPI      IF (STPNOW()) RETURN                                                40.30
       ACCUR  = REAL(IACCUR) * 100. / REAL(NINDX)
 !$OMP END MASTER                                                          40.31
 !$OMP BARRIER                                                             40.31
@@ -4542,7 +4528,7 @@
           CALL STRSSB (IDDLOW  ,IDDTOP  ,
      &                 IDCMIN  ,IDCMAX  ,ISSTOP  ,CAX     ,CAY     ,
      &                 CAS     ,AC2     ,SPCSIG  ,IMATRA  ,
-     &                 ANYBLK  ,RDX     ,RDY                       )      40.41 30.21
+     &                 ANYBLK  ,RDX     ,RDY     ,TRAC0            )      41.07 40.41 30.21
 !
         END IF
       END IF
@@ -4732,7 +4718,7 @@
 !     QB      : computed in the subroutine FRABRE
 !     SIGM01  = ETOT1 / ETOT
 !     SIGM_10 = ETOT  / ACTOT
-!     UBOT    = Sqrt [ UB2 ]
+!     UBOT    = Sqrt [ 2 UB2 ] Note: this is Urms according to Madsen (1994)
 !     TMBOT   = 2*PI AB2 / UB2
 !
 !  4. Argument variables
@@ -4797,7 +4783,8 @@
 !     WH                 : fraction of breaking waves
 !
       REAL              :: AB2, EMAX, UB2
-      REAL              :: BIPH, WH
+      REAL              :: WH
+      REAL              :: BIPH
       REAL              :: FRINTF_X_DDIR
       REAL              :: BRCOEF   ! variable breaking coefficient (calc. in BRKPAR)  40.22
 !
@@ -4864,7 +4851,9 @@
 !
       ETOT = ETOT + ETOT_DSIG(MSC) * PWTAIL(6) / FRINTF
 !
-      IF (ISURF .EQ. 1 .OR. ISURF.EQ.4 .OR. ISURF.EQ.5) THEN              41.03
+      IF (ISURF .EQ. 1 .OR. ISURF.EQ.4                                    41.03
+     &    .OR. ISURF.EQ.5                                                 41.03
+     &                                ) THEN
         HM   = PSURF(2) * DEP2(KCGRD(1))                                  40.22
       ELSEIF (ISURF .EQ. 2 .OR. ISURF.EQ.3) THEN                          41.03
 !        Calulate the correct breaking coefficient BRCOEF
@@ -4961,7 +4950,7 @@
 !     Calculate the orbital velocity UBOT, orbital excursion ABRBOT and
 !     bottom wave period TMBOT                                            40.51
 !
-        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( UB2 )
+        IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( 2. * UB2 )
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
@@ -4971,7 +4960,9 @@
 !     *** calculate Ursell number ***
 !     *** update only for first encounter in a sweep                      40.16
 !
-      IF ( ITRIAD.GT.0 ) THEN                                             40.41
+      IF ( ITRIAD.GT.0                                                    40.41
+     &     .OR. ISURF.EQ.5                                                41.03
+     &                 ) THEN                                             40.41
          IF (( SWPDIR .EQ. 1) .OR.                                        40.16
      &       ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.                 40.16
      &       ( SWPDIR .EQ. 3 .AND. IYCGRD(1) .EQ. 1) .OR.                 40.16
@@ -5837,6 +5828,7 @@
      &                     MEMNL4     ,WWINT      ,WWAWG      ,
      &                     WWSWG      ,CGO        ,USTAR      ,
      &                     ZELEN      ,SPCDIR     ,ANYWND     ,
+     &                     CAS        ,                                   41.11
      &                     DISSC0     ,DISSC1     ,GENC0      ,           40.85
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
@@ -6036,7 +6028,7 @@
 !
 !     PBOT(1)   = CFC      0.005    (Putnam and Collins equation)
 !     PBOT(2)   = CFW      0.01     (Putnam and Collins equation)
-!     PBOT(3)   = GAMJNS   0.0038   (Jonswap equation)
+!     PBOT(3)   = GAMJNS   0.067    (Jonswap equation)
 !     PBOT(4)   = MF      -0.08     (Madsen et al. equation)
 !     PBOT(5)   = KN       0.05     (Madsen et al. bottom roughness)
 !
@@ -6180,6 +6172,7 @@
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)
       REAL  :: CGO(MSC,MICMAX)                                            40.22
+      REAL  :: CAS(MDC,MSC,MICMAX)                                        41.11
       REAL  :: USTAR(MCGRD)
       REAL  :: ZELEN(MCGRD)
       REAL  :: DISSC0(1:MDC,1:MSC,1:MDISP)                                40.67
@@ -6244,8 +6237,8 @@
 !
 !         *** calculate surf breaking source term (5 formulations) ***    41.03
 !
-          CALL SSURF (ETOT    ,HM      ,
-     &                QBLOC   ,SMEBRK  ,AC2     ,IMATRA  ,                30.81
+          CALL SSURF (ETOT    ,HM      ,QBLOC   ,SMEBRK  ,
+     &                KMESPC  ,SPCSIG  ,AC2     ,IMATRA  ,                30.81
      &                IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,
      &                ISSTOP  ,DISSC0  ,DISSC1  )                         40.67 40.61 30.21
 !
@@ -6314,6 +6307,7 @@
      &                            IDCMIN  ,IDCMAX  ,ISSTOP  ,             40.02
      &                            ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,    40.02
      &                            CGO     ,UFRIC   ,                      40.53
+     &                            CAS     ,                               41.11
      &                            DEP2    ,DISSC1  ,DISSC0  )             40.67 40.61 40.12
 !TIMG      CALL SWTSTO(133)                                                    40.23
 !
@@ -6326,14 +6320,7 @@
 !       *** geographical gridpoint a continuous spectrum    ***
 !       *** is present, i.e., after first iteration         ***
 !
-        IF ( ICUR .EQ. 0 .AND. ITER .GE. 1 ) THEN
-!
-            CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.55
-     &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,          40.85
-     &                   IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
-     &                   HS    , SMEBRK, PLTRI , URSELL )
-!
-        ELSE IF ( ICUR .EQ. 1 .AND. ITER .GT. 1 ) THEN
+        IF ( ICUR .EQ. 0 .OR. ITER .GT. 1 ) THEN
 !
             CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                  40.55
      &                   KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,          40.85
@@ -7947,9 +7934,8 @@
             IF ( IMATDA(ID,IS).NE.0. ) THEN
                INVMDA(ID,IS) = 1./IMATDA(ID,IS)
             ELSE
-               CALL MSGERR ( 4,
+               CALL MSGERR ( 3,
      &                     'Main diagonal of spectral matrix is zero!' )
-               RETURN
             END IF
          END DO
       END DO
@@ -8676,8 +8662,8 @@
 
                IF ( ( HSCURV.LE.PNUMS(15) .AND.
      &               (HSREL.LE.PNUMS(1) .OR. HSABS.LE.PNUMS(2)) ) .AND.   40.93
-     &              ( TMCURV.LE.PNUMS(15) .AND.                           40.93
-     &               (TMREL.LE.PNUMS(1) .OR. TMABS.LE.PNUMS(2)) ) ) THEN  40.93
+     &              ( TMCURV.LE.PNUMS(16) .AND.                           40.93
+     &               (TMREL.LE.PNUMS(1) .OR. TMABS.LE.PNUMS(3)) ) ) THEN  40.93
                   IACCURt = IACCURt + 1
                END IF
 
@@ -8713,9 +8699,7 @@
       IARR(1) = IACCUR
       IARR(2) = WETGRD
       CALL SWREDUCE ( IARR, 2, SWINT, SWSUM )
-!OMP#ifndef _OPENMP
-      IF (STPNOW()) RETURN
-!OMP#endif
+!MPI      IF (STPNOW()) RETURN
       IACCUR = IARR(1)
       WETGRD = IARR(2)
       ACCUR  = REAL(IACCUR) * 100. / REAL(WETGRD)
