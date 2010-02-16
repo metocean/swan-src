@@ -611,8 +611,8 @@
 !
 !****************************************************************
 !
-      SUBROUTINE SSURF (ETOT    ,HM               ,                       30.81
-     &                  QB      ,SMEBRK  ,AC2     ,IMATRA  ,              30.81
+      SUBROUTINE SSURF (ETOT    ,HM      ,QB      ,SMEBRK  ,              30.81
+     &                  KMESPC  ,SPCSIG  ,AC2     ,IMATRA  ,              30.81
      &                  IMATDA  ,IDCMIN  ,IDCMAX  ,PLWBRK  ,              30.81
      &                  ISSTOP  ,DISSC0  ,DISSC1  )                       40.67 40.61 30.81 30.21
 !
@@ -664,6 +664,8 @@
 !     40.61: Marcel Zijlema
 !     40.67: Nico Booij
 !     41.03: Andre van der Westhuysen
+!     41.06: Gerbrant van Vledder
+!     41.09: Andre van der Westhuysen
 !
 !  1. Updates
 !
@@ -676,11 +678,13 @@
 !     40.61, Sep. 06: introduce DISSRF variable for output purposes
 !     40.67, Jun. 07: more accurate computation of dissipation terms
 !     41.03, Feb. 09: extension to alternative surf breaking formula's
+!     41.06, Mar. 09: extension to frequency dependent surf breaking
+!     41.09, Oct. 09: extension to biphase breaker model (variable n)
 !
 !  2. Purpose
 !
-!     Computation of the source term due to wave breaking with one of three
-!     formulation:
+!     Computation of the source term due to wave breaking with one of the
+!     following formulation:
 !                 1) Battjes and Janssen (1978)
 !                 2) Thornton and Guza (1983)
 !                 3) biphase scaling of Van der Westhuysen (2009)
@@ -799,7 +803,9 @@
 !
 !          after Thornton and Guza (1983), Eqs. (24),(25)
 !
-!     For the weighting function W (or fraction of breaking waves), two choices can be made.
+!     and
+!
+!     for the weighting function W (or fraction of breaking waves), two choices can be made.
 !     The first one is after Thornton and Guza (1983):
 !
 !           Hrms  n
@@ -837,6 +843,7 @@
 !     IMATDA  output:   Coefficient of diagonal matrix (2D)
 !     IMATRA  output:   Coefficient of righthandside of matrix
 !     ISSTOP  input :   Maximum for counter IS
+!     KMESPC  input :   Mean average wavenumber according to the WAM-formulation
 !     PLWBRK  output:   array containing the surf breaking source term
 !                       for test-output
 !     QB      input :   Fraction of breaking waves
@@ -851,8 +858,9 @@
      &         IMATDA(MDC,MSC)      ,
      &         IMATRA(MDC,MSC)      ,
      &         PLWBRK(MDC,MSC,NPTST)                                      40.00
+      REAL     SPCSIG(MSC)
 !
-      REAL     ETOT,  HM,  QB, SMEBRK                                     30.81
+      REAL     ETOT,  HM,  QB, SMEBRK, KMESPC                             30.81
 !
 !  5. Parameter variables
 !
@@ -872,10 +880,14 @@
 !     WS      Wavebreaking source term coefficient = DTOT/ETOT
 !     SbrD    Derivative of source term for surf breaking (Sbr) to action density
 !
-      INTEGER          ID,      IDDUM,   IENT,   IS
-      REAL             BIPH,    DEPLOC,  URSLOC, WH
-      DOUBLE PRECISION BB,      DIS0,    SbrD,
-     &                 SURFA0,  SURFA1,  WS
+      INTEGER          ID,       IDDUM,   IENT,   IS
+      REAL             PP,       FAC,     EPTOT,  ETOT0,
+     &                 BIPH,     DEPLOC,  URSLOC, WH, SMEAN,
+     &                 ECS(MDC), FMIN,    FMAX,   FRFAC(MSC)
+      DOUBLE PRECISION BB,       DIS0,    SbrD,
+     &                 SURFA0,   SURFA1,  WS  ,
+     &                 TEMP1 ,   TEMP2
+      REAL             SwanIntgratSpc
 !
 !
 !  7. Common blocks used
@@ -977,6 +989,12 @@
          URSLOC = (GRAV*2.*SQRT(ETOT))/(SQRT(2.)*SMEBRK**2*DEPLOC**2)
          BIPH = 0.5*PI*(TANH(PTRIAD(4)/URSLOC)-1.)
          IF ( BIPH.LT.0. ) THEN
+!
+            IF ( PSURF(6).GT.0. ) THEN                                    41.09
+               SMEAN    = SQRT(8.*ETOT)*KMESPC/(2.*PI)                    41.09
+               PSURF(4) = 4.-(4./PI)*ATAN(PSURF(6)*(SMEAN-0.0375))        41.09
+            ENDIF                                                         41.09
+!
             WH = (BIPH/PSURF(5))**PSURF(4)
             WH = MIN(1.,WH)
 !
@@ -1007,7 +1025,28 @@
 !     *** store the results for surf wave breaking  ***
 !     *** in the matrices IMATDA and IMATRA         ***
 !
+      FRFAC = 1.                                                          41.06
+      IF (IFRSRF.EQ.1) THEN                                               41.06
+         PP    = PSURF(11)
+         FMIN  = PI2*PSURF(12)
+         FMAX  = PI2*PSURF(13)
+         ECS   = 1.
+         ETOT0 = SwanIntgratSpc(0., FMIN, FMAX, SPCSIG, ECS, SPCSIG,
+     &                          ECS, 0., 0., AC2(1,1,KCGRD(1)), 1 )
+         EPTOT = SwanIntgratSpc(PP, FMIN, FMAX, SPCSIG, ECS, SPCSIG,
+     &                          ECS, 0., 0., AC2(1,1,KCGRD(1)), 1 )
+         FAC   = ETOT0/EPTOT
+         IF ( ETOT0.GT.1.E-8 ) THEN
+            DO IS = 1, ISSTOP
+               FRFAC(IS) = FAC*SPCSIG(IS)**PP
+            END DO
+         END IF
+      END IF
+      TEMP1 = SURFA0
+      TEMP2 = SURFA1
       DO 101 IS = 1, ISSTOP
+        SURFA0 = TEMP1*FRFAC(IS)                                          41.06
+        SURFA1 = TEMP2*FRFAC(IS)                                          41.06
         DO 100 IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
           IMATDA(ID,IS) = IMATDA(ID,IS) + REAL(SURFA1)                    30.82
@@ -1039,6 +1078,7 @@
      &                   IDCMIN  ,IDCMAX  ,ISSTOP  ,                      40.02
      &                   ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,             40.02
      &                   CGO     ,UFRIC   ,                               40.53
+     &                   CAS     ,                                        41.11
      &                   DEP2    ,DISSC1  ,DISSC0  )                      40.67 40.61 40.12
 !
 !****************************************************************
@@ -1093,20 +1133,19 @@
 !     40.61: Marcel Zijlema
 !     40.63: Andre van der Westhuysen
 !     40.67: Nico Booij
+!     41.11: Andre van der Westhuysen
 !
 !  1. Updates
 !
 !     40.02, Jan. 00: New, based on the old SWCAP1-5 subroutines
 !     40.12, Nov. 00: Added WCAP to dissipation output (bug fix)
-!     40.30, Mar. 03: cumulative steepness method (taken from Fysica+)
-!     40.31, Feb. 04: some changes/improvements to CSM
-!     40.41, May. 04: Normalisation added to CSM
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53: Aug. 04: white-capping based Alves and Banner (2003) method
 !     40.61, Sep. 06: introduce DISWCP variable for output purposes
 !     40.63, Apr. 07: a correction to Alves and Banner method
 !     40.67, Jun. 07: more accurate computation of source terms
 !                     DISSIP and DISIMP renamed DISSC1 and DISSC0 (as elsewhere)
+!     41.11, Oct. 09: Enhanced dissipation in counter current
 !
 !
 !  2. Purpose
@@ -1124,8 +1163,6 @@
 !     C_wc1 = C_K  sig~ (k/k~): According to Komen (generalised)
 !     C_wc2 = C_BJ sig~ (k/k~): According to Battjes-Janssen (modified)
 !     C_wc3 = C_LH            : According to Longuet Higgins (1969)
-!     C_wc4 = C_CSM           : According to cumulative steepness
-!                               method (Ris et al. (1999) and Donelan (1999))
 !
 !     In these formulations C_K is defined as (Komen; 1994 p. 145):
 !
@@ -1161,42 +1198,6 @@
 !
 !     and C3 can be varied
 !
-!
-!     Cumulative steepness method. Basic idea is that dissipation depends
-!     on the steepness of the wave spectrum at and below a particular
-!     frequency. Details can be found in "SWAN fysica plus" (2002),
-!     report H3937/A832, implemented by Delf Hydraulics and Alkyon by
-!     order of RIKZ/RWS as a part of the project HR-Ontwikkeling.
-!                                                                         40.41
-!     Recent modifications are described in:                              40.41
-!     Hurdle, D.P., and G.Ph. van Vledder, 2004: Improved spectral wave   40.41
-!     modelling of white-capping dissipation in swell sea systems. Proc.  40.41
-!     Offshore Mechanics, Arctic Engineering Conference, June 2004,       40.41
-!     Vancouver, Canada,  paper OMAE2004-51562.                           40.41
-!                                                                         40.41
-!     Default values: C_st = 4                                            40.41
-!                     m    = 2                                            40.41
-!                                                                         40.41
-!     C_CSM = A*C_st S(sig,th)                                            40.41
-!
-!     where
-!
-!     C_st is a tuneable coefficient and
-!
-!     S(sig,th) = integrals from 0 to sig and from 0 to 2pi of
-!
-!                 k^2 |cos(th-th')|^m E(sig,th) dsig dth'
-!
-!     where coefficient m controls the directional dependence in case
-!     of straining mechanism (if dominant then m = 2 else m > 10) and
-!     th is the actual direction where straining mechanism takes
-!     place.
-!                                                                         40.41
-!     A is a normalisation coefficient computed                           40.41
-!                                                                         40.41
-!              1     GAMMA(0.5*m+1.)                                      40.41
-!       A = -------- ----------------                                     40.41
-!           SQRT(PI) GAMMA(0.5*m+0.5)                                     40.41
 !
 !     In these equations the variables have the following meaning:
 !
@@ -1253,6 +1254,7 @@
       REAL, INTENT(INOUT) :: DISSC0(MDC,MSC,MDISP),DISSC1(MDC,MSC,MDISP)  40.67 40.12
       REAL, INTENT(IN)    :: UFRIC                                        40.53
       REAL, INTENT(IN)    :: CGO(MSC,MICMAX)                              40.53
+      REAL, INTENT(IN)    :: CAS(MDC,MSC,MICMAX)                          41.11
 !
 !  6. Local variables
 !
@@ -1261,13 +1263,6 @@
 !     C_BJ  : Whitecapping coefficient according to Battjes-Janssen
 !     C_K   : Whitecapping coefficient according to Komen
 !     C_LH  : Whitecapping coefficient according to Longuet Higgins
-!     CHARS : array to pass character info to MSGERR
-!     CUMSTP: Cumulative steepness spectrum
-!     DDIF  : Directional difference
-!     DELTA : Directional step (radians)
-!     DSIGMA: Step sizes, ratio with sigma
-!     DSTEEP: Contribution to cumulative steepness
-!     EBIN  : Total energy per bin
 !     EF    : Energy density spectrum in frequency domain
 !             (azimuth-integrated frequency spectrum)
 !     HM    : Maximum waveheight as used in the Battjes-Janssen expression
@@ -1278,8 +1273,6 @@
 !     IDDUM : Counter in directional space within sweep limits
 !     IENT  : Number of entries in this subroutine
 !     IS    : Counter in frequency space
-!     MSGSTR: string to pass message to call MSGERR
-!     MXWCP : maximum number of white-capping methods
 !     N1    : Exponent for the wavenumber term in the Komen expression
 !     N2    : Exponent for the steepness term in the Komen expression
 !     P     : Exponent of the relative saturation (B/Br)
@@ -1288,29 +1281,21 @@
 !     STP_OV: Overall steepness
 !     STP_PM: Overall steepness for a Pierson-Moskowitz spectrum
 !     WCAP  : Whitecapping source-term
+!     WCCUR : Whitecapping source term due to opposing current
 !     WCIMPL: Implicit part of the whitecapping source-term
-!     XFAC  : Factor between sigma & dsigma
 !
       INTEGER, SAVE     :: IENT = 0
-      INTEGER           :: ID, IDDUM, IS, ID1, ID2, IF, IL, MXWCP
+      INTEGER           :: ID, IDDUM, IS, ID1, ID2
 !
       REAL              :: A, C_BJ, HM, HRMS, N1, N2
       REAL              :: QB_WC, SIG0, STP_OV, STP_PM
-      REAL              :: DDIF, DELTA,                                   40.31 40.30
-     &                     DSTEEP, EBIN, XFAC                             40.30
-      REAL              :: CPOW, CTOT, GAMMA                              40.41
-      REAL              :: BINSIZE                                        40.41
 !
       REAL, ALLOCATABLE :: C_K(:), C_LH(:), WCAP(:), WCIMPL(:)
-      REAL, ALLOCATABLE :: CUMSTP(:,:), DSIGMA(:)                         40.30
-      REAL, ALLOCATABLE :: FCOS(:)                                        40.31
 
       REAL              :: B, P, BRKD, FBR                                40.63 40.53
       REAL              :: PWCAP1, PWCAP2, PWCAP9, PWCAP10, PWCAP11       40.63
       REAL              :: EF(MSC)                                        40.53
-!
-      CHARACTER*20 NUMSTR, CHARS                                          40.51
-      CHARACTER*80 MSGSTR                                                 40.51
+      REAL              :: WCCUR(MDC,MSC)                                 41.11
 !
 !     8. REMARKS
 !
@@ -1329,7 +1314,6 @@
 !     If IWCAP = 1, 2, or 5; Calculate C_K
 !     If IWCAP = 4 or 5; Calcualte C_BJ
 !     If IWCAP = 3; Calculate C_LH
-!     If IWCAP = 6; Calculate cumulative steepness spectrum
 !     IF IWCAP = 7; Calculate with Alves and Banner (2003)
 !     ------------------------------------------------------------
 !     For frequency dependent part of the spectrum
@@ -1345,19 +1329,6 @@
 !
       IF (LTRACE) CALL STRACE (IENT,'WCAP')
 !
-      MXWCP = 7
-      IF (IWCAP.GT.MXWCP) THEN                                            40.30
-!
-! Error message
-!
-         CHARS = NUMSTR(MXWCP+1,RNAN,'(I1)')
-         CALL TXPBLA(CHARS,IF,IL)
-         MSGSTR = 'Value for IWCAP should be less than '//
-     &            CHARS(IF:IL)
-         CALL MSGERR ( 4, MSGSTR )
-         RETURN
-      END IF
-!
 ! Initialisation
 !
       IF (ETOT.LE.0.) RETURN
@@ -1367,9 +1338,8 @@
       IF (EDRKTOT.LE.0.) RETURN
 !
       ALLOCATE (C_K(MSC), C_LH(MSC), WCAP(MSC), WCIMPL(MSC))
-      ALLOCATE (CUMSTP(0:MSC,MDC), DSIGMA(1:MSC))                         40.30
-      ALLOCATE (FCOS(1:MDC))                                              40.31
       WCIMPL(1:MSC) = 0.
+      WCCUR(1:MDC,1:MSC) = 0.                                             41.11
 !
 ! Calculate coefficients
 !
@@ -1430,45 +1400,6 @@
         END DO
       END IF
 !
-! In case of cumulative steepness method, calculate its spectrum          40.30
-!
-      IF ( IWCAP.EQ.6 ) THEN                                              40.30
-         XFAC      = (SPCSIG(3)-SPCSIG(1))/(2.*SPCSIG(2))                 40.30
-         DSIGMA(:) = XFAC*SPCSIG(:)                                       40.30
-         DELTA     = SPCDIR(2,1)-SPCDIR(1,1)                              40.30
-!
-!        --- precompute cos dependence                                    40.31
-!                                                                         40.31
-         DO ID1 = 1, MDC                                                  40.31
-           DDIF = REAL(ID1-1)*DELTA                                       40.31
-           FCOS(ID1) = (ABS(COS(DDIF)))**PWCAP(13)                        40.31
-         END DO                                                           40.31
-!
-!        --- compute normalisation coefficient                            40.41
-!
-         CPOW = PWCAP(13)                                                 40.41
-         IF (CPOW > 10) THEN                                              40.41
-           CTOT = SQRT(CPOW/(2.*PI))*(1.+0.25/CPOW)                       40.41
-         ELSE                                                             40.41
-           CTOT = 1./SQRT(PI)*GAMMA(0.5*CPOW+1.)/GAMMA(0.5*CPOW+0.5)      40.41
-         END IF                                                           40.41
-!
-         CUMSTP = 0.                                                      40.30
-         DO IS = 1,ISSTOP                                                 40.30
-            BINSIZE = SPCSIG(IS)*DELTA*DSIGMA(IS)                         40.41
-            DO ID1 = 1,MDC                                                40.30
-               CUMSTP(IS,ID1) = CUMSTP(IS-1,ID1)                          40.31
-               DO ID2 = 1,MDC                                             40.30
-                  EBIN= AC2(ID2,IS,KCGRD(1))*BINSIZE                      40.41 40.30
-                  DSTEEP = KWAVE(IS,1)**2*EBIN*FCOS(ABS(ID1-ID2)+1)       40.31 40.30
-                  CUMSTP(IS,ID1) = CUMSTP(IS,ID1) + DSTEEP                40.31 40.30
-               END DO                                                     40.30
-            END DO                                                        40.30
-         END DO                                                           40.30
-         CUMSTP = PWCAP(12)*CUMSTP                                        40.30
-         CUMSTP = CUMSTP*CTOT                                             40.41
-      END IF                                                              40.30
-!
 ! Calculate dissipation according to Alves & Banner (2003)                40.53
 !
       IF ( IWCAP.EQ.7 ) THEN                                              40.53
@@ -1523,11 +1454,20 @@
      &    (GRAV**(0.5)*KWAVE(IS,1)**(0.5)/SPCSIG(IS))**(PWCAP(10)/2-1) *  40.53
      &    GRAV**(0.5)*KWAVE(IS,1)**(0.5)                                  40.53
      &    + (1.-FBR) * C_K(IS) * SIGM_10 * (KWAVE(IS,1) / KM_WAM)         40.63
+!                                                                         41.11
+!  Calculate current-induced enhanced dissipation WCCUR(ID,IS)            41.11
+!                                                                         41.11
+          IF ( PWCAP(14).NE.0. ) THEN                                     41.11
+             DO ID = 1, MDC                                               41.11
+                WCCUR(ID,IS)=PWCAP(14)*MAX((CAS(ID,IS,1)/SPCSIG(IS)),0.)  41.11
+     &                       *(B/BRKD)**(P/2.)                            41.11
+             ENDDO                                                        41.11
+          ENDIF                                                           41.11
                                                                           40.53
         END DO                                                            40.53
       END IF                                                              40.53
 !
-      IF ( IWCAP.LT.6 ) THEN                                              40.51 40.30
+      IF ( IWCAP.LT.7 ) THEN                                              40.51 40.30
 !
 ! Calculate the whitecapping source term WCAP(IS)
 !
@@ -1560,37 +1500,19 @@
 !
 ! Fill the diagonal of the matrix and the PLWCAP-array
 !
-      IF ( IWCAP.NE.6 ) THEN                                              40.30
-
-        DO IS=1, ISSTOP
+      DO IS=1, ISSTOP
 !
-!         Only fill the values for the current sweep
+!        Only fill the values for the current sweep
 !
-          DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+         DO IDDUM = IDCMIN(IS), IDCMAX(IS)
             ID = MOD(IDDUM - 1 + MDC, MDC) + 1
             IMATDA(ID,IS)   = IMATDA(ID,IS)   + WCAP(IS)
             DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + WCAP(IS)                  40.67 40.12
             IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*(WCAP(IS)-WCIMPL(IS))
-          END DO
-        END DO
-
-      ELSE
-
-        DO IS=1, ISSTOP                                                   40.30
-!                                                                         40.30
-!         Only fill the values for the current sweep                      40.30
-!                                                                         40.30
-          DO IDDUM = IDCMIN(IS), IDCMAX(IS)                               40.30
-            ID = MOD(IDDUM - 1 + MDC, MDC) + 1                            40.30
-            IMATDA(ID,IS)   = IMATDA(ID,IS)   + CUMSTP(IS,ID)             40.30
-            DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + CUMSTP(IS,ID)             40.67 40.30
-            IF (TESTFL) PLWCAP(ID,IS,IPTST) = -1.*CUMSTP(IS,ID)           40.30
-          END DO                                                          40.30
-        END DO                                                            40.30
-
-      END IF
+         END DO
+      END DO
 !
-! Add the implicit part to the right-hand side
+! Add the implicit part to the right-hand side, if appropriate
 !
       IF ((IWCAP.EQ.4).OR.
      &    (IWCAP.EQ.5)) THEN
@@ -1608,8 +1530,26 @@
         END DO
       END IF
 !
+! Add extra dissipation on opposing current, if appropriate               41.11
+!
+      IF ( IWCAP.EQ.7 .AND. PWCAP(14).NE.0. ) THEN
+!
+         DO IS=1, ISSTOP
+!
+!           Only fill the values for the current sweep
+!
+            DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+               ID = MOD(IDDUM - 1 + MDC, MDC) + 1
+               IMATDA(ID,IS)   = IMATDA(ID,IS)   + WCCUR(ID,IS)
+               DISSC1(ID,IS,1) = DISSC1(ID,IS,1) + WCCUR(ID,IS)
+               IF (TESTFL) PLWCAP(ID,IS,IPTST) = PLWCAP(ID,IS,IPTST) -
+     &                                           WCCUR(ID,IS)
+            END DO
+         END DO
+!
+      ENDIF
+!
       DEALLOCATE (C_K, C_LH, WCAP, WCIMPL)
-      DEALLOCATE (CUMSTP, DSIGMA, FCOS)                                   40.31 40.30
 !
       RETURN
       END SUBROUTINE SWCAP

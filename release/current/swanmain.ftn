@@ -793,7 +793,6 @@
 !     40.23, Nov. 02: parameter PROPFL added
 !     40.23, Dec. 02: reset of some default variables
 !     40.30, Mar. 03: introduction distributed-memory approach using MPI
-!     40.30, Mar. 03: coefficients for cumulative steepness method added
 !     40.08, Mar. 03: Unneccessary variable deleted
 !     40.31, Nov. 03: removing POOL construction and HPGL functionality
 !     40.41, Sep. 04: output variables TMM10 and RTMM10 added
@@ -857,6 +856,9 @@
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
       CALL BUGFIX ('A')
       CALL BUGFIX ('B')
+      CALL BUGFIX ('C')
+      CALL BUGFIX ('D')
+      CALL BUGFIX ('E')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
       IF (INERR.GT.0) RETURN                                              34.01
@@ -1030,6 +1032,7 @@
       ONED   = .FALSE.                                                    32.02
       ACUPDA = .TRUE.                                                     40.07
       OFFSRC = .FALSE.                                                    40.80
+      LADDS  = .FALSE.                                                    40.85
       HSRERR = 0.1                                                        32.01
 !
 !     higher order propagation and spherical coordinates                  33.08
@@ -1052,6 +1055,10 @@
 !     *** flag for setup convergence                                      30.82
 !
       CSETUP = .TRUE.                                                     30.82
+!
+!     flag for frequency dependent surf breaking                          41.06
+!
+      IFRSRF = 0                                                          41.06
 !
 !     PSETUP(1) is currently unused, but can be used as setup nesting flag
 !     PSETUP(2) is the user defined correction for the level of the setup
@@ -1156,6 +1163,16 @@
 !
       PNUMS(30) = 0.00                                                    40.23
 !
+!     --- parameters for limiting Ctheta
+!
+      PNUMS(26) = 0.2                                                     41.06
+      PNUMS(27) = 2.0                                                     41.06
+      PNUMS(29) = 0.0                                                     41.06
+!
+!     --- computation of Ctheta based on wave number
+!
+      PNUMS(32) = 0.                                                      41.07
+!
 !     *** (1) and (2): Komen et al. (1984) formulation ***
 !
       PWCAP(1)  = 2.36E-5
@@ -1180,12 +1197,13 @@
       PWCAP(7) = 1.
       PWCAP(8) = 0.75
 !
-!     *** (12): Proportionality coefficient in cumulative steepness       40.30
-!               method                                                    40.30
-!         (13): Power of cosine term in cumulative steepness method       40.30
+!     *** (13): Flag for activation of nonlinear dispersion (not used)    41.11
+!         (14): Coefficient for enhanced current-induced dissipation      41.11
+!         (15): Exponent for doppler shifting factor (must be =1.)        41.11
 !
-      PWCAP(12) = 0.5                                                     40.41 40.31 40.30
-      PWCAP(13) = 2.0                                                     40.31 40.30
+      PWCAP(13) = 0.                                                      41.11
+      PWCAP(14) = 0.                                                      41.11
+      PWCAP(15) = 1.0                                                     41.11
 !
 !     PBOT(1)   = 0.005          modified
       PBOT(1)   = 0.0                                                     20.68
@@ -3206,11 +3224,19 @@
 !
 !        ***** compute depth and water level *****
 !
-         DEP = SVALQI (XP, YP, 1, DEPTH, 1, 0, 0)                         40.80
+         IF ( IGTYPE(1).EQ.3 ) THEN
+            DEP = DEPTH(INDX)
+         ELSE
+            DEP = SVALQI (XP, YP, 1, DEPTH, 1, 0, 0)                      40.80
+         ENDIF
          COMPDA(INDX,JBOTLV) = DEP                                        40.80
 !
          IF (VARWLV) THEN                                                 40.80
-            WLVL = SVALQI (XP, YP, 7, WLEVL, 1, 0, 0)                     40.80
+            IF ( IGTYPE(7).EQ.3 ) THEN
+               WLVL = WLEVL(INDX)
+            ELSE
+               WLVL = SVALQI (XP, YP, 7, WLEVL, 1, 0, 0)                  40.80
+            ENDIF
             COMPDA(INDX,JWLV2) = WLVL
             IF (JWLV1.GT.1) COMPDA(INDX,JWLV1) = WLVL                     40.80
             IF (JWLV3.GT.1) COMPDA(INDX,JWLV3) = WLVL                     40.80
@@ -3228,8 +3254,16 @@
 !
          IF (ICUR.EQ.1 .AND. IGTYPE(2) .GE. 1) THEN                       40.80
             IF (DEPW.GT.0.) THEN
-              UU  = SVALQI (XP, YP, 2, UXB, 0, 0, 0)                      40.80
-              VV  = SVALQI (XP, YP, 3, UYB, 0, 0, 0)                      40.80
+              IF ( IGTYPE(2).EQ.3 ) THEN
+                 UU = UXB(INDX)
+              ELSE
+                 UU = SVALQI (XP, YP, 2, UXB, 0, 0, 0)                    40.80
+              ENDIF
+              IF ( IGTYPE(3).EQ.3 ) THEN
+                 VV = UYB(INDX)
+              ELSE
+                 VV = SVALQI (XP, YP, 3, UYB, 0, 0, 0)                    40.80
+              ENDIF
               VTOT = SQRT (UU*UU + VV*VV)
               CGMAX = PNUMS(18)*SQRT(GRAV*DEPW)
               IF (VTOT .GT. CGMAX) THEN
@@ -3256,7 +3290,11 @@
 !         ***** compute variable friction coefficient *****
 !
          IF (VARFR) THEN
-            FRI = SVALQI (XP, YP, 4, FRIC, 1, 0, 0)                       40.80
+            IF ( IGTYPE(4).EQ.3 ) THEN
+               FRI = FRIC(INDX)
+            ELSE
+               FRI = SVALQI (XP, YP, 4, FRIC, 1, 0, 0)                    40.80
+            ENDIF
             COMPDA(INDX,JFRC2) = FRI                                      40.80
             COMPDA(INDX,JFRC3) = FRI                                      40.80
          ENDIF
@@ -3264,8 +3302,16 @@
 !        ***** compute variable wind velocity *****
 !
          IF (VARWI) THEN
-            UU  = SVALQI (XP, YP, 5, WXI, 0, 0, 0)                        40.80
-            VV  = SVALQI (XP, YP, 6, WYI, 0, 0, 0)                        40.80
+            IF ( IGTYPE(5).EQ.3 ) THEN
+               UU = WXI(INDX)
+            ELSE
+               UU = SVALQI (XP, YP, 5, WXI, 0, 0, 0)                      40.80
+            ENDIF
+            IF ( IGTYPE(6).EQ.3 ) THEN
+               VV = WYI(INDX)
+            ELSE
+               VV = SVALQI (XP, YP, 6, WYI, 0, 0, 0)                      40.80
+            ENDIF
             COMPDA(INDX,JWX2) =  UU*COSWC + VV*SINWC
             COMPDA(INDX,JWY2) = -UU*SINWC + VV*COSWC
             IF (JWX3.GT.1) COMPDA(INDX,JWX3) = COMPDA(INDX,JWX2)          40.80
@@ -3275,7 +3321,11 @@
 !     ***** compute variable air-sea temperature difference *****         40.80
 !
          IF (VARAST) THEN
-            ASTD = SVALQI (XP, YP, 10, ASTDF, 1, 0, 0)                    40.80
+            IF ( IGTYPE(10).EQ.3 ) THEN
+               ASTD = ASTDF(INDX)
+            ELSE
+               ASTD = SVALQI (XP, YP, 10, ASTDF, 1, 0, 0)                 40.80
+            ENDIF
             COMPDA(INDX,JASTD2) = ASTD                                    40.80
             COMPDA(INDX,JASTD3) = ASTD                                    40.80
          ENDIF
@@ -4301,8 +4351,7 @@
 !     40.08, Mar. 03: "GE" changed to "EQ" and warning message related to
 !                     curvilinear coordinates added
 !     40.31, Dec. 03: removing POOL mechanism
-!     40.41, Jul. 04: added error concerning CSM and DIA,
-!                     added warning concerning frequency-resolution and DIA,
+!     40.41, Jul. 04: added warning concerning frequency-resolution and DIA,
 !                     added check of resonance condition for triads
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53, Mar. 05: change Alves and Banner parameters in case of XNL
@@ -4327,17 +4376,13 @@
 !
 !  6. Local variables
 !
-!     CHARS :     array to pass character info to MSGERR
 !     MSGSTR:     string to pass message to call MSGERR
 !
-      CHARACTER*20 NUMSTR, CHARS(3)
       CHARACTER*80 MSGSTR
 !
 !  8. Subroutines used
 !
 !     MSGERR : Handles error messages according to severity
-!     NUMSTR : Converts integer/real to string
-!     TXPBLA : Removes leading and trailing blanks in string
 !
 !  9. Subroutines calling
 !
@@ -4359,7 +4404,6 @@
 !
 ! 13. Source text
 !
-      LOGICAL  STPNOW                                                     40.00
       LOGICAL  EQREAL                                                     40.53
       SAVE IENT
       DATA IENT/0/
@@ -4397,6 +4441,22 @@
 !     *** WARNINGS AND ERROR MESSAGES ***
 !
 !     -----------------------------------------------------------------
+!
+!     *** Check formulation for whitecapping ***
+!
+      IF ( IWCAP.GT.7 ) THEN
+         WRITE (MSGSTR, '(A,I2,A)')
+     &               'Unknown method for whitecapping (IWCAP=',IWCAP,')'
+         CALL MSGERR( 1, TRIM(MSGSTR) )
+         CALL MSGERR( 1,
+     &     'Whitecapping according to Komen et al. (1984) will be used')
+         IWCAP     = 1
+         PWCAP(1)  = 2.36E-5
+         PWCAP(2)  = 3.02E-3
+         PWCAP(9)  = 2.
+         PWCAP(10) = 0.
+         PWCAP(11) = 1.
+      ENDIF
 !
 !     *** WAM cycle 3 physics ***
 !
@@ -4509,7 +4569,7 @@
        IF (MSC .EQ. 3 ) THEN
          CALL MSGERR(4,'Do not activate quadruplets for boundary ')
          CALL MSGERR(4,'option BIN -> use other option           ')
-         WRITE(PRINTF,*)
+         RETURN
        END IF
 !
       END IF                                                              30.72
@@ -4542,15 +4602,8 @@
          CALL MSGERR(4,'When triads are active the number of     ')       30.72
          CALL MSGERR(4,'directions chosen in the CGRID command   ')       30.72
          CALL MSGERR(4,'must be less than 200                    ')       30.72
+         RETURN
       END IF                                                              30.72
-!
-!     When CSM is applied only DIA should be used                         40.41
-!
-      IF (IWCAP.EQ.6 .AND. IQUAD.GT.3 .AND. IQUAD.NE.8) THEN              40.41 40.30
-         CALL MSGERR(3,                                                   40.30
-     &       'In case of cumulative steepness method, only DIA '//        40.30
-     &       'technique is supported')                                    40.30
-      END IF                                                              40.30
 !
 !     When Alves and Banner and XNL are applied change the parameters     40.53
 !
@@ -4562,10 +4615,6 @@
          IF (EQREAL(PWCAP( 9),    0.0)) PWCAP( 9) = 0.                    40.53
          IF (EQREAL(PWCAP(11),    0.0)) PWCAP(11) = 0.                    40.53
       END IF                                                              40.53
-!OMP!
-!OMP      IF ( IQUAD.EQ.51 .OR. IQUAD.EQ.52 .OR. IQUAD.EQ.53 ) THEN           40.41
-!OMP         CALL MSGERR(4,'XNL not supported within OpenMP environment')     40.41
-!OMP      END IF                                                              40.41
 !
       IF ( ITEST .GE. 120 ) THEN
         WRITE(PRINTF,3000) IWIND ,IQUAD, ICUR, IWCAP, MSC
@@ -4992,7 +5041,11 @@
         DO INDX = 1, nverts                                               40.80
            XP = xcugrd(INDX)
            YP = ycugrd(INDX)
-           DEP = SVALQI (XP, YP, 1, DEPTH, 1, 0, 0)
+           IF ( IGTYPE(1).EQ.3 ) THEN
+              DEP = DEPTH(INDX)
+           ELSE
+              DEP = SVALQI (XP, YP, 1, DEPTH, 1, 0, 0)
+           ENDIF
            COMPDA(INDX,JDP1) = COMPDA(INDX,JDP2)
            WLVL = COMPDA(INDX,JWLV2)
            DEPW = DEP + WLVL + WLEV
@@ -6405,11 +6458,19 @@
       DO INDX = 1, nverts                                                 40.80
          XP = xcugrd(INDX)
          YP = ycugrd(INDX)
-         UU = SVALQI (XP, YP, IGR1, ARR, 0, 0, 0)
+         IF ( IGTYPE(IGR1).EQ.3 ) THEN
+            UU = ARR(INDX)
+         ELSE
+            UU = SVALQI (XP, YP, IGR1, ARR, 0, 0, 0)
+         ENDIF
          IF (IGR2.EQ.0) THEN
             COMPDA(INDX,JX3) = UU
          ELSE
-            VV = SVALQI (XP, YP, IGR2, ARR2, 0, 0, 0)
+            IF ( IGTYPE(IGR2).EQ.3 ) THEN
+               VV = ARR2(INDX)
+            ELSE
+               VV = SVALQI (XP, YP, IGR2, ARR2, 0, 0, 0)
+            ENDIF
             COMPDA(INDX,JX3) =  UU*COSFC + VV*SINFC
             COMPDA(INDX,JY3) = -UU*SINFC + VV*COSFC
          ENDIF

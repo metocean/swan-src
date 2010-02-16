@@ -1328,6 +1328,9 @@
                    JRADS  = MCMVAR                                        40.85
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.85
+                IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                   40.85
+     &              IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                   40.85
+     &              IVTYPE.EQ.56 .OR. IVTYPE.GE.60 ) LADDS = .TRUE.       40.85
              ENDIF
              GOTO 70
           ENDIF
@@ -1517,6 +1520,9 @@
                JRADS  = MCMVAR                                            40.85
                ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.85
+            IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                       40.85
+     &          IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                       40.85
+     &          IVTYPE.EQ.56 .OR. IVTYPE.GE.60 ) LADDS = .TRUE.           40.85
             CALL INKEYW ('STA', ' ')                                      40.00
             IF (KEYWIS('UNIT')) THEN
               CALL MSGERR (1, 'UNIT is ignored in this version')          40.00
