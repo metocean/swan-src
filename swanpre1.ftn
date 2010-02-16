@@ -213,7 +213,6 @@
 !     40.23, Sep. 02: coefficient urslim must be stored in PTRIAD(5)
 !     40.23, Nov. 02: keyword FLUXLIM added
 !     40.30, Feb. 03: introduction distributed-memory approach using MPI
-!     40.30, Mar. 03: extension to cumulative steepness method
 !     40.08, Mar. 03: warning message added for use of curvilinear
 !                     coordinate system
 !     40.31, Dec. 03: removing POOL-mechanism
@@ -1610,12 +1609,13 @@
 !                   <                            >  [limiter]   )     &   40.03
 !                    | NONSTat  [mxitns]        |
 !
-!           ( DIRimpl [cdd] [cdlim]                                )  &
+!           ( DIRimpl [cdd] [cdlim]  WNUMber                       )  &
 !
+!           ( REFRLim [frlim] [power]          (NOT documented)    )  &
 !
 !           | -> SIGIMpl [css] [eps2] [outp] [niter]               |
 !          (<                                                      >) &
-!           |    SIGEXpl [cfl]                 (NOT documented)    |
+!           |    SIGEXpl [css] [cfl]           (NOT documented)    |
 !           |                                                      |
 !           |    FIL     [diffc]               (NOT documented)    |
 !
@@ -1680,6 +1680,17 @@
             IREFR = 0                                                     30.80
             CALL MSGERR(0, 'Refraction deactivated')                      40.02
           ENDIF
+          CALL INKEYW ('STA','    ')                                      41.07
+          IF (KEYWIS ('WNUM')) PNUMS(32) = 1.                             41.07
+        ENDIF
+!
+!       limit Ctheta if user want so                                      41.06
+!
+        CALL INKEYW ('STA','  ')
+        IF (KEYWIS ('REFRL')) THEN
+          PNUMS(29) = 1.
+          CALL INREAL ('FRLIM', PNUMS(26) ,'UNC', 0.)
+          CALL INREAL ('POWER', PNUMS(27), 'UNC', 0.)
         ENDIF
 !
 !       *** numerical scheme in frequency space :                  ***
@@ -1698,15 +1709,16 @@
 !         *** implicit solver ***
 !         ***  This is the default option   PNUMS(8) = 1.  ***
           PNUMS(8) = 1.
-          CALL INREAL ('CSS'   , PNUMS(7), 'UNC', 0.)
-          CALL INREAL ('EPS1'  , PNUMS(11) , 'UNC', 0.)
-          CALL INREAL ('EPS2'  , PNUMS(12) , 'UNC', 0.)
-          CALL INREAL ('OUTP'  , PNUMS(13) , 'UNC', 0.)
-          CALL INREAL ('NITER' , PNUMS(14), 'UNC', 0.)
+          CALL INREAL ('CSS'  , PNUMS (7), 'UNC', 0.)
+          CALL INREAL ('EPS1' , PNUMS(11), 'UNC', 0.)
+          CALL INREAL ('EPS2' , PNUMS(12), 'UNC', 0.)
+          CALL INREAL ('OUTP' , PNUMS(13), 'UNC', 0.)
+          CALL INREAL ('NITER', PNUMS(14), 'UNC', 0.)
         ELSE IF (KEYWIS('SIGEX') .OR. KEYWIS('EXP')) THEN                 30.20
 !
 !         *** 2) explicit scheme ***
           PNUMS(8) = 2.
+          CALL INREAL ('CSS'  , PNUMS (7), 'UNC', 0.)                     41.07
           CALL INREAL ('CFL'  , PNUMS(19), 'UNC', 0.)
 !
         ELSE IF (KEYWIS ('FIL')) THEN
@@ -1950,12 +1962,15 @@
 !           | -> CONstant [alpha] [gamma]                                      |
 !           |                                                                  |
 !           |    VARiable [alpha] [gammin] [gammax] [gamneg] [coeff1] [coeff2] |
-!           |                                                                  |
-! BREaking <     RUEssink [alpha] [a] [b]                                       >
+! BREaking <                                                                    > &
+!           |    RUEssink [alpha] [a] [b]                                      |
 !           |                                                                  |
 !           |    TG       [alpha] [gamma] [pown]                               |
 !           |                                                                  |
-!           !    BIPhase  [alpha] [pown] [bref]                                |
+!           !    WESTHuys [alpha] [pown] [bref] [shfac]                        |
+!
+!
+!       ( FREQDep [power] [fmin] [fmax] ) (fmin and fmax not documented)
 !
 ! ============================================================
 !
@@ -1983,34 +1998,45 @@
           CALL INREAL ('ALPHA',  PSURF(1), 'STA', 1.0)
           CALL INREAL ('GAMMA',  PSURF(2), 'STA', 0.42)
           CALL INREAL ('POWN' ,  PSURF(4), 'STA', 4.0)
-        ELSE IF (KEYWIS('BIP')) THEN                                      41.03
+        ELSE IF (KEYWIS('WESTH')) THEN                                    41.09 41.03
           ISURF = 5
-          CALL INREAL ('ALPHA',  PSURF(1), 'STA', 1.0)
-          CALL INREAL ('POWN' ,  PSURF(4), 'STA', 2.4)
-          CALL INREAL ('BREF' ,  PSURF(5), 'STA', -1.5708)
+          CALL INREAL ('ALPHA',  PSURF(1), 'STA', 0.98)                   41.09
+          CALL INREAL ('POWN' ,  PSURF(4), 'STA', 2.5)                    41.09
+          CALL INREAL ('BREF' ,  PSURF(5), 'STA', -1.3963)                41.09
+          CALL INREAL ('SHFAC',  PSURF(6), 'STA', 500.)                   41.09
         ENDIF
+!
+        CALL INKEYW ('STA', '  ')                                         41.06
+        IF (KEYWIS ('FREQD')) THEN                                        41.06
+           IFRSRF = 1                                                     41.06
+           CALL INREAL ('POWER', PSURF(11), 'STA', 2.0)                   41.06
+           CALL INREAL ('FMIN' , PSURF(12), 'STA', 0.0)                   41.06
+           CALL INREAL ('FMAX' , PSURF(13), 'STA', 1000.)                 41.06
+        END IF                                                            41.06
         GOTO 100
       ENDIF
 !
 !     ------------------------------------------------------------------
 !
-!     WCAP        parameters whitecapping
+!     WCAP        parameters whitecapping (NOT documented)
 !
 ! =============================================================
 !
-!        | ->KOMen    [cds2] [stpm] [powst] [delta] [powk]  |             34.00
-!        |                                                  |
-!        |   JANSsen  [cds1]  [delta] [pwtail]              |
-! WCAP  <                                                    >    (NOT documented)
-!        |   LHIG     [cflhig]                              |
-!        |                                                  |
-!        |   BJ       [bjstp] [bjalf]                       |
-!        |                                                  |
-!        |   KBJ      [bjstp] [bjalf] [kconv]               |
-!        |                                                  |             40.30
-!        |   CSM      [cst] [pow]                           |             40.30
-!        |                                                  |
-!        |   AB       [cds2] [br] [p0] [powst] [powk]       |             40.53
+!        | ->KOMen    [cds2] [stpm] [powst] [delta] [powk]                34.00
+!        |
+!        |   JANSsen  [cds1]  [delta] [pwtail]
+!        |
+!        |   LHIG     [cflhig]
+!        |
+! WCAP  <    BJ       [bjstp] [bjalf]
+!        |
+!        |   KBJ      [bjstp] [bjalf] [kconv]
+!        |                                                                40.30
+!        |   AB       [cds2] [br] [p0] [powst] [powk]                     40.53
+!        |
+!        |   WESTHuys [cds2] [br] [p0] [powst] [powk] &                   41.11
+!        |
+!        |            [nldisp] [cds3] [powfsh]                            41.11
 !
 ! =============================================================
 !
@@ -2059,11 +2085,6 @@
           CALL INREAL ('BJSTP' , PWCAP(6), 'UNC', 0.)
           CALL INREAL ('BJALF' , PWCAP(7), 'UNC', 0.)
           CALL INREAL ('KCONV' , PWCAP(8), 'UNC', 0.)
-        ELSE IF ( KEYWIS ('CSM')) THEN                                    40.30
-!         *** whitecapping according to cumulative steepness method  ***  40.30
-          IWCAP = 6                                                       40.30
-          CALL INREAL ('CST', PWCAP(12), 'UNC', 0.)                       40.30
-          CALL INREAL ('POW', PWCAP(13), 'UNC', 0.)                       40.30
         ELSE IF ( KEYWIS ('AB')) THEN                                     40.53
 !         *** whitecapping according to Alves and Banner (2003) ***       40.53
           IWCAP = 7                                                       40.53
@@ -2072,6 +2093,18 @@
           CALL INREAL ('P0',    PWCAP(10), 'STA', 4.)                     40.53
           CALL INREAL ('POWST', PWCAP(9),  'STA', 0.)                     40.53
           CALL INREAL ('POWK',  PWCAP(11), 'STA', 0.)                     40.53
+        ELSE IF ( KEYWIS ('WESTH')) THEN                                  41.11
+!         *** whitecapping according to Vd Westhuysen et al. (2007) ***   41.11
+!         *** incl. enhanced dissipation on current (yet unpublished)     41.11
+          IWCAP = 7                                                       41.11
+          CALL INREAL ('CDS2',  PWCAP(1),  'STA', 5.0E-5)                 41.11
+          CALL INREAL ('BR',    PWCAP(12), 'STA', 1.75E-3)                41.11
+          CALL INREAL ('P0',    PWCAP(10), 'STA', 4.)                     41.11
+          CALL INREAL ('POWST', PWCAP(9),  'STA', 0.)                     41.11
+          CALL INREAL ('POWK',  PWCAP(11), 'STA', 0.)                     41.11
+          CALL INREAL ('NLDISP',PWCAP(13), 'STA', 0.)                     41.11
+          CALL INREAL ('CDS3'  ,PWCAP(14), 'STA', 1.5)                    41.11
+          CALL INREAL ('POWFSH',PWCAP(15), 'STA', 1.)                     41.11
         ELSE
           CALL WRNKEY
         ENDIF

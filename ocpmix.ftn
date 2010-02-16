@@ -1461,6 +1461,8 @@
 !
 !  8. SUBROUTINE USED
 !
+!$    LOGICAL,EXTERNAL :: OMP_IN_PARALLEL
+!
 !  9. SUBROUTINES CALLING
 !
 ! 10. ERROR MESSAGES
@@ -1481,6 +1483,7 @@
         STPNOW = .FALSE.
       END IF
       IF (MAXERR.EQ.-1) STPNOW = .FALSE.
+!$    IF (OMP_IN_PARALLEL()) STPNOW = .FALSE.
 !
       RETURN
       END
@@ -1834,6 +1837,7 @@
                CALL MSGERR (4,
      &         'File cannot be opened/does not exist: '//DDNAME_L)        40.03
                IOSTAT = IEEXST
+               RETURN
             END IF
             IF (OPENED) THEN
                IF (IOSTAT.GT.-1)
