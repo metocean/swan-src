@@ -3668,7 +3668,6 @@
             OQI(1) = NREF
 
 !           --- count lines of heading
-
             IF ( RTYPE.NE.'TABD' ) THEN
                IF ( RTYPE.EQ.'TABP' .OR. RTYPE.EQ.'TABI' ) THEN
                   NLINES = NLINES + 7

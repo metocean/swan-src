@@ -1456,7 +1456,7 @@
 !
       IVTYPE = 4
       OVKEYW(IVTYPE) = 'DEP'                                              40.00
-      OVSNAM(IVTYPE) = 'Depth'
+      OVSNAM(IVTYPE) = 'dep'
       OVLNAM(IVTYPE) = 'Depth'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
@@ -1528,7 +1528,7 @@
 !
       IVTYPE = 10
       OVKEYW(IVTYPE) = 'HS'                                               40.00
-      OVSNAM(IVTYPE) = 'Hsig'
+      OVSNAM(IVTYPE) = 'hs'
       OVLNAM(IVTYPE) = 'Significant wave height'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
@@ -1540,7 +1540,7 @@
 !                                                                         modified 10.09
       IVTYPE = 11
       OVKEYW(IVTYPE) = 'TM01'                                             40.00
-      OVSNAM(IVTYPE) = 'Tm01'                                             20.81
+      OVSNAM(IVTYPE) = 'tm01'                                             20.81
       OVLNAM(IVTYPE) = 'Average absolute wave period'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
@@ -1552,7 +1552,7 @@
 !
       IVTYPE = 12
       OVKEYW(IVTYPE) = 'RTP'                                              40.00
-      OVSNAM(IVTYPE) = 'RTpeak'                                           40.41 20.81
+      OVSNAM(IVTYPE) = 'tp'                                              40.41 20.81
       OVLNAM(IVTYPE) = 'Relative peak period'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
@@ -1564,7 +1564,7 @@
 !
       IVTYPE = 13
       OVKEYW(IVTYPE) = 'DIR'                                              40.00
-      OVSNAM(IVTYPE) = 'Dir'
+      OVSNAM(IVTYPE) = 'dm'
       OVLNAM(IVTYPE) = 'Average wave direction'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
@@ -1576,7 +1576,7 @@
 !
       IVTYPE = 14
       OVKEYW(IVTYPE) = 'PDI'                                              40.00
-      OVSNAM(IVTYPE) = 'PkDir'
+      OVSNAM(IVTYPE) = 'dp'
       OVLNAM(IVTYPE) = 'direction of the peak of the spectrum'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
@@ -1600,7 +1600,7 @@
 !
       IVTYPE = 16
       OVKEYW(IVTYPE) = 'DSPR'                                             40.00
-      OVSNAM(IVTYPE) = 'Dspr'
+      OVSNAM(IVTYPE) = 'dspr'
       OVLNAM(IVTYPE) = 'directional spreading'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 1
@@ -1720,7 +1720,7 @@
 !
       IVTYPE = 26
       OVKEYW(IVTYPE) = 'WIND'                                             40.00
-      OVSNAM(IVTYPE) = 'Windv'
+      OVSNAM(IVTYPE) = 'wsp'
       OVLNAM(IVTYPE) = 'Wind velocity at 10 m above sea level'
       OVUNIT(IVTYPE) = UV                                                 30.72
       OVSVTY(IVTYPE) = 3
@@ -1792,7 +1792,7 @@
 !                                                                         20.61
       IVTYPE = 32
       OVKEYW(IVTYPE) = 'TM02'                                             40.00
-      OVSNAM(IVTYPE) = 'Tm02'
+      OVSNAM(IVTYPE) = 'tm02'
       OVLNAM(IVTYPE) = 'Zero-crossing period'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
@@ -1804,7 +1804,7 @@
 !                                                                         20.61
       IVTYPE = 33
       OVKEYW(IVTYPE) = 'FSPR'                                             40.00
-      OVSNAM(IVTYPE) = 'FSpr'                                             20.67
+      OVSNAM(IVTYPE) = 'fspr'                                             20.67
       OVLNAM(IVTYPE) = 'Frequency spectral width (Kappa)'
       OVUNIT(IVTYPE) = ' '
       OVSVTY(IVTYPE) = 1
@@ -1816,7 +1816,7 @@
 !
       IVTYPE = 34                                                         20.67
       OVKEYW(IVTYPE) = 'URMS'                                             40.00
-      OVSNAM(IVTYPE) = 'Urms'
+      OVSNAM(IVTYPE) = 'urms'
       OVLNAM(IVTYPE) = 'RMS of orbital velocity at the bottom'
       OVUNIT(IVTYPE) = UV
       OVSVTY(IVTYPE) = 1
@@ -1828,7 +1828,7 @@
 !
       IVTYPE = 35                                                         30.22
       OVKEYW(IVTYPE) = 'UFRI'                                             40.00
-      OVSNAM(IVTYPE) = 'Ufric'
+      OVSNAM(IVTYPE) = 'ufric'
       OVLNAM(IVTYPE) = 'Friction velocity'
       OVUNIT(IVTYPE) = UV
       OVSVTY(IVTYPE) = 1
@@ -1938,7 +1938,7 @@
 !
       IVTYPE = 44                                                         40.00
       OVKEYW(IVTYPE) = 'HSWE'                                             40.00
-      OVSNAM(IVTYPE) = 'Hswell'
+      OVSNAM(IVTYPE) = 'hs_sw'
       OVLNAM(IVTYPE) = 'Wave height of swell part'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
@@ -2046,7 +2046,7 @@
 !
       IVTYPE = 53                                                         40.51
       OVKEYW(IVTYPE) = 'TPS'
-      OVSNAM(IVTYPE) = 'TPsmoo'
+      OVSNAM(IVTYPE) = 'tp'
       OVLNAM(IVTYPE) = 'Relative peak period (smooth)'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
@@ -2238,7 +2238,7 @@
 !
       IVTYPE = 70                                                         MSL
       OVKEYW(IVTYPE) = 'DPM'
-      OVSNAM(IVTYPE) = 'Dpm'
+      OVSNAM(IVTYPE) = 'dpm'
       OVLNAM(IVTYPE) = 'Mean direction of spectral peak'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
@@ -2250,7 +2250,7 @@
 !
       IVTYPE = 71                                                         MSL
       OVKEYW(IVTYPE) = 'DPMSEA'
-      OVSNAM(IVTYPE) = 'Dpm_sea'
+      OVSNAM(IVTYPE) = 'dpm_sea'
       OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
@@ -2260,9 +2260,46 @@
       OVHEXP(IVTYPE) = 360.
       OVEXCV(IVTYPE) = -999.
 !
-      IVTYPE = 72                                                         MSL
+      IVTYPE = 72
+      OVKEYW(IVTYPE) = 'DPMSW'
+      OVSNAM(IVTYPE) = 'dpm_sw'
+      OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 73
+      OVKEYW(IVTYPE) = 'TPSEA'
+      OVSNAM(IVTYPE) = 'tp_sea'
+      OVLNAM(IVTYPE) = 'Peak period of sea'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 74
+      OVKEYW(IVTYPE) = 'TPSW'
+      OVSNAM(IVTYPE) = 'tp_sw'
+      OVLNAM(IVTYPE) = 'Peak period of swell'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -99.
+
+!
+      IVTYPE = 75                                                         MSL
       OVKEYW(IVTYPE) = 'SWE'
-      OVSNAM(IVTYPE) = 'SWe'
+      OVSNAM(IVTYPE) = 'swe'
       OVLNAM(IVTYPE) = 'Spectral bandwidth'
       OVUNIT(IVTYPE) = ' '
       OVSVTY(IVTYPE) = 1

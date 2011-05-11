@@ -297,7 +297,7 @@
       
 !NCOM      REAL           :: MasterDt
 
-      CHARACTER*6  QOVSNM                                                 40.87
+      CHARACTER*7  QOVSNM                                                 40.87
       CHARACTER*40 QOVLNM                                                 40.87
       REAL         QR(9)                                                  40.87
 

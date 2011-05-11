@@ -618,7 +618,7 @@
 !     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 72, MOUTPA=50)                                   MSL 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 75, MOUTPA=50)                                   MSL 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -692,7 +692,10 @@
 !  (69) [  'RADS']
 !  (70) [   'DPM']
 !  (71) ['DPMSEA']
-!  (72) [   'SWE']
+!  (72) [ 'DPMSW']
+!  (73) [ 'TPSEA']
+!  (74) [  'TPSW']
+!  (75) [   'SWE']
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -912,7 +915,7 @@
       CHARACTER*36 FBCL,          FBCR,        FNEST
       CHARACTER*8  OVKEYW(NMOVAR)
       CHARACTER*40 OVLNAM(NMOVAR)
-      CHARACTER*6  OVSNAM(NMOVAR)
+      CHARACTER*7  OVSNAM(NMOVAR)
       CHARACTER*16 OVUNIT(NMOVAR)
       CHARACTER*8  SNAME
       CHARACTER*6  UAP,           UD,          UDI,         UDL

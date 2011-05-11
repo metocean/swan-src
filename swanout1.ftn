@@ -708,7 +708,7 @@
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
-     &       IVTYPE.eq.70 .OR. IVTYPE.eq.71 .OR. IVTYPE.eq.72 .OR.
+     &       IVTYPE.eq.70 .OR. IVTYPE.eq.71 .OR. IVTYPE.ge.72 .OR.
      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
      &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
@@ -2837,7 +2837,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=24)                                               40.51 40.41 40.00
+      PARAMETER  (NVOTP=27)                                               40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -2850,10 +2850,12 @@
 !
       LOGICAL    OQPROC(*), EQREAL                                        30.72
       LOGICAL :: EXCPT     ! if true value in point is undefined          40.86
+      real isigp(0:2)                                                   MSL
+      integer ipart                                                     MSL
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 58, 59, 70, 71, 72/                                 MSL 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59, 70,71,72,73,74,75/                                 MSL 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -3168,30 +3170,37 @@
 !
 !       peak period -also get for dpm
 !
+        FSWELL = PI2 * OUTPAR(5)
+        do ipart=0,2
         IVTYPE = 12
         IVTYP2 = 70
-        IVTYP3 = 71
-        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2).OR.OQPROC(IVTYP3)) THEN       MSL
+        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2+ipart)) THEN                                          MSL
            EMAX = 0.
-           ISIGM = -1
+           isigp(ipart) = -1
            DO IS = 1, MSC
+              if (ipart.eq.1.and.spcsig(is).lt.fswell) cycle
+              if (ipart.eq.2.and.spcsig(is).gt.fswell) then
+                 if (isigp(2).eq.is-1) isigp(2)=-1
+                 exit
+              endif
               ETD = 0.
               DO ID = 1, MDC
-                ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)*DDIR                  30.72
+                ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)                     30.72
               ENDDO
               IF (ETD.GT.EMAX) THEN
+                if (ipart.ne.1.or.EMAX.ne.0.) isigp(ipart) = IS
                 EMAX  = ETD
-                ISIGM = IS
               ENDIF
            ENDDO
            if (OQPROC(IVTYPE)) then                                       MSL
-           IF (ISIGM.GT.0) THEN
-             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)                   30.72
+           IF (isigp(0).GT.0) THEN
+             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(isigp(0))                   30.72
            ELSE
              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
            endif
         ENDIF
+       enddo
 !
 !       peak period based on parabolic fitting                            40.51
 !
@@ -3201,6 +3210,61 @@
            ETD  = 0.
            ISIGM = -1
            DO IS = 1, MSC
+              ED  = ETD
+              ETD = 0.
+              DO ID = 1, MDC
+                ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)
+              END DO
+              IF (ETD.GT.EMAX) THEN
+                EMAX  = ETD
+                ISIGM = IS
+                EMAXD = ED
+                EMAXU = 0.
+                IF (IS.LT.MSC) THEN
+                   DO ID = 1, MDC
+                     EMAXU = EMAXU + SPCSIG(IS+1)*ACLOC(ID,IS+1)
+                   END DO
+                ELSE
+                   EMAXU = EMAX
+                END IF
+              END IF
+           END DO
+           IF (ISIGM.GT.1) THEN
+             SIG1 = SPCSIG(ISIGM-1)
+             SIG2 = SPCSIG(ISIGM+1)
+             SIG3 = SPCSIG(ISIGM  )
+             E1   = EMAXD
+             E2   = EMAXU
+             E3   = EMAX
+             P    = SIG1+SIG2
+             Q    = (E1-E2)/(SIG1-SIG2)
+             R    = SIG1+SIG3
+             T    = (E1-E3)/(SIG1-SIG3)
+             A    = (T-Q)/(R-P)
+             IF (A.LT.0) THEN
+                SIGP = (-Q+P*A)/(2.*A)
+             ELSE
+                SIGP = SIG3
+             END IF
+             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SIGP
+           ELSE IF (ISIGM.EQ.1) THEN
+             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(1)
+           ELSE
+             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           END IF
+        END IF
+!
+!       sea/swell peak period based on parabolic fitting
+!       40.51
+!      
+        do IVTYPE = 73,74 
+        IF (OQPROC(IVTYPE)) THEN
+           EMAX = 0.
+           ETD  = 0.
+           ISIGM = -1
+           DO IS = 1, MSC
+              if (ivtype.eq.73.and.spcsig(is).lt.fswell) cycle
+              if (ivtype.eq.74.and.spcsig(is).gt.fswell) cycle
               ED  = ETD
               ETD = 0.
               DO ID = 1, MDC
@@ -3244,6 +3308,8 @@
              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            END IF
         END IF
+        enddo
+
 !
 !       peak direction
 !
@@ -3284,25 +3350,14 @@
 !
 !       mean direction at peak frequency
 !
-        IVTYP1 = 70
+        do ipart=0,2
+        IVTYP1 = 70+ipart
         IF (OQPROC(IVTYP1)) THEN
-          if (OQPROC(IVTYP2)) then
-            FSWELL = PI2 * OUTPAR(5)
-            if (SPCSIG(ISIGM).LT.FSWELL)then
-              isigf=msc
-              do while (spcsig(isigf-1).gt.FSWELL.and.isigf.gt.1)
-                isigf=isigf-1
-              enddo
-            else
-                isigf=isigm
-            endif
-          endif
-c          print*,isigm,SPCSIG(isigm)
-          if (isigm.gt.0) then
+            if (isigp(ipart).gt.0) then
             eex=0
             eey=0
             DO ID=1, MDC
-              EAD = ACLOC(ID,isigm)
+              EAD = ACLOC(ID,isigp(ipart))
               EEX  = EEX + EAD * SPCDIR(ID,2)
               EEY  = EEY + EAD * SPCDIR(ID,3)
             enddo
@@ -3326,43 +3381,8 @@ c          print*,isigm,SPCSIG(isigm)
           endif
           
         ENDIF
+        enddo
         
-        IVTYP2 = 71
-        IF (OQPROC(IVTYP2)) THEN
-          FSWELL = PI2 * OUTPAR(5)
-          if (SPCSIG(ISIGM).LT.FSWELL)then
-            isigm=msc
-            do while (spcsig(isigm-1).gt.FSWELL.and.isigm.gt.1)
-              isigm=isigm-1
-            enddo
-          endif
-          if (isigm.gt.0) then
-            eex=0
-            eey=0
-            DO ID=1, MDC
-              EAD = ACLOC(ID,isigm)
-              EEX  = EEX + EAD * SPCDIR(ID,2)
-              EEY  = EEY + EAD * SPCDIR(ID,3)
-            enddo
-            IF (ABS(EEX).GT.0.OR.ABS(EEY).GT.0) THEN
-               IF (BNAUT) THEN                                            30.70
-                 DIRDEG = ATAN2(EEY,EEX) * 180./PI                        10.15
-               ELSE
-                 DIRDEG = (ALCQ + ATAN2(EEY,EEX)) * 180./PI               10.15
-               ENDIF
-               IF (DIRDEG.LT.0.) DIRDEG = DIRDEG + 360.                   10.15
-!
-!              *** Convert (if necessary) from nautical degrees ***       32.01
-!              *** to cartesian degrees                         ***       32.01
-!
-               VOQ(IP,VOQR(IVTYP2)) = DEGCNV( DIRDEG )                    32.01
-            ELSE
-                VOQ(IP,VOQR(IVTYP2)) = OVEXCV(IVTYP2)
-            ENDIF
-          else
-            VOQ(IP,VOQR(IVTYP2)) = OVEXCV(IVTYP2)
-          endif
-        ENDIF
 
 !
 !       mean direction
@@ -3572,7 +3592,7 @@ c          print*,isigm,SPCSIG(isigm)
 !
 !       spectral bandwidth
 !
-        IVTYPE = 72
+        IVTYPE = 75
         IF (OQPROC(IVTYPE)) THEN
           ETOT = 0.
           EM2=0.
