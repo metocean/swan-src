@@ -63,7 +63,7 @@
 !
       INTEGER  ID     ,IS     ,ISSTOP
 !
-      REAL     reyn,fe,fegm,SDIS,uurat,NU_AIR,C0
+      REAL reyn,fe,fegm,SDIS,uurat,NU_AIR,C0
       REAL COSWIND(MDC)
 !
 !
@@ -89,14 +89,15 @@
 !
 !     2*U_sig*H_s/v_a
       NU_AIR=1.5e-5
-      reyn=8*SQRT(2)*UTOP(kcgrd(1))*sqrt(ETOT(kcgrd(1)))/NU_AIR
-      uurat=UFRIC(KCGRD(1))/(sqrt(2)*UTOP(kcgrd(1))
-      fegm=
+      reyn=8*2**0.5*UTOP(kcgrd(1))*sqrt(ETOT(kcgrd(1)))/NU_AIR
+      uurat=UFRIC(KCGRD(1))/(2**0.5*UTOP(kcgrd(1)))
+      fegm=1
       c0=16*rhoaw/grav
 
       DO IDDUM = IDCMIN(IS) , IDCMAX(IS)
 	  ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
-	  COSWIND(ID)=ECOS(ID)*COS(THETAW)+ESIN(ID)*SIN(THETAW)
+	  COSWIND(ID)=ECOS(ID)*COS(THETAW(kcgrd(1)))
+     &+ESIN(ID)*SIN(THETAW(kcgrd(1)))
       enddo
 
       
@@ -104,10 +105,10 @@
         DO IDDUM = IDCMIN(IS) , IDCMAX(IS)
 	  ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
 	  IF (REYN.LT.PSWDIS(4)) THEN
-             SDIS=-PSWDIS(5)*DRAT*2*KWAVE(IS)*SQRT(2*NU_AIR*SPCSIG(IS))
+           SDIS=-PSWDIS(5)*DRAT*2*KWAVE(IS,1)*SQRT(2*NU_AIR*SPCSIG(IS))
 	  ELSE
-	     SDIS=-c0*spcsig(is)**2*PSWDIS(1)
-       &     *(fegm+(pswdis(3)+pswdis(2)*COSWIND(ID))*uurat)
+	   SDIS=-c0*spcsig(is)**2*PSWDIS(1)
+     &     *(fegm+(pswdis(3)+pswdis(2)*COSWIND(ID))*uurat)
 	  END IF	
 	  IMATDA(ID,IS) = IMATDA(ID,IS) + SDIS
           DISSC1(ID,IS,3) = DISSC1(ID,IS,3) + SDIS
@@ -128,7 +129,7 @@
       END
 
 ! ----------------------------------------------------------------------
-      SUBROUTINE TABU_SWELLFT
+      SUBROUTINE TABU_SWELLFT(SWELLFT,IAB)
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -144,49 +145,13 @@
 !     METHOD.
 !      tabulation on Kelvin functions
 !
-!  2. Method :
-!
-!  3. Parameters :
-!
-!     Parameter list
-!     ----------------------------------------------------------------
-!     ----------------------------------------------------------------
-!
-!  4. Subroutines used :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      STRACE    Subr. W3SERVMD Subroutine tracing.
-!     ----------------------------------------------------------------
-!
-!  5. Called by :
-!
-!      Name      Type  Module   Description
-!     ----------------------------------------------------------------
-!      W3SIN3    Subr. W3SRC3MD Corresponding source term.
-!     ----------------------------------------------------------------
-!
-!  6. Error messages :
-!
-!       None.
-!
-!  7. Remarks :
-!
-!  8. Structure :
-!
-!     See source code.
-!
-!  9. Switches :
-!
-!     !/S  Enable subroutine tracing.
 !
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
-      USE CONSTANTS
       IMPLICIT NONE
-      INTEGER, PARAMETER      :: NITER=100
-      REAL   , PARAMETER      :: XM=0.50, EPS1=0.00001
+      INTEGER, PARAMETER :: NITER=100
+      REAL,PARAMETER::kappa=0.4,XM=0.50,EPS1=0.00001,ABMIN=0.3,ABMAX=8.
 !     VARIABLE.   TYPE.     PURPOSE.
 !      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
 !      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
@@ -194,15 +159,16 @@
 !      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
 !                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
 ! ----------------------------------------------------------------------
-      INTEGER I,ITER
-      REAL KER, KEI
+      INTEGER I,ITER,IAB
+      REAL KER, KEI, DELAB
       REAL ABR,ABRLOG,L10,FACT,FSUBW,FSUBWMEMO,dzeta0,dzeta0memo
+      real swellft(iab)
 !
 !
       DELAB   = (ABMAX-ABMIN)/REAL(IAB)
       L10=ALOG(10.)
       DO I=0,IAB
-         ABRLOG=ABMIN+REAL(I)*DELAB
+         ABRLOG=ABMIN+1.*I*DELAB
 	      ABR=EXP(ABRLOG*L10)
 	      FACT=1/ABR/(21.2*KAPPA)
          FSUBW=0.05
@@ -241,18 +207,18 @@
 ! VARIABLES.
 ! ACM Libraries
 ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-   IMPLICIT NONE
-   DOUBLE PRECISION X, Y, X2, Y2, RE0, IM0, RE1, IM1, &
-      R1, R2, T1, T2, P1, P2, RTERM, ITERM, L
-   DOUBLE PRECISION , PARAMETER, DIMENSION(8) :: EXSQ = &
-         (/ 0.5641003087264D0,0.4120286874989D0,0.1584889157959D0, & 
-            0.3078003387255D-1,0.2778068842913D-2,0.1000044412325D-3, &
-            0.1059115547711D-5,0.1522475804254D-8 /)
-   DOUBLE PRECISION , PARAMETER, DIMENSION(8) :: TSQ = &
-         (/ 0.0D0,3.19303633920635D-1,1.29075862295915D0, &
-            2.95837445869665D0,5.40903159724444D0,8.80407957805676D0, &
-            1.34685357432515D1,2.02499163658709D1 /)
-   INTEGER N,M,K
+      IMPLICIT NONE
+      DOUBLE PRECISION X, Y, X2, Y2, RE0, IM0, RE1, IM1, 
+     & R1, R2, T1, T2, P1, P2, RTERM, ITERM, L
+      DOUBLE PRECISION , PARAMETER, DIMENSION(8) :: EXSQ =
+     &    (/ 0.5641003087264D0,0.4120286874989D0,0.1584889157959D0,
+     &       0.3078003387255D-1,0.2778068842913D-2,0.1000044412325D-3,
+     &       0.1059115547711D-5,0.1522475804254D-8 /)
+      DOUBLE PRECISION , PARAMETER, DIMENSION(8) :: TSQ =
+     &    (/ 0.0D0,3.19303633920635D-1,1.29075862295915D0,
+     &       2.95837445869665D0,5.40903159724444D0,8.80407957805676D0,
+     &       1.34685357432515D1,2.02499163658709D1 /)
+      INTEGER N,M,K
 ! THE ARRAYS TSQ AND EXSQ CONTAIN THE SQUARE OF THE
 ! ABSCISSAS AND THE WEIGHT FACTORS USED IN THE GAUSS-
 ! HERMITE QUADRATURE.
@@ -388,22 +354,22 @@
       END SUBROUTINE KZEONE
       
 ! ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-SUBROUTINE KERKEI(X,KER,KEI)
+      SUBROUTINE KERKEI(X,KER,KEI)
 !**********************************************************************
 ! Computes the values of the zeroth order Kelvin function Ker and Kei
 ! These functions are used to determine the friction factor fw as a 
 ! function of the bottom roughness length assuming a linear profile
 ! of eddy viscosity (See Grant and Madsen, 1979)
 !**********************************************************************
-   IMPLICIT NONE
+      IMPLICIT NONE
    
-   DOUBLE PRECISION ZR,ZI,CYR,CYI,CYR1,CYI1
-   INTEGER NZ,IERR
-   REAL X,KER,KEI
+      DOUBLE PRECISION ZR,ZI,CYR,CYI,CYR1,CYI1
+      INTEGER NZ,IERR
+      REAL X,KER,KEI
    
-   ZR=X*.50D0*SQRT(2.0D0)
-   ZI=ZR
-   CALL KZEONE(ZR, ZI, CYR, CYI,CYR1,CYI1)
-   KER=CYR/EXP(ZR)
-   KEI=CYI/EXP(ZR)
-END SUBROUTINE KERKEI
+      ZR=X*.50D0*SQRT(2.0D0)
+      ZI=ZR
+      CALL KZEONE(ZR, ZI, CYR, CYI,CYR1,CYI1)
+      KER=CYR/EXP(ZR)
+      KEI=CYI/EXP(ZR)
+      END SUBROUTINE KERKEI

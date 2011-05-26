@@ -2580,6 +2580,8 @@
 !WAM4        CALL INREAL ('S3', pswdis(3), 'STA', -0.15)
 !WAM4        CALL INREAL ('Re', pswdis(4), 'STA', 100000)
 !WAM4        CALL INREAL ('S5', pswdis(5), 'STA', 1.2)
+!WAM4        ISWELLFT=200
+!WAM4        CALL SWELLFT_TABU(SWELLFT,ISWELLFT)
 !WAM4        GOTO 100
 !WAM4      ENDIF
 !

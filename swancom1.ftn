@@ -6316,7 +6316,7 @@
 !
 !	Calculate swell dissipation                                         MSL
 !WAM4       if (iswdis.ge.1) 
-!WAM4        CALL SWDIS (DEP2     ,ECOS     ,ESIN     ,AC2      ,    
+!WAM4     &   CALL SWDIS (DEP2     ,ECOS     ,ESIN     ,AC2      ,    
 !WAM4     &             IMATDA   ,KWAVE    ,SPCSIG ,IDCMIN   ,IDCMAX   ,
 !WAM4     &             ISSTOP   ,DISSC1   ,THETAW    ,USTAR, ETOT   )     
 !     compute nonlinear interactions, starting with triads                 NB!

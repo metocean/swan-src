@@ -2336,8 +2336,6 @@
 ! WDIP   [    0.] wind direction with respect to problem coordinates
 !                 =dir; set by command WIND ... [dir]
 !
-! pswdis(mswdis) Parameters for Arduin et al (2008) swell dissipation as per WW3
-! s1,s2,s3,Re,s5
 !
       INTEGER             DSHAPE,      FSHAPE
       INTEGER             ICMAX
@@ -2350,7 +2348,6 @@
       INTEGER             NSTATC,      NSTATM,      NUMOBS,      NCOMPT   40.41
       INTEGER             IDIFFR                                          40.21
       INTEGER             IFRSRF                                          41.06
-      integer             iswdis
       REAL                DEPMIN,      PBOT(MBOT),  PNUMS(MNUMS)
       REAL                PSETUP(MSETUP),           PSHAPE(MSHAPE)
       REAL                PSURF(MSURF),             PTRIAD(MTRIAD)
@@ -2361,12 +2358,17 @@
       REAL                PQUAD(MQUAD)
       REAL                RCOMPT(5000,5)
       REAL                PDIFFR(MDIFFR)                                  40.21
-!WAM4      real                pswdis(mswdis)                                  MSL
       LOGICAL             ACUPDA
       LOGICAL             BNDCHK,      BNAUT,       ONED,        BRESCL
       LOGICAL             OFFSRC                                          40.80
       LOGICAL             LADDS                                           40.85
       LOGICAL             CSETUP
+! pswdis(mswdis) Parameters for Arduin et al (2008) swell dissipation as per WW3
+! s1,s2,s3,Re,s5
+!WAM4      integer             iswdis,iswellft
+!WAM4      real                pswdis(mswdis)                                  MSL
+!WAM4      real                swellft(200)
+!
 !$OMP THREADPRIVATE(ICMAX,CSETUP)
 !
 !  8. Subroutines and functions used
