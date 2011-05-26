@@ -430,7 +430,6 @@
       SAVE IENT
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SWSYNC')
-
 !MPI!     --- blocks until all nodes have called this routine
 !MPI
 !MPI      CALL MPI_BARRIER ( MPI_COMM_WORLD, IERR )
@@ -3294,11 +3293,12 @@
       IF (LTRACE) CALL STRACE (IENT,'SWCOLOUT')
 
       IF ( NREOQ.EQ.0 ) RETURN
-
 !           --- do for all output requests
             CORQ => FORQ
-            DO 100 IRQ = 1, NREOQ
-
+      DO 100 IRQ = 1, NREOQ
+        DO IUNIT=HIOPEN+NREOQ+NPROC*(IRQ-1)+1,HIOPEN+NREOQ+(NPROC*IRQ)
+	 call flush(iunit)
+	END DO
 
 !     --- do for all COMPUTE commands
 

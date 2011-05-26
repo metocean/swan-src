@@ -622,7 +622,6 @@
             IF (IOUTES .GT. ITEST) ITEST = IOUTES
 
 !           --- synchronize nodes
-
             CALL SWSYNC                                                   40.30
             IF (STPNOW()) RETURN                                          40.30
 
@@ -1041,6 +1040,7 @@
       ISURF  = 1
       IBOT   = 0
       ITRIAD = 0
+!WAM4      iswdis = 0                                                           MSL
       VARWI  = .FALSE.
       VARFR  = .FALSE.
       VARWLV = .FALSE.                                                    20.38
@@ -3758,8 +3758,10 @@
           ENDIF                                                           40.04
           SUMWREG = 1. -SUMWEXC                                           40.04
 !
-          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
-            SVALQI = EXCFLD(IGRID)                                        40.04
+!          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
+!            SVALQI = EXCFLD(IGRID)                                        40.04
+          if (sumwreg.le.0.) then
+            svalqi=0.
           ELSE                                                            40.04
             SVALQI = ( WF1*ARRINP(II)   + WF2*ARRINP(II+MXG(IGRID))       40.04
      &               + WF3*ARRINP(II+1) + WF4*ARRINP(II+1+MXG(IGRID)) )   40.04
@@ -3857,8 +3859,10 @@
           ENDIF                                                           40.04
           SUMWREG = 1. -SUMWEXC                                           40.04
 !
-          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
-            SVALQI = EXCFLD(IGRID)                                        40.04
+!          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
+!            SVALQI = EXCFLD(IGRID)                                        40.04
+          if (sumwreg.le.0.) then                                        MSL
+                svalqi=0.                                               MSL
           ELSE                                                            40.04
             SVALQI = ( WF1*ARRINP(II)   + WF2*ARRINP(II+MXG(IGRID))       40.04
      &               + WF3*ARRINP(II+1) + WF4*ARRINP(II+1+MXG(IGRID)) )   40.04

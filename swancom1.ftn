@@ -2870,7 +2870,8 @@
      &                 COMPDA(1,JQB)    ,                                 40.02
      &                 HM      ,KMESPC  ,SMEBRK,                          40.02
      &                 COMPDA(1,JPBOT)  ,                                 40.51
-     &                 SWPDIR                  )                          40.16
+     &                 SWPDIR,
+     &                 COMPDA(1,JUTOP)                  )                  MSL
 !TIMG        CALL SWTSTO(116)                                                  40.23
 !
         COMPDA(KCGRD(1),JHS) = HS                                         30.70
@@ -4590,7 +4591,8 @@
      &                   AC2TOT  ,ETOT    ,                               40.02
      &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
      &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
-     &                   TMBOT   ,SWPDIR           )                      40.51 40.16
+     &                   TMBOT   ,SWPDIR,                                 40.51 40.16
+     &                   UTOP                     )                        MSL
 !
 !****************************************************************
 !
@@ -4750,7 +4752,7 @@
 !
       REAL, INTENT(IN OUT) :: AC2(MDC,MSC,MCGRD)
       REAL, INTENT(IN OUT) :: QB(MCGRD)
-      REAL, INTENT(IN OUT) :: UBOT(MCGRD)
+      REAL, INTENT(IN OUT) :: UBOT(MCGRD),UTOP(MCGRD)
       REAL, INTENT(IN OUT) :: URSELL(MCGRD)
       REAL, INTENT(IN OUT) :: TMBOT(MCGRD)                                40.51
 !
@@ -4954,6 +4956,7 @@
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
+        if ( ETOT2 .gt.0 ) UTOP(KCGRD(1)) = SQRT ( 2. * ETOT2 )             MSL
 !
       ENDIF
 !
@@ -6311,6 +6314,11 @@
      &                            DEP2    ,DISSC1  ,DISSC0  )             40.67 40.61 40.12
 !TIMG      CALL SWTSTO(133)                                                    40.23
 !
+!	Calculate swell dissipation                                         MSL
+!WAM4       if (iswdis.ge.1) 
+!WAM4        CALL SWDIS (DEP2     ,ECOS     ,ESIN     ,AC2      ,    
+!WAM4     &             IMATDA   ,KWAVE    ,SPCSIG ,IDCMIN   ,IDCMAX   ,
+!WAM4     &             ISSTOP   ,DISSC1   ,THETAW    ,USTAR, ETOT   )     
 !     compute nonlinear interactions, starting with triads                 NB!
 !
 !TIMG      CALL SWTSTA(134)                                                    40.23

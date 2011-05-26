@@ -2563,6 +2563,28 @@
 !
 !     ------------------------------------------------------------------
 !
+!     SWDIS  setting parameters for swell dissipation (Arduin et al 2008)
+!	Defaults Case ACC350 from WW3 manaul
+! ===============================================
+!
+!   SWDISsipation [s1] [s2] [s3] [Re] [s5]
+!
+! ===============================================
+!
+!WAM4      IF (KEYWIS ('SWDIS')) THEN
+!WAM4        MCMVAR=MCMVAR+1
+!WAM4        JUTOP=MCMVAR
+!WAM4        ISWDIS = 1
+!WAM4        CALL INREAL ('S1', pswdis(1), 'STA', 0.7)
+!WAM4        CALL INREAL ('S2', pswdis(2), 'STA', -0.18)
+!WAM4        CALL INREAL ('S3', pswdis(3), 'STA', -0.15)
+!WAM4        CALL INREAL ('Re', pswdis(4), 'STA', 100000)
+!WAM4        CALL INREAL ('S5', pswdis(5), 'STA', 1.2)
+!WAM4        GOTO 100
+!WAM4      ENDIF
+!
+!     ------------------------------------------------------------------
+!
 !     OFF      switching standard options off
 !
 ! ============================================================

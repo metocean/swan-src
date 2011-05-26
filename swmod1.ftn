@@ -75,7 +75,7 @@
 !     LINELN [ 120]  max length of input lines (in command file)
 !
       INTEGER LINELN
-      PARAMETER  (LINELN=120)
+      PARAMETER  (LINELN=150)
 !
 !  7. Local variables
 !
@@ -263,7 +263,7 @@
       CHARACTER (LEN=LENFNM) :: FILEA , FILEB , FILENM
       CHARACTER (LEN=40)     :: INST
       CHARACTER (LEN=16)     :: PROJID
-      CHARACTER (LEN=4)      :: PROJNR
+      CHARACTER (LEN=10)     :: PROJNR
       CHARACTER (LEN=72)     :: PROJT1, PROJT2, PROJT3
       CHARACTER (LEN=36)     :: PTITLE
       CHARACTER (LEN=20)     :: VERTXT
@@ -1634,6 +1634,7 @@
 !     MTRIAD [  10] dimension of array PTRIAD
 !     MWCAP  [  15] dimension of array PWCAP
 !     MWIND  [  40] dimension of array PWIND
+!     mswdis [   5] dimension of array mswdis                             MSL
 !
       INTEGER             MBOT,        MNUMS,       MQUAD
       INTEGER             MSETUP,      MSHAPE,      MSPPAR,      MSURF
@@ -1642,10 +1643,11 @@
       INTEGER             MDIFFR                                          40.21
       INTEGER             MDISP                                           40.67
       INTEGER             MGENR, MREDS, MTRNP                             40.85
+!WAM4      integer             mswdis
 !
       PARAMETER           (MBOT   = 10)
       PARAMETER           (MDIFFR = 10)                                   40.21
-      PARAMETER           (MDISP  =  3)                                   40.67
+      PARAMETER           (MDISP  =  4)                                   40.67
       PARAMETER           (MGENR  =  1)                                   40.85
       PARAMETER           (MREDS  =  2)                                   40.85
       PARAMETER           (MTRNP  =  3)                                   40.85
@@ -1659,6 +1661,7 @@
       PARAMETER           (MTRIAD = 10)
       PARAMETER           (MWCAP  = 15)
       PARAMETER           (MWIND  = 40)
+!WAM4      parameter           (mswdis=5)                                      MSL
 !
 !  7. Local variables
 !
@@ -1817,6 +1820,7 @@
       INTEGER             JWY2,        JWY3,        JZEL  ,      JPBOT
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
       INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
+      INTEGER             jutop                                                              MSL
 !
 !     *** location and dimensions of computational grid ***
 !
@@ -2332,6 +2336,9 @@
 ! WDIP   [    0.] wind direction with respect to problem coordinates
 !                 =dir; set by command WIND ... [dir]
 !
+! pswdis(mswdis) Parameters for Arduin et al (2008) swell dissipation as per WW3
+! s1,s2,s3,Re,s5
+!
       INTEGER             DSHAPE,      FSHAPE
       INTEGER             ICMAX
       INTEGER             IBOT,        ICOR,        ICUR
@@ -2343,6 +2350,7 @@
       INTEGER             NSTATC,      NSTATM,      NUMOBS,      NCOMPT   40.41
       INTEGER             IDIFFR                                          40.21
       INTEGER             IFRSRF                                          41.06
+      integer             iswdis
       REAL                DEPMIN,      PBOT(MBOT),  PNUMS(MNUMS)
       REAL                PSETUP(MSETUP),           PSHAPE(MSHAPE)
       REAL                PSURF(MSURF),             PTRIAD(MTRIAD)
@@ -2353,6 +2361,7 @@
       REAL                PQUAD(MQUAD)
       REAL                RCOMPT(5000,5)
       REAL                PDIFFR(MDIFFR)                                  40.21
+!WAM4      real                pswdis(mswdis)                                  MSL
       LOGICAL             ACUPDA
       LOGICAL             BNDCHK,      BNAUT,       ONED,        BRESCL
       LOGICAL             OFFSRC                                          40.80
