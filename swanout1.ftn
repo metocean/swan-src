@@ -708,7 +708,7 @@
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
-     &       IVTYPE.eq.70 .OR. IVTYPE.eq.71 .OR. IVTYPE.ge.72 .OR.
+     &       IVTYPE.eq.80 .OR. IVTYPE.eq.81 .OR. IVTYPE.ge.82 .OR.
      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
      &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
@@ -3223,7 +3223,7 @@
         FSWELL = PI2 * OUTPAR(5)
         do ipart=0,2
         IVTYPE = 12
-        IVTYP2 = 70
+        IVTYP2 = 76
         IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2+ipart)) THEN                                          MSL
            EMAX = 0.
            isigp(ipart) = -1
@@ -3279,7 +3279,7 @@
                 END IF
               END IF
            END DO
-           IF (ISIGM.GT.1) THEN
+           IF (ISIGM.GT.1.AND.ISIGM.LT.MSC) THEN
              SIG1 = SPCSIG(ISIGM-1)
              SIG2 = SPCSIG(ISIGM+1)
              SIG3 = SPCSIG(ISIGM  )
@@ -3307,7 +3307,7 @@
 !       sea/swell peak period based on parabolic fitting
 !       40.51
 !      
-        do IVTYPE = 73,74 
+        do IVTYPE = 83,84 
         IF (OQPROC(IVTYPE)) THEN
            EMAX = 0.
            ETD  = 0.
@@ -3334,7 +3334,7 @@
                 END IF
               END IF
            END DO
-           IF (ISIGM.GT.1) THEN
+           IF (ISIGM.GT.1.AND.ISIGM.LT.MSC) THEN
              SIG1 = SPCSIG(ISIGM-1)
              SIG2 = SPCSIG(ISIGM+1)
              SIG3 = SPCSIG(ISIGM  )
@@ -3401,7 +3401,7 @@
 !       mean direction at peak frequency
 !
         do ipart=0,2
-        IVTYP1 = 70+ipart
+        IVTYP1 = 78+ipart
         IF (OQPROC(IVTYP1)) THEN
             if (isigp(ipart).gt.0) then
             eex=0
@@ -3642,7 +3642,7 @@
 !
 !       spectral bandwidth
 !
-        IVTYPE = 75
+        IVTYPE = 85
         IF (OQPROC(IVTYPE)) THEN
           ETOT = 0.
           EM2=0.

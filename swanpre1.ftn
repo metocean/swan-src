@@ -452,7 +452,7 @@
       IF (KEYWIS ('NCOUT')) THEN
 	  ncproc=1
 	  CALL INCSTR ('NCFILE',ncfile,'STA','swan.nc')
-          WRITE (PRINTF,*)' ** NETCDF file request: ',ncfile
+          WRITE (PRINTF,*)'NETCDF file request: ',ncfile
 	  GOTO 100
       ENDIF
 !
@@ -2634,16 +2634,13 @@
 ! ===============================================
 !
 !WAM4      IF (KEYWIS ('SWDIS')) THEN
-!WAM4        MCMVAR=MCMVAR+1
-!WAM4        JUTOP=MCMVAR
 !WAM4        ISWDIS = 1
 !WAM4        CALL INREAL ('S1', pswdis(1), 'STA', 0.7)
 !WAM4        CALL INREAL ('S2', pswdis(2), 'STA', -0.18)
 !WAM4        CALL INREAL ('S3', pswdis(3), 'STA', -0.15)
 !WAM4        CALL INREAL ('Re', pswdis(4), 'STA', 100000)
 !WAM4        CALL INREAL ('S5', pswdis(5), 'STA', 1.2)
-!WAM4        ISWELLFT=200
-!WAM4        CALL SWELLFT_TABU(SWELLFT,ISWELLFT)
+!WAM4        CALL TABU_SWELLFT()
 !WAM4        GOTO 100
 !WAM4      ENDIF
 !

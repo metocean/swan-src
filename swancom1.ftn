@@ -3516,6 +3516,16 @@
       WRITE(PRINTF,1018) PWIND(13)
  1018 FORMAT('                      : LIM_PM ',E12.4)
 !
+      IF (ISWDIS.EQ.1) THEN
+        WRITE(PRINTF,7120) PSWDIS(1), PSWDIS(2)
+ 7120   FORMAT(' Swell dissipation  : S1     ',E12.4,
+     &         ' S2   ',E12.4)
+        WRITE(PRINTF,7121) PSWDIS(3), PSWDIS(4)
+ 7121   FORMAT('                    : S3     ',E12.4,
+     &         ' Re   ',E12.4)
+        WRITE(PRINTF,7122) PSWDIS(5)
+ 7122   FORMAT('                    : S5     ',E12.4)
+      ENDIF
       WRITE(PRINTF,*)
       IF ( ITEST .GT. 2 )  THEN
          DO IS = 1, MSC

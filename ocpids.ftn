@@ -90,7 +90,7 @@
 !
       LOGICAL    LREAD, FILEXI
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,
-     &           PLTOPT *4, TIMSTR *24,
+     &           PLTOPT *4, TIMSTR *15,
      &           OUTFO *40, TSTFO *40, TXT*120
       INTEGER    PRCTIM(6), INIVER, INIVEF
       INTEGER    PFROPT                                                   40.31
@@ -416,10 +416,11 @@
 !
 !     --------Fortran 90 date-time routines --------
 !
-      CHARACTER TIMSTR *24, CDUMMY *5                                     30.82
+      CHARACTER TIMSTR *15, TSTRDUM *20, CDUMMY *5                        30.82
       INTEGER   IDUMMY(8)                                                 30.82
 !
-      CALL DATE_AND_TIME (TIMSTR(1:8), TIMSTR(10:20), CDUMMY, IDUMMY)     30.70
+      TSTRDUM(1:15)=TIMSTR(1:15)
+      CALL DATE_AND_TIME (TSTRDUM(1:8), TSTRDUM(10:20), CDUMMY, IDUMMY)     30.70
       CALL DTSTTI (1, TIMSTR, PRCTIM)                                     30.70
 
       RETURN
@@ -492,7 +493,7 @@
 !
       INTEGER :: JUMPYEAR = 30     ! Used in interpretation of 2-digit year code
       INTEGER    IOPT, DTTIME(6)
-      CHARACTER  TIMSTR *24, MONC(12) *3, MONCI *3
+      CHARACTER  TIMSTR *15, MONC(12) *3, MONCI *3
       DATA MONC /'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL',
      &           'AUG', 'SEP', 'OCT', 'NOV', 'DEC'/
 !
@@ -602,7 +603,7 @@
 !     Source:
 !
       INTEGER    IOPT, DTTIME(6)
-      CHARACTER  TIMSTR *24, MONC(12) *3
+      CHARACTER  TIMSTR *15, MONC(12) *3
       DATA MONC /'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul',
      &           'Aug', 'Sep', 'Oct', 'Nov', 'Dec'/
 !

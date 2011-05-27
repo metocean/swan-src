@@ -61,9 +61,9 @@
 !     UFRIC     2D    Friction velocity
 !
 !
-      INTEGER  ID     ,IS     ,ISSTOP
+      INTEGER  ID     ,IS     ,ISSTOP, ind
 !
-      REAL reyn,fe,fegm,SDIS,uurat,NU_AIR,C0
+      REAL reyn,z0visc,z0noz,fegm,SDIS,uurat,NU_AIR,C0,aorb,xi
       REAL COSWIND(MDC)
 !
 !
@@ -89,13 +89,17 @@
 !
 !     2*U_sig*H_s/v_a
       NU_AIR=1.5e-5
-      reyn=8*2**0.5*UTOP(kcgrd(1))*sqrt(ETOT(kcgrd(1)))/NU_AIR
+      Z0VISC = 0.1*nu_air/MAX(UFRIC(kcgrd(1)),0.0001)
+      Z0NOZ = MAX(Z0VISC,0.1)!ZZ0RAT*Z0)
+      aorb=2*sqrt(ETOT(kcgrd(1)))
+      reyn=4*2**0.5*UTOP(kcgrd(1))*aorb/NU_AIR
       uurat=UFRIC(KCGRD(1))/(2**0.5*UTOP(kcgrd(1)))
-      fegm=1
+      xi=(ALOG10(MAX(AORB/Z0NOZ,3.))-0.3)/DELAB
+      ind=min(int(xi),iswellft)
+      fegm=swellft(ind)
       c0=16*rhoaw/grav
-
-      DO IDDUM = IDCMIN(IS) , IDCMAX(IS)
-	  ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+      print*,aorb,fegm
+      DO ID = 1,MDC
 	  COSWIND(ID)=ECOS(ID)*COS(THETAW(kcgrd(1)))
      &+ESIN(ID)*SIN(THETAW(kcgrd(1)))
       enddo
@@ -111,7 +115,7 @@
      &     *(fegm+(pswdis(3)+pswdis(2)*COSWIND(ID))*uurat)
 	  END IF	
 	  IMATDA(ID,IS) = IMATDA(ID,IS) + SDIS
-          DISSC1(ID,IS,3) = DISSC1(ID,IS,3) + SDIS
+          DISSC1(ID,IS,6) = DISSC1(ID,IS,6) + SDIS
 	ENDDO
       ENDDO
 !
@@ -129,7 +133,7 @@
       END
 
 ! ----------------------------------------------------------------------
-      SUBROUTINE TABU_SWELLFT(SWELLFT,IAB)
+      SUBROUTINE TABU_SWELLFT()
 !/
 !/                  +-----------------------------------+
 !/                  | WAVEWATCH III           NOAA/NCEP |
@@ -145,7 +149,7 @@
 !     METHOD.
 !      tabulation on Kelvin functions
 !
-!
+      use swcomm3
 ! 10. Source code :
 !
 !/ ------------------------------------------------------------------- /
@@ -159,15 +163,14 @@
 !      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
 !                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
 ! ----------------------------------------------------------------------
-      INTEGER I,ITER,IAB
-      REAL KER, KEI, DELAB
+      INTEGER I,ITER
+      REAL KER, KEI
       REAL ABR,ABRLOG,L10,FACT,FSUBW,FSUBWMEMO,dzeta0,dzeta0memo
-      real swellft(iab)
 !
 !
-      DELAB   = (ABMAX-ABMIN)/REAL(IAB)
+      DELAB   = (ABMAX-ABMIN)/REAL(ISWELLFT)
       L10=ALOG(10.)
-      DO I=0,IAB
+      DO I=0,ISWELLFT
          ABRLOG=ABMIN+1.*I*DELAB
 	      ABR=EXP(ABRLOG*L10)
 	      FACT=1/ABR/(21.2*KAPPA)

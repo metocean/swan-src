@@ -4102,7 +4102,7 @@
 
       CHARACTER (LEN=4)  :: BTYPE     ! type of boundary cond.
 !CDAT10      CHARACTER (LEN=10) :: CDATE     ! date-time
-!CDAT12      CHARACTER (LEN=12) :: CDATE     ! date-time
+      CHARACTER (LEN=12) :: CDATE     ! date-time
 !CDAT14      CHARACTER (LEN=14) :: CDATE     ! date-time
       CHARACTER (LEN=80) :: HEDLIN    ! heading line
 

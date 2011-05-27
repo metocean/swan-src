@@ -116,7 +116,7 @@
 !
       CHARACTER*4        BLANK
       CHARACTER          COMID
-      CHARACTER*(LINELN) ELTEXT
+      CHARACTER*(LINELN+4) ELTEXT
       CHARACTER*4        ELTYPE
       CHARACTER*(LINELN) KAART
       CHARACTER          KAR
@@ -621,7 +621,7 @@
 !     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 75, MOUTPA=50)                                   MSL 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 85, MOUTPA=50)                                   MSL 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -2407,7 +2407,8 @@
 ! s1,s2,s3,Re,s5
 !WAM4      integer             iswdis,iswellft
 !WAM4      real                pswdis(mswdis)                                  MSL
-!WAM4      real                swellft(200)
+!WAM4      real                swellft(0:200),delab
+!WAM4      Parameter(iswellft=200)
 !
 !$OMP THREADPRIVATE(ICMAX,CSETUP)
 !
