@@ -621,7 +621,7 @@
 !     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 85, MOUTPA=50)                                   MSL 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 85, MOUTPA=60)                                   MSL 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !

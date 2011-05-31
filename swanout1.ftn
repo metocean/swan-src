@@ -2905,7 +2905,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 58, 59, 70,71,72,73,74,75/                                 MSL 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59, 80,81,82,83,84,85/                                 MSL 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -3223,8 +3223,9 @@
         FSWELL = PI2 * OUTPAR(5)
         do ipart=0,2
         IVTYPE = 12
-        IVTYP2 = 76
-        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2+ipart)) THEN                                          MSL
+        IVTYP2 = 80
+        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYP2+ipart).OR.OQPROC(83).OR.
+     & OQPROC(84)) THEN                                                 MSL
            EMAX = 0.
            isigp(ipart) = -1
            DO IS = 1, MSC
@@ -3311,29 +3312,7 @@
         IF (OQPROC(IVTYPE)) THEN
            EMAX = 0.
            ETD  = 0.
-           ISIGM = -1
-           DO IS = 1, MSC
-              if (ivtype.eq.73.and.spcsig(is).lt.fswell) cycle
-              if (ivtype.eq.74.and.spcsig(is).gt.fswell) cycle
-              ED  = ETD
-              ETD = 0.
-              DO ID = 1, MDC
-                ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)*DDIR
-              END DO
-              IF (ETD.GT.EMAX) THEN
-                EMAX  = ETD
-                ISIGM = IS
-                EMAXD = ED
-                EMAXU = 0.
-                IF (IS.LT.MSC) THEN
-                   DO ID = 1, MDC
-                     EMAXU = EMAXU + SPCSIG(IS+1)*ACLOC(ID,IS+1)*DDIR
-                   END DO
-                ELSE
-                   EMAXU = EMAX
-                END IF
-              END IF
-           END DO
+           isigm=isigp(ivtype-82)
            IF (ISIGM.GT.1.AND.ISIGM.LT.MSC) THEN
              SIG1 = SPCSIG(ISIGM-1)
              SIG2 = SPCSIG(ISIGM+1)
@@ -3401,7 +3380,7 @@
 !       mean direction at peak frequency
 !
         do ipart=0,2
-        IVTYP1 = 78+ipart
+        IVTYP1 = 80+ipart
         IF (OQPROC(IVTYP1)) THEN
             if (isigp(ipart).gt.0) then
             eex=0

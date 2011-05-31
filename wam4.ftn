@@ -1,6 +1,6 @@
 !****************************************************************
 !
-      SUBROUTINE SWDIS (DEP2    ,ECOS    ,ESIN    ,AC2     ,     
+      SUBROUTINE SWDIS (DEP2, ECOS    ,ESIN    ,AC2     ,UTOP  ,     
      &                 IMATDA  ,KWAVE   ,SPCSIG  ,IDCMIN  ,IDCMAX  ,
      &                 ISSTOP  ,DISSC1  ,THETAW   ,UFRIC, ETOT  )        
 !
@@ -63,7 +63,7 @@
 !
       INTEGER  ID     ,IS     ,ISSTOP, ind
 !
-      REAL reyn,z0visc,z0noz,fegm,SDIS,uurat,NU_AIR,C0,aorb,xi
+      REAL reyn,z0visc,z0noz,fegm,SDIS,uorb,NU_AIR,C0,aorb,xi
       REAL COSWIND(MDC)
 !
 !
@@ -73,12 +73,11 @@
      &         ESIN(MDC)                 ,
      &         IMATDA(MDC,MSC)           ,
      &         KWAVE(MSC,ICMAX)          ,
-     &         PLBTFR(MDC,MSC,NPTST)     ,                                
-     &         UTOP(MCGRD)               ,
-     &         THETAW(MCGRD)                ,
+     &         UTOP(MCGRD)            ,
+     &         THETAW                ,
      &         DISSC1(MDC,MSC,1:MDISP)   ,                                
-     &         UFRIC(MCGRD),
-     &         ETOT(MCGRD)                                               
+     &         UFRIC,
+     &         ETOT                                              
 !
       INTEGER  IDCMIN(MSC)               ,
      &         IDCMAX(MSC)
@@ -89,34 +88,36 @@
 !
 !     2*U_sig*H_s/v_a
       NU_AIR=1.5e-5
-      Z0VISC = 0.1*nu_air/MAX(UFRIC(kcgrd(1)),0.0001)
-      Z0NOZ = MAX(Z0VISC,0.1)!ZZ0RAT*Z0)
-      aorb=2*sqrt(ETOT(kcgrd(1)))
-      reyn=4*2**0.5*UTOP(kcgrd(1))*aorb/NU_AIR
-      uurat=UFRIC(KCGRD(1))/(2**0.5*UTOP(kcgrd(1)))
+      Z0VISC = 0.1*nu_air/MAX(UFRIC,0.0001)
+      ZO     = PWIND(14) * UFRIC * UFRIC / GRAV
+      ZE     = ZO / SQRT( 1-0.75 )
+      Z0NOZ = MAX(Z0VISC,0.04*ze)
+      aorb=2*sqrt(ETOT)
+      uorb=2**0.5*UTOP(kcgrd(1))
+      reyn=4*uorb*aorb/NU_AIR
       xi=(ALOG10(MAX(AORB/Z0NOZ,3.))-0.3)/DELAB
       ind=min(int(xi),iswellft)
       fegm=swellft(ind)
-      c0=16*rhoaw/grav
-      print*,aorb,fegm
+!      print*,fegm,ind,aorb,z0noz,ze
+      c0=16*0.00125/grav
+!      print*,uorb,reyn
       DO ID = 1,MDC
-	  COSWIND(ID)=ECOS(ID)*COS(THETAW(kcgrd(1)))
-     &+ESIN(ID)*SIN(THETAW(kcgrd(1)))
+         COSWIND(ID)=ECOS(ID)*COS(THETAW)+ESIN(ID)*SIN(THETAW)
       enddo
 
       
       DO IS=1,ISSTOP
         DO IDDUM = IDCMIN(IS) , IDCMAX(IS)
-	  ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
-	  IF (REYN.LT.PSWDIS(4)) THEN
-           SDIS=-PSWDIS(5)*DRAT*2*KWAVE(IS,1)*SQRT(2*NU_AIR*SPCSIG(IS))
-	  ELSE
-	   SDIS=-c0*spcsig(is)**2*PSWDIS(1)
-     &     *(fegm+(pswdis(3)+pswdis(2)*COSWIND(ID))*uurat)
-	  END IF	
-	  IMATDA(ID,IS) = IMATDA(ID,IS) + SDIS
+          ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+          IF (REYN.LT.PSWDIS(4)) THEN
+           SDIS=PSWDIS(5)*0.0025*KWAVE(IS,1)*SQRT(2*NU_AIR*SPCSIG(IS))
+          ELSE
+           SDIS=c0*spcsig(is)**2*PSWDIS(1)
+     &     *(fegm+(pswdis(3)+pswdis(2)*COSWIND(ID))*ufric/uorb)
+         END IF
+          IMATDA(ID,IS) = IMATDA(ID,IS) + SDIS
           DISSC1(ID,IS,6) = DISSC1(ID,IS,6) + SDIS
-	ENDDO
+         ENDDO
       ENDDO
 !
 !       *** test output ***

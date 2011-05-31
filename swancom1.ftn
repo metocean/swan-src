@@ -2969,8 +2969,8 @@
      &  SWMATR(1,1,JRED0)   ,SWMATR(1,1,JRED1)   ,                        40.85
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
      &  COMPDA(1,JNPLA2)    ,                                             40.55
-     &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO                  40.41 40.03
-     &                                                                )   30.21
+     &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO,                  40.41 40.03
+     &  compda(1,jutop)                                               )   30.21
 !TIMG        CALL SWTSTO(117)                                                  40.23
 !
 !       *** compute transport of action and fill the matrix ***
@@ -4871,6 +4871,7 @@
       ABRBOT         = 0.001
       UBOT(KCGRD(1)) = 0.
       TMBOT(KCGRD(1))= 0.
+      UTOP(KCGRD(1))=0.
 !
 !     Calculate total spectral energy:
 !
@@ -5868,8 +5869,8 @@
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
      &                     NPLA2      ,                                   40.55
-     &                     URSELL     ,ANYBIN     ,REFLSO                 40.41 40.03
-     &                                                        )           30.21
+     &                     URSELL     ,ANYBIN     ,REFLSO     ,            40.41 40.03
+     &                     utop                                   )           30.21
 !
 !****************************************************************
 
@@ -6187,6 +6188,7 @@
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: KWAVE(MSC,MICMAX)                                          40.22
       REAL  :: UBOT(MCGRD)
+      real  :: utop(mcgrd)
       REAL  :: UX2(MCGRD)
       REAL  :: UY2(MCGRD)
       REAL  :: UE(MSC4MI:MSC4MA , MDC4MI:MDC4MA )
@@ -6368,10 +6370,10 @@
 !TIMG      CALL SWTSTO(133)                                                    40.23
 !
 !	Calculate swell dissipation                                         MSL
-!WAM4       if (iswdis.ge.1) 
-!WAM4     &   CALL SWDIS (DEP2     ,ECOS     ,ESIN     ,AC2      ,    
-!WAM4     &             IMATDA   ,KWAVE    ,SPCSIG ,IDCMIN   ,IDCMAX   ,
-!WAM4     &             ISSTOP   ,DISSC1   ,THETAW    ,USTAR, ETOT   )     
+!WAM4       if (iswdis.ge.1)
+!WAM4     &   CALL SWDIS (DEP2,ECOS,ESIN,AC2,utop,    
+!WAM4     &   IMATDA   ,KWAVE    ,SPCSIG     ,IDCMIN   ,IDCMAX   ,
+!WAM4     &   ISSTOP   ,DISSC1   ,THETAW     ,UFRIC    , ETOT   )     
 !     compute nonlinear interactions, starting with triads                 NB!
 !
 !TIMG      CALL SWTSTA(134)                                                    40.23
