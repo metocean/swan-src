@@ -99,7 +99,7 @@
       ind=min(int(xi),iswellft)
       fegm=swellft(ind)
 !      print*,fegm,ind,aorb,z0noz,ze
-      c0=16*0.00125/grav
+      c0=16*0.00125*uorb/grav
 !      print*,uorb,reyn
       DO ID = 1,MDC
          COSWIND(ID)=ECOS(ID)*COS(THETAW)+ESIN(ID)*SIN(THETAW)
