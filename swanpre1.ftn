@@ -2637,7 +2637,7 @@
 !WAM4        ISWDIS = 1
 !WAM4        CALL INREAL ('S1', pswdis(1), 'STA', 0.7)
 !WAM4        CALL INREAL ('S2', pswdis(2), 'STA', -0.018)
-!WAM4        CALL INREAL ('S3', pswdis(3), 'STA', -0.015)
+!WAM4        CALL INREAL ('S3', pswdis(3), 'STA', 0.015)
 !WAM4        CALL INREAL ('Re', pswdis(4), 'STA', 1.e5)
 !WAM4        CALL INREAL ('S5', pswdis(5), 'STA', 1.2)
 !WAM4        pswdis(3)=abs(pswdis(3))
