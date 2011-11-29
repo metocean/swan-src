@@ -91,7 +91,7 @@
       aorb=2*sqrt(ETOT)
       uorb=2**0.5*UTOP(kcgrd(1))
       reyn=4*uorb*aorb/NU_AIR
-      if (REYN.LT.PSWDIS(4)) THEN !Laminar
+      if (REYN.le.PSWDIS(4)) THEN !Laminar
 !      print*,'Laminar',reyn,aorb
       DO IS=1,ISSTOP
         SDIS=PSWDIS(5)*0.0025*KWAVE(IS,1)*SQRT(2*NU_AIR*SPCSIG(IS))

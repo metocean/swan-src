@@ -1,5 +1,3 @@
-e
-curvar=0.1
 !     SWAN main program and miscellaneous routines
 !
 !     Contents of this file:
@@ -3830,10 +3828,8 @@ curvar=0.1
           ENDIF                                                           40.04
           SUMWREG = 1. -SUMWEXC                                           40.04
 !
-!          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
-!            SVALQI = EXCFLD(IGRID)                                        40.04
-          if (sumwreg.le.0.) then
-            svalqi=0.
+          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
+            SVALQI = EXCFLD(IGRID)                                        40.04
           ELSE                                                            40.04
             SVALQI = ( WF1*ARRINP(II)   + WF2*ARRINP(II+MXG(IGRID))       40.04
      &               + WF3*ARRINP(II+1) + WF4*ARRINP(II+1+MXG(IGRID)) )   40.04
@@ -3931,10 +3927,8 @@ curvar=0.1
           ENDIF                                                           40.04
           SUMWREG = 1. -SUMWEXC                                           40.04
 !
-!          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
-!            SVALQI = EXCFLD(IGRID)                                        40.04
-          if (sumwreg.le.0.) then                                        MSL
-                svalqi=0.                                               MSL
+          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
+            SVALQI = EXCFLD(IGRID)                                        40.04
           ELSE                                                            40.04
             SVALQI = ( WF1*ARRINP(II)   + WF2*ARRINP(II+MXG(IGRID))       40.04
      &               + WF3*ARRINP(II+1) + WF4*ARRINP(II+1+MXG(IGRID)) )   40.04
