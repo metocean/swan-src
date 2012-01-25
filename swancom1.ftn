@@ -1216,7 +1216,7 @@
           COMPDA(IP,JDSXS) = 0.                                           40.61
           COMPDA(IP,JDSXW) = 0.                                           40.61
           COMPDA(IP,JDSXV) = 0.                                           40.61
-          compda(ip,jdssw) = 0.                                           MSL
+!WAM4          compda(ip,jdssw) = 0.                                           MSL
           COMPDA(IP,JGENR) = 0.                                           40.85
           COMPDA(IP,JGSXW) = 0.                                           40.85
           COMPDA(IP,JREDS) = 0.                                           40.85
@@ -2881,7 +2881,8 @@
      &                 HM      ,KMESPC  ,SMEBRK,                          40.02
      &                 COMPDA(1,JPBOT)  ,                                 40.51
      &                 SWPDIR,
-     &                 COMPDA(1,JUTOP)                  )                  MSL
+     &                 )
+!     &                 COMPDA(1,JUTOP)                  )                  MSL
 !TIMG        CALL SWTSTO(116)                                                  40.23
 !
         COMPDA(KCGRD(1),JHS) = HS                                         30.70
@@ -2971,7 +2972,8 @@
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
      &  COMPDA(1,JNPLA2)    ,                                             40.55
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO,                  40.41 40.03
-     &  compda(1,jutop)                                               )   30.21
+     &  )
+!     &  compda(1,jutop)                                               )   30.21
 !TIMG        CALL SWTSTO(117)                                                  40.23
 !
 !       *** compute transport of action and fill the matrix ***
@@ -3112,7 +3114,7 @@
      &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXV)    ,                              40.67 40.61
-     &                  compda(1,jdssw)    ,
+!WAM4     &                  compda(1,jdssw)    ,
      &                  COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,          40.85
      &                  COMPDA(1,JRSXQ)    ,COMPDA(1,JRSXT)    ,          40.85
      &                  COMPDA(1,JREDS)    ,                              40.85
@@ -3518,16 +3520,16 @@
       WRITE(PRINTF,1018) PWIND(13)
  1018 FORMAT('                      : LIM_PM ',E12.4)
 !
-      IF (ISWDIS.EQ.1) THEN
-        WRITE(PRINTF,7120) PSWDIS(1), PSWDIS(2)
- 7120   FORMAT(' Swell dissipation  : S1     ',E12.4,
-     &         ' S2   ',E12.4)
-        WRITE(PRINTF,7121) PSWDIS(3), PSWDIS(4)
- 7121   FORMAT('                    : S3     ',E12.4,
-     &         ' Re   ',E12.4)
-        WRITE(PRINTF,7122) PSWDIS(5)
- 7122   FORMAT('                    : S5     ',E12.4)
-      ENDIF
+!WAM4      IF (ISWDIS.EQ.1) THEN
+!WAM4        WRITE(PRINTF,7120) PSWDIS(1), PSWDIS(2)
+!WAM4 7120   FORMAT(' Swell dissipation  : S1     ',E12.4,
+!WAM4     &         ' S2   ',E12.4)
+!WAM4        WRITE(PRINTF,7121) PSWDIS(3), PSWDIS(4)
+!WAM4 7121   FORMAT('                    : S3     ',E12.4,
+!WAM4     &         ' Re   ',E12.4)
+!WAM4        WRITE(PRINTF,7122) PSWDIS(5)
+!WAM4 7122   FORMAT('                    : S5     ',E12.4)
+!WAM4      ENDIF
       WRITE(PRINTF,*)
       IF ( ITEST .GT. 2 )  THEN
          DO IS = 1, MSC
@@ -4624,8 +4626,9 @@
      &                   AC2TOT  ,ETOT    ,                               40.02
      &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
      &                   HM      ,KMESPC  ,SMEBRK  ,                      40.02
-     &                   TMBOT   ,SWPDIR,                                 40.51 40.16
-     &                   UTOP                     )                        MSL
+     &                   TMBOT   ,SWPDIR                                  40.51 40.16
+     &                   )
+!     &                   ,UTOP                     )                        MSL
 !
 !****************************************************************
 !
@@ -4785,7 +4788,7 @@
 !
       REAL, INTENT(IN OUT) :: AC2(MDC,MSC,MCGRD)
       REAL, INTENT(IN OUT) :: QB(MCGRD)
-      REAL, INTENT(IN OUT) :: UBOT(MCGRD),UTOP(MCGRD)
+      REAL, INTENT(IN OUT) :: UBOT(MCGRD) !,UTOP(MCGRD)                   MSL
       REAL, INTENT(IN OUT) :: URSELL(MCGRD)
       REAL, INTENT(IN OUT) :: TMBOT(MCGRD)                                40.51
 !
@@ -4873,7 +4876,7 @@
       ABRBOT         = 0.001
       UBOT(KCGRD(1)) = 0.
       TMBOT(KCGRD(1))= 0.
-      UTOP(KCGRD(1))=0.
+!      UTOP(KCGRD(1))=0.
 !
 !     Calculate total spectral energy:
 !
@@ -4990,7 +4993,7 @@
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
         IF ( UB2.GT.0. .AND. AB2.GT.0. )                                  40.51
      &                               TMBOT(KCGRD(1)) = PI2*SQRT(AB2/UB2)  40.51
-        if ( ETOT2 .gt.0 ) UTOP(KCGRD(1)) = SQRT ( 2. * ETOT2 )             MSL
+!        if ( ETOT2 .gt.0 ) UTOP(KCGRD(1)) = SQRT ( 2. * ETOT2 )             MSL
 !
       ENDIF
 !
@@ -5871,8 +5874,9 @@
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
      &                     NPLA2      ,                                   40.55
-     &                     URSELL     ,ANYBIN     ,REFLSO     ,            40.41 40.03
-     &                     utop                                   )           30.21
+     &                     URSELL     ,ANYBIN     ,REFLSO                 40.41 40.03
+     & )
+!     &                     ,utop                                   )           MSL
 !
 !****************************************************************
 
@@ -6190,7 +6194,7 @@
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL  :: KWAVE(MSC,MICMAX)                                          40.22
       REAL  :: UBOT(MCGRD)
-      real  :: utop(mcgrd)
+!      real  :: utop(mcgrd)
       REAL  :: UX2(MCGRD)
       REAL  :: UY2(MCGRD)
       REAL  :: UE(MSC4MI:MSC4MA , MDC4MI:MDC4MA )
@@ -6213,7 +6217,7 @@
       REAL  :: PLNL4S(MDC,MSC,NPTST)
       REAL  :: PLNL4D(MDC,MSC,NPTST)
       REAL  :: PLVEGT(MDC,MSC,NPTST)                                      40.55
-      real  :: plswdis(mdc,msc,nptst)
+!WAM4      real  :: plswdis(mdc,msc,nptst)
       REAL  :: PLTRI(MDC,MSC,NPTST)
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)

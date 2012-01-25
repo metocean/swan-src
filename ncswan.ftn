@@ -342,7 +342,6 @@
 	    ELSE
 	      GOTO 50
 	    END IF
-
 	    READ(funit,*,ERR=50,END=50) dat
 	    itime=itime+1
 	    ncerr=writeslab(varnc,itime,dat,mxk,myk)

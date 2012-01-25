@@ -1283,11 +1283,11 @@
                    JDSXV  = MCMVAR                                        40.65
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF
-                 IF (IVTYPE.EQ.85 .AND. JDSSW.LE.1) THEN                40.65
-                   MCMVAR = MCMVAR+1                                    40.65
-                   JDSSW  = MCMVAR                                      40.65
-                   ALOCMP = .TRUE.                                      40.97
-                ENDIF                                                     40.65
+!WAM4                 IF (IVTYPE.EQ.86 .AND. JDSSW.LE.1) THEN                
+!WAM4                   MCMVAR = MCMVAR+1                                    
+!WAM4                   JDSSW  = MCMVAR
+!WAM4                   ALOCMP = .TRUE.                                      
+!WAM4                 ENDIF
                 IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
                    MCMVAR = MCMVAR+1                                      40.85
                    JGENR  = MCMVAR                                        40.85

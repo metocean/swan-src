@@ -5195,23 +5195,23 @@
      &        'command INIT should follow READ BOT or READ UNSTRUC')      40.80
         ICOND = 4
         CALL INKEYW ('STA', 'MULT')
-        jxmin=1
-        jymin=1
+!        jxmin=1
+!        jymin=1
         IF (KEYWIS ('SING')) THEN                                         40.62
           SINGLEHOT = .TRUE.                                              40.62
           JXMAX = MXCGL                                                   40.62
           JYMAX = MYCGL                                                   40.62
-          if (inode.eq.1) then
-            jxmin=mxf
-            jymin=myf
-          elseif (inode.eq.nproc) then
-            jxmax=mxl
-            jymax=myl
-          endif
-!MPI          call mpi_bcast(jxmin,1,SWINT,0,MPI_COMM_WORLD,IERR)
-!MPI          call mpi_bcast(jymin,1,SWINT,0,MPI_COMM_WORLD,IERR)
-!MPI          call mpi_bcast(jxmax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
-!MPI          call mpi_bcast(jymax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
+!          if (inode.eq.1) then
+!            jxmin=mxf
+!            jymin=myf
+!          elseif (inode.eq.nproc) then
+!            jxmax=mxl
+!            jymax=myl
+!          endif
+!!MPI          call mpi_bcast(jxmin,1,SWINT,0,MPI_COMM_WORLD,IERR)
+!!MPI          call mpi_bcast(jymin,1,SWINT,0,MPI_COMM_WORLD,IERR)
+!!MPI          call mpi_bcast(jxmax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
+!!MPI          call mpi_bcast(jymax,1,SWINT,nproc-1,MPI_COMM_WORLD,IERR)
           CALL IGNORE ('SING')                                            40.62
         ELSE                                                              40.62
           SINGLEHOT = .FALSE.                                             40.62
@@ -5219,7 +5219,8 @@
           JYMAX = MYC                                                     40.62
           CALL IGNORE ('MULT')                                            40.62
         END IF                                                            40.62
-        NPTOT =(JXMAX-JXMIN+1)*(JYMAX-JYMIN+1)                             MSL
+!        NPTOT =(JXMAX-JXMIN+1)*(JYMAX-JYMIN+1)                             MSL
+         nptot=jxmax*jymax
         IF (OPTG.EQ.5) NPTOT = nverts                                     40.80
         CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
 !       --- append node number to FILENM in case of parallel computing    40.31
@@ -5309,7 +5310,7 @@
         ENDIF
 !
         IF (OPTG.NE.5) THEN                                               40.80
-        DO 290 JX = JXMIN, JXMAX                                              40.62
+        DO 290 JX = 1, JXMAX                                              40.62
 !
 !       --- structured grid                                               40.80
 !
@@ -5318,7 +5319,7 @@
             ELSE
                IX = JX
             ENDIF
-          DO 280 JY = JYMIN, JYMAX                                            40.62
+          DO 280 JY = 1, JYMAX                                            40.62
               IF (SINGLEHOT) THEN                                         40.62
                  IY = JY-MYF+1
               ELSE

@@ -1761,30 +1761,30 @@
 !
 !     swell dissipation
 !
-      IF (OQPROC(86)) THEN                                              MSL
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 86,       
-     &  VOQR(86), JDSSW
-        IF (JDSSW.GT.1) THEN                                            MSL
-           IF (OPTG.NE.5) THEN                                          MSL
-              CALL SWIPOL(COMPDA(1,JDSSW),OVEXCV(86),XC, YC, MIP, CROSS,           MSL
-     &                    VOQ(1,VOQR(86)) ,KGRPNT, COMPDA(1,JDP2))
-           ELSE                                                         MSL
-              CALL SwanInterpolateOutput ( VOQ(1,VOQR(86)), VOQ(1,1),              MSL
-     &                                     VOQ(1,2), COMPDA(1,JDSSW),   MSL
-     &                                     MIP, KVERT, OVEXCV(86) )     MSL
-           ENDIF                                                        MSL
-        ELSE
-           DO IP = 1, MIP                                               MSL
-             VOQ(IP,VOQR(86)) = OVEXCV(86)                              MSL
-           ENDDO                                                        MSL
-        ENDIF
-        IF (INRHOG.EQ.1) THEN
-          DO IP = 1, MIP
-            F1 = VOQ(IP,VOQR(86))
-            IF (.NOT.EQREAL(F1,OVEXCV(86))) VOQ(IP,VOQR(86))=F1*RHO*GRAV
-          END DO
-        ENDIF
-      ENDIF
+!WAM4      IF (OQPROC(86)) THEN                                              MSL
+!WAM4        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 86,       
+!WAM4     &  VOQR(86), JDSSW
+!WAM4        IF (JDSSW.GT.1) THEN                                            MSL
+!WAM4           IF (OPTG.NE.5) THEN                                          MSL
+!WAM4              CALL SWIPOL(COMPDA(1,JDSSW),OVEXCV(86),XC, YC, MIP, CROSS,           MSL
+!WAM4     &                    VOQ(1,VOQR(86)) ,KGRPNT, COMPDA(1,JDP2))
+!WAM4           ELSE                                                         MSL
+!WAM4              CALL SwanInterpolateOutput ( VOQ(1,VOQR(86)), VOQ(1,1),              MSL
+!WAM4     &                                     VOQ(1,2), COMPDA(1,JDSSW),   MSL
+!WAM4     &                                     MIP, KVERT, OVEXCV(86) )     MSL
+!WAM4           ENDIF                                                        MSL
+!WAM4        ELSE
+!WAM4           DO IP = 1, MIP                                               MSL
+!WAM4             VOQ(IP,VOQR(86)) = OVEXCV(86)                              MSL
+!WAM4           ENDDO                                                        MSL
+!WAM4        ENDIF
+!WAM4        IF (INRHOG.EQ.1) THEN
+!WAM4          DO IP = 1, MIP
+!WAM4            F1 = VOQ(IP,VOQR(86))
+!WAM4            IF (.NOT.EQREAL(F1,OVEXCV(86))) VOQ(IP,VOQR(86))=F1*RHO*GRAV
+!WAM4          END DO
+!WAM4        ENDIF
+!WAM4      ENDIF
 !
 !     energy generation
 !
