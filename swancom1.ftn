@@ -1216,6 +1216,7 @@
           COMPDA(IP,JDSXS) = 0.                                           40.61
           COMPDA(IP,JDSXW) = 0.                                           40.61
           COMPDA(IP,JDSXV) = 0.                                           40.61
+          compda(ip,jdssw) = 0.                                           MSL
           COMPDA(IP,JGENR) = 0.                                           40.85
           COMPDA(IP,JGSXW) = 0.                                           40.85
           COMPDA(IP,JREDS) = 0.                                           40.85
@@ -3111,6 +3112,7 @@
      &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXV)    ,                              40.67 40.61
+     &                  compda(1,jdssw)    ,
      &                  COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,          40.85
      &                  COMPDA(1,JRSXQ)    ,COMPDA(1,JRSXT)    ,          40.85
      &                  COMPDA(1,JREDS)    ,                              40.85
@@ -6211,6 +6213,7 @@
       REAL  :: PLNL4S(MDC,MSC,NPTST)
       REAL  :: PLNL4D(MDC,MSC,NPTST)
       REAL  :: PLVEGT(MDC,MSC,NPTST)                                      40.55
+      real  :: plswdis(mdc,msc,nptst)
       REAL  :: PLTRI(MDC,MSC,NPTST)
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)

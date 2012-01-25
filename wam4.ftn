@@ -88,37 +88,45 @@
 !
 !     2*U_sig*H_s/v_a
       NU_AIR=1.5e-5
+      aorb=2*sqrt(ETOT)
+      uorb=2**0.5*UTOP(kcgrd(1))
+      reyn=4*uorb*aorb/NU_AIR
+      if (REYN.le.PSWDIS(4)) THEN !Laminar
+!      print*,'Laminar',reyn,aorb
+      DO IS=1,ISSTOP
+        SDIS=PSWDIS(5)*0.0025*KWAVE(IS,1)*SQRT(2*NU_AIR*SPCSIG(IS))
+        DO IDDUM = IDCMIN(IS) , IDCMAX(IS)
+          ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+          IMATDA(ID,IS) = IMATDA(ID,IS) + SDIS
+          DISSC1(ID,IS,6) = DISSC1(ID,IS,6) + SDIS
+         ENDDO
+      ENDDO
+      else !Turbulent
+!      print*,'Turbulent',reyn,aorb
       Z0VISC = 0.1*nu_air/MAX(UFRIC,0.0001)
       ZO     = PWIND(14) * UFRIC * UFRIC / GRAV
       ZE     = ZO / SQRT( 1-0.75 )
       Z0NOZ = MAX(Z0VISC,0.04*ze)
-      aorb=2*sqrt(ETOT)
-      uorb=2**0.5*UTOP(kcgrd(1))
-      reyn=4*uorb*aorb/NU_AIR
       xi=(ALOG10(MAX(AORB/Z0NOZ,3.))-0.3)/DELAB
       ind=min(int(xi),iswellft)
       fegm=swellft(ind)
-!      print*,fegm,ind,aorb,z0noz,ze
+!      print*,ufric,fegm,ind,aorb,z0noz,ze
       c0=16*0.00125*uorb/grav
 !      print*,uorb,reyn
       DO ID = 1,MDC
          COSWIND(ID)=ECOS(ID)*COS(THETAW)+ESIN(ID)*SIN(THETAW)
       enddo
-
       
       DO IS=1,ISSTOP
         DO IDDUM = IDCMIN(IS) , IDCMAX(IS)
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
-          IF (REYN.LT.PSWDIS(4)) THEN
-           SDIS=PSWDIS(5)*0.0025*KWAVE(IS,1)*SQRT(2*NU_AIR*SPCSIG(IS))
-          ELSE
-           SDIS=c0*spcsig(is)**2*PSWDIS(1)
+          SDIS=c0*spcsig(is)**2*PSWDIS(1)
      &     *(fegm+(pswdis(3)+pswdis(2)*COSWIND(ID))*ufric/uorb)
-         END IF
           IMATDA(ID,IS) = IMATDA(ID,IS) + SDIS
           DISSC1(ID,IS,6) = DISSC1(ID,IS,6) + SDIS
          ENDDO
       ENDDO
+      endif
 !
 !       *** test output ***
 !

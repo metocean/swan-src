@@ -1,4 +1,3 @@
-!
 !     SWAN main program and miscellaneous routines
 !
 !     Contents of this file:
@@ -1366,6 +1365,7 @@
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
       JDSXV  = 1                                                          40.65 40.61
+      JDSSW  = 1                                                          MSL
       JGENR  = 1                                                          40.85
       JGSXW  = 1                                                          40.85
       JREDS  = 1                                                          40.85
@@ -2340,6 +2340,19 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 1.
       OVEXCV(IVTYPE) = -9
+!
+      IVTYPE = 86                                                       MSL
+      OVKEYW(IVTYPE) = 'DISSW'
+      OVSNAM(IVTYPE) = 'Ssw'
+      OVLNAM(IVTYPE) = 'Swell dissipation'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+
 !
 !     various parameters for computation of output quantities             40.00
 !
@@ -3815,10 +3828,8 @@
           ENDIF                                                           40.04
           SUMWREG = 1. -SUMWEXC                                           40.04
 !
-!          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
-!            SVALQI = EXCFLD(IGRID)                                        40.04
-          if (sumwreg.le.0.) then
-            svalqi=0.
+          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
+            SVALQI = EXCFLD(IGRID)                                        40.04
           ELSE                                                            40.04
             SVALQI = ( WF1*ARRINP(II)   + WF2*ARRINP(II+MXG(IGRID))       40.04
      &               + WF3*ARRINP(II+1) + WF4*ARRINP(II+1+MXG(IGRID)) )   40.04
@@ -3916,10 +3927,8 @@
           ENDIF                                                           40.04
           SUMWREG = 1. -SUMWEXC                                           40.04
 !
-!          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
-!            SVALQI = EXCFLD(IGRID)                                        40.04
-          if (sumwreg.le.0.) then                                        MSL
-                svalqi=0.                                               MSL
+          IF (SUMWEXC.GE.SUMWREG)   THEN                                  40.04
+            SVALQI = EXCFLD(IGRID)                                        40.04
           ELSE                                                            40.04
             SVALQI = ( WF1*ARRINP(II)   + WF2*ARRINP(II+MXG(IGRID))       40.04
      &               + WF3*ARRINP(II+1) + WF4*ARRINP(II+1+MXG(IGRID)) )   40.04

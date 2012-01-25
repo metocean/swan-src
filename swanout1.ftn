@@ -1759,6 +1759,33 @@
         ENDIF
       ENDIF
 !
+!     swell dissipation
+!
+      IF (OQPROC(86)) THEN                                              MSL
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 86,       
+     &  VOQR(86), JDSSW
+        IF (JDSSW.GT.1) THEN                                            MSL
+           IF (OPTG.NE.5) THEN                                          MSL
+              CALL SWIPOL(COMPDA(1,JDSSW),OVEXCV(86),XC, YC, MIP, CROSS,           MSL
+     &                    VOQ(1,VOQR(86)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE                                                         MSL
+              CALL SwanInterpolateOutput ( VOQ(1,VOQR(86)), VOQ(1,1),              MSL
+     &                                     VOQ(1,2), COMPDA(1,JDSSW),   MSL
+     &                                     MIP, KVERT, OVEXCV(86) )     MSL
+           ENDIF                                                        MSL
+        ELSE
+           DO IP = 1, MIP                                               MSL
+             VOQ(IP,VOQR(86)) = OVEXCV(86)                              MSL
+           ENDDO                                                        MSL
+        ENDIF
+        IF (INRHOG.EQ.1) THEN
+          DO IP = 1, MIP
+            F1 = VOQ(IP,VOQR(86))
+            IF (.NOT.EQREAL(F1,OVEXCV(86))) VOQ(IP,VOQR(86))=F1*RHO*GRAV
+          END DO
+        ENDIF
+      ENDIF
+!
 !     energy generation
 !
       IF (OQPROC(60)) THEN                                                40.85
@@ -2887,7 +2914,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=27)                                               40.51 40.41 40.00
+      PARAMETER  (NVOTP=26)                                               40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -2905,7 +2932,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 58, 59, 80,81,82,83,84,85/                                 MSL 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59, 80,81,82,83,84/                                 MSL 40.51 40.41 40.00
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
