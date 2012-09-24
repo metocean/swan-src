@@ -5155,6 +5155,8 @@
               IYP = KGRBND(2*IGRBND)
 !
               IF (IXP.GT.0 .AND.IYP.GT.0) THEN
+                if (ixp.ne.1.and.ixp.ne.mxc.and.iyp.ne.1.and.iyp.ne.myc)
+     & cycle
 !
 !               (IXP,IYP) is a valid boundary point
 !
