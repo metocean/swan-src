@@ -1,0 +1,231 @@
+# ------------------------------------------------------------------------------
+#                      Makefile for building SWAN with COAMPS
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Top-level default target
+# ------------------------------------------------------------------------------
+default: coamps
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Use COAMPS build variables to select the appropriate macros file
+# ------------------------------------------------------------------------------
+AR_CMD = ar rv
+ifeq ($(COAMPS_ARCH),amd64)
+  SWAN_OS = $(COAMPS_OS)
+  SWAN_ARCH = x86_64
+  SWAN_COMP = $(COAMPS_COMP)
+endif
+ifeq ($(COAMPS_ARCH),intel)
+  SWAN_OS = $(COAMPS_OS)
+  SWAN_ARCH = i686
+  SWAN_COMP = $(COAMPS_COMP)
+endif
+ifeq ($(COAMPS_ARCH),ibm_sp)
+  SWAN_OS = $(COAMPS_OS)
+  SWAN_ARCH = SP
+  SWAN_COMP = IBM
+  AR_CMD = ar -X32_64 rv
+endif
+ifeq ($(COAMPS_ARCH),cray_xt)
+  SWAN_OS = Cray
+  SWAN_ARCH = XT
+  SWAN_COMP = pgi
+endif
+ifeq ($(COAMPS_ARCH),sgi_altix)
+  SWAN_OS = SGI
+  SWAN_ARCH = Altix
+  SWAN_COMP = intel
+endif
+ifeq ($(COAMPS_ARCH),sgi_ice)
+  SWAN_OS = SGI
+  SWAN_ARCH = ice
+  SWAN_COMP = intel
+  AR_CMD = xiar rv
+endif
+CONFIG = macros.$(SWAN_OS).$(SWAN_ARCH).$(SWAN_COMP).inc
+
+
+# ------------------------------------------------------------------------------
+# Some local variables to make things easier
+# ------------------------------------------------------------------------------
+XTRA_FLAGS =
+ifeq ($(COAMPS_PREC),r8)
+  ifeq ($(COAMPS_ARCH),ibm_sp)
+    XTRA_FLAGS += -WF,-DREAL8
+  else
+    XTRA_FLAGS += -DREAL8
+  endif
+endif
+ifeq ($(SWAN_DEBUG),ON)
+  ifeq ($(COAMPS_ARCH),ibm_sp)
+    XTRA_FLAGS = -WF,-DDEBUG
+  else
+    XTRA_FLAGS = -DDEBUG
+  endif
+endif
+# ------------------------------------------------------------------------------
+SWLIB := $(CURDIR)/libswan.a
+LOBJS := swanesmf.o
+LOBJS += swanfield.o
+LOBJS += w2a.o
+LOBJS += SdsBabanin.o
+LOBJS += swmod1.o
+LOBJS += swmod2.o
+LOBJS += m_constants.o
+LOBJS += m_fileio.o
+LOBJS += serv_xnl4v5.o
+LOBJS += mod_xnl4v5.o
+LOBJS += SwanGriddata.o
+LOBJS += SwanGridobjects.o
+LOBJS += SwanCompdata.o
+LOBJS += swanmain.o
+LOBJS += swanpre1.o
+LOBJS += swanpre2.o
+LOBJS += swancom1.o
+LOBJS += swancom2.o
+LOBJS += swancom3.o
+LOBJS += swancom4.o
+LOBJS += swancom5.o
+LOBJS += swanout1.o
+LOBJS += swanout2.o
+LOBJS += swanser.o
+LOBJS += swanparll.o
+LOBJS += SwanReadGrid.o
+LOBJS += SwanReadADCGrid.o
+LOBJS += SwanReadTriangleGrid.o
+LOBJS += SwanReadEasymeshGrid.o
+LOBJS += SwanInitCompGrid.o
+LOBJS += SwanCheckGrid.o
+LOBJS += SwanCreateEdges.o
+LOBJS += SwanGridTopology.o
+LOBJS += SwanGridVert.o
+LOBJS += SwanGridCell.o
+LOBJS += SwanGridFace.o
+LOBJS += SwanPrintGridInfo.o
+LOBJS += SwanFindPoint.o
+LOBJS += SwanPointinMesh.o
+LOBJS += SwanBpntlist.o
+LOBJS += SwanPrepComp.o
+LOBJS += SwanVertlist.o
+LOBJS += SwanCompUnstruc.o
+LOBJS += SwanDispParm.o
+LOBJS += SwanPropvelX.o
+LOBJS += SwanSweepSel.o
+LOBJS += SwanPropvelS.o
+LOBJS += SwanTranspAc.o
+LOBJS += SwanTranspX.o
+LOBJS += SwanDiffPar.o
+LOBJS += SwanGSECorr.o
+LOBJS += SwanInterpolatePoint.o
+LOBJS += SwanInterpolateAc.o
+LOBJS += SwanInterpolateOutput.o
+LOBJS += SwanConvAccur.o
+LOBJS += SwanConvStopc.o
+LOBJS += SwanFindObstacles.o
+LOBJS += SwanCrossObstacle.o
+LOBJS += SwanComputeForce.o
+LOBJS += SwanIntgratSpc.o
+LOBJS += ocpids.o
+LOBJS += ocpcre.o
+LOBJS += ocpmix.o
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Build
+# ------------------------------------------------------------------------------
+coamps: macros makefrag
+	$(MAKE) esmf_mpi
+	$(MAKE) hcat
+	$(AR_CMD) $(SWLIB) $(LOBJS)
+	mv -f hcat.exe $(COAMPS_DIR)/bin/swan_hcat.exe
+	@rm -f swanmain.F
+	$(MAKE) mpi
+	mv -f swan.exe $(COAMPS_DIR)/bin/swan.exe
+	@rm -f swanmain.F
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Setup macros.inc file for SWAN build
+# ------------------------------------------------------------------------------
+macros:
+	-@rm -f macros.inc
+	-@cp -f config/$(CONFIG) macros.inc
+	-@echo '' >> macros.inc
+	-@echo 'ifeq ($(COAMPS_COMM),scali)' >> macros.inc
+	-@echo 'F90_MPI += -ccl=pgf90' >> macros.inc
+	-@echo 'swch += -impi' >> macros.inc
+	-@echo 'endif' >> macros.inc
+	-@echo '' >> macros.inc
+	-@echo 'ifeq ($(COAMPS_BOPT),g)' >> macros.inc
+	-@echo 'override FLAGS_OPT := -g' >> macros.inc
+	-@echo 'endif' >> macros.inc
+	-@echo '' >> macros.inc
+	-@echo 'override FFLAGS += $(XTRA_FLAGS)' >> macros.inc
+	-@echo 'override FFLAGS_F90 += $(XTRA_FLAGS)' >> macros.inc
+	-@echo '' >> macros.inc
+	-@echo 'INCS_SER += -I$(COAMPS_DIR)/include' >> macros.inc
+	-@echo 'INCS_OMP += -I$(COAMPS_DIR)/include' >> macros.inc
+	-@echo 'INCS_MPI += -I$(COAMPS_DIR)/include' >> macros.inc
+	-@echo '' >> macros.inc
+	-@echo 'swanesmf.o: $(COAMPS_DIR)/lib/libcoampsM.a(coamps_field.o)' >> macros.inc
+	-@echo '' >> macros.inc
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Setup makefile fragment for COAMPS build
+# ------------------------------------------------------------------------------
+makefrag:
+	-@rm -f coamps.mk
+	-@touch coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '# SWAN makefile fragment for COAMPS build' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '# SWAN object list' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo 'COAMPS_WAVEF_OBJS :=' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '# SWAN library list' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo 'COAMPS_WAVEF_LIBS := $(SWLIB)' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '# SWAN module directories' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo 'COAMPS_WAVEF_MOD_DIRS := -I$(CURDIR)' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '# SWAN top-level component objects' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo 'COAMPS_WAVEF_DEPS := $(SWLIB)(swanesmf.o)' >> coamps.mk
+	-@echo '#-----------------------------------------------' >> coamps.mk
+	-@echo '' >> coamps.mk
+# ------------------------------------------------------------------------------
+
+
+# ------------------------------------------------------------------------------
+# Clean
+# ------------------------------------------------------------------------------
+clean:
+	$(MAKE) allclean
+	rm -f $(SWLIB)
+	rm -f coamps.mk
+	rm -f macros.inc
+# ------------------------------------------------------------------------------
+

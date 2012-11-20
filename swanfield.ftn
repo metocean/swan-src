@@ -1,0 +1,1602 @@
+#ifdef    TEST_SWFLD
+#define DEBUG
+#endif /* TEST_SWFLD */
+!
+! Define real kind for data passed through ESMF interface
+#if defined(REAL8)
+#define ESMF_KIND_RX 8
+#else
+#define ESMF_KIND_RX 4
+#endif
+!
+!***********************************************************************
+!
+      MODULE SWFLD_MOD
+!
+!***********************************************************************
+!
+!     --- SWAN Modules
+      USE OCPCOMM2
+      USE OCPCOMM4
+      USE SWCOMM1
+      USE SWCOMM2
+      USE SWCOMM3
+      USE SWCOMM4
+      USE M_GENARR
+      USE M_PARALL
+      USE W2A_MOD
+!
+!     --- Default type and scope
+!
+      IMPLICIT NONE
+      PRIVATE
+      SAVE
+!
+!     --- Module variables
+!
+      INTEGER :: IXF, IXL, IYF, IYL
+      INTEGER :: NZ !Number of z-levels for 3D fields
+      REAL :: ZMIN = -300.0 ! max depth for 3D fields
+      REAL, ALLOCATABLE :: ZL(:) !z-levels
+      REAL, ALLOCATABLE :: MASK(:,:) ! Land/sea mask (0=land, 1=sea)
+      REAL, ALLOCATABLE :: DPDX(:,:), DPDY(:,:) ! DP/DX & DP/DY
+      REAL, ALLOCATABLE :: DQDX(:,:), DQDY(:,:) ! DQ/DX & DQ/DY
+      REAL, ALLOCATABLE :: COSCC(:,:), SINCC(:,:) ! COSINE & SINE OF LOCAL ANGLE
+      REAL, POINTER :: COMPDA(:,:) ! Pointer to COMPDA array
+!
+!     --- Public data
+!
+      PUBLIC :: NZ, ZL
+      PUBLIC :: MASK
+      PUBLIC :: COSCC, SINCC
+!
+!     --- Public methods
+!
+      PUBLIC SWFLD_INIT
+      PUBLIC SWFLD_FINAL
+      PUBLIC SWFLD_TEST
+      PUBLIC SWFLD_MASK
+      PUBLIC SWFLD_STOKES
+      PUBLIC SWFLD_BOTCUR
+      PUBLIC SWFLD_RADSTR
+      PUBLIC SWFLD_RADSTG
+      PUBLIC SWFLD_TAU
+      PUBLIC SWFLD_CHARNK
+      PUBLIC SWFLD_TAUW
+!
+!***********************************************************************
+!
+
+      CONTAINS
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_INIT( COMPDA_IN, OPT_ZL, DMAX )
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL, TARGET :: COMPDA_IN(MCGRD,MCMVAR)
+      INTEGER, OPTIONAL :: OPT_ZL
+      REAL, OPTIONAL :: DMAX
+!
+!     --- Local Variables
+      INTEGER :: ISTAT
+
+!     --- Set COMPDA pointer
+
+      COMPDA => COMPDA_IN
+
+!     --- Exclusive bounds (local index): IXF,IYF,IXL,IYL
+!         Total bounds (local index): 1,1,MXC,MYC
+
+      IF (MXCGL.GT.MYCGL) THEN !Decomposed along x-direction
+        ! Lower bounds
+        IF (INODE.EQ.1) THEN
+          IXF = 1
+        ELSE
+          IXF = 1 + IHALOX
+        ENDIF
+        IYF = 1
+        ! Upper bounds
+        IF (INODE.EQ.NPROC) THEN
+          IXL = MXC
+        ELSE
+          IXL = MXC - IHALOX
+        ENDIF
+        IYL = MYC
+      ELSE !(MXCGL.LE.MYCGL) -- Decomposed along y-direction
+        ! Lower bounds
+        IXF = 1
+        IF (INODE.EQ.1) THEN
+          IYF = 1
+        ELSE
+          IYF = 1 + IHALOY
+        ENDIF
+        ! Upper bounds
+        IXL = MXC
+        IF (INODE.EQ.NPROC) THEN
+          IYL = MYC
+        ELSE
+          IYL = MYC - IHALOY
+        ENDIF
+      ENDIF
+
+!     --- Allocate and set land/sea mask.  This mask is dynamic, includes
+!         halos and is based on both excluded points and depth.  Local
+!         mask values are used (1=sea, 0=land).
+
+      ALLOCATE(MASK(MXC,MYC))
+      CALL SWFLD_MASK
+
+!     --- Setup curvilinear grid variables
+
+      CALL SETUP_CGRID(XGRDGL,YGRDGL)
+
+!     --- Set z-levels
+
+      IF (PRESENT(OPT_ZL)) THEN
+        SELECT CASE (OPT_ZL)
+        CASE (1)
+          IF (PRESENT(DMAX)) THEN
+            ZMIN = -DMAX
+          ENDIF
+          CALL GET_NCOM_ZGRID()
+        CASE (2)
+          CALL GET_ZGRID()
+        CASE DEFAULT
+          NZ = 1; ALLOCATE(ZL(NZ)); ZL = 0;
+        END SELECT
+      ELSE
+        NZ = 1; ALLOCATE(ZL(NZ)); ZL = 0;
+      ENDIF
+
+      END SUBROUTINE SWFLD_INIT
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_FINAL()
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+!     NONE
+!
+!     --- Local Variables
+!     NONE
+
+!     --- Clean up
+
+      IF (ALLOCATED(ZL)) DEALLOCATE(ZL)
+      IF (ALLOCATED(MASK)) DEALLOCATE(MASK)
+      IF (ALLOCATED(DPDX)) DEALLOCATE(DPDX)
+      IF (ALLOCATED(DPDY)) DEALLOCATE(DPDY)
+      IF (ALLOCATED(DQDX)) DEALLOCATE(DQDX)
+      IF (ALLOCATED(DQDY)) DEALLOCATE(DQDY)
+      IF (ALLOCATED(COSCC)) DEALLOCATE(COSCC)
+      IF (ALLOCATED(SINCC)) DEALLOCATE(SINCC)
+      NULLIFY(COMPDA)
+ 
+      END SUBROUTINE SWFLD_FINAL
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_TEST( COMPDA_IN )
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL, TARGET :: COMPDA_IN(MCGRD,MCMVAR)
+!
+!     --- Local Variables
+      INTEGER :: ISTAT, IU, IOS, IX, IY, IZ, JX, JY, K
+      CHARACTER(LENFNM) :: CFILE
+      REAL(ESMF_KIND_RX), ALLOCATABLE, DIMENSION(:,:)   :: FX2, FC2, FY2
+      REAL(ESMF_KIND_RX), ALLOCATABLE, DIMENSION(:,:,:) :: FX3, FY3
+#ifdef DEBUG
+      REAL(ESMF_KIND_RX), ALLOCATABLE, DIMENSION(:,:)   ::
+     &  DDX, DDY, TX1, TX2, TX3, TX4, TY1, TY2, TY3, TY4
+#endif
+
+!     --- Initialize
+
+      CALL SWFLD_INIT( COMPDA_IN, OPT_ZL=2 )
+
+!     --- Allocate local memory for field arrays
+
+      ALLOCATE(FX3(NZ,MXC,MYC), FY3(NZ,MXC,MYC),
+     &         FX2(MXC,MYC), FC2(MXC,MYC), FY2(MXC,MYC), STAT=ISTAT)
+      IF (ISTAT.NE.0) THEN
+        WRITE(*,'(/A/)') 'Allocation of SWFLD local arrays failed'
+        CALL EXIT(1)
+      ENDIF
+#ifdef DEBUG
+      ALLOCATE(DDX(MXC,MYC), DDY(MXC,MYC),
+     &         TX1(MXC,MYC), TX2(MXC,MYC), TX3(MXC,MYC), TX4(MXC,MYC),
+     &         TY1(MXC,MYC), TY2(MXC,MYC), TY3(MXC,MYC), TY4(MXC,MYC),
+     &         STAT=ISTAT)
+      IF (ISTAT.NE.0) THEN
+        WRITE(*,'(/A/)') 'Allocation of SWFLD temp arrays failed'
+        CALL EXIT(1)
+      ENDIF
+#endif
+
+!     --- Compute Stokes drift current
+
+      CALL SWFLD_STOKES( FX3, FY3 )
+      CFILE = 'USX.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','USX(DPTH)'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               (FX3(IZ,IX,IY),IZ=1,NZ)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+      CFILE = 'USY.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','USY(DPTH)'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               (FY3(IZ,IX,IY),IZ=1,NZ)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+
+!     --- Compute wave bottom orbital velocity
+
+      CALL SWFLD_BOTCUR( FX2, FY2, FC2 )
+      CFILE = 'UBR.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','UBX','UBY','UBF'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               FX2(IX,IY),FY2(IX,IY),FC2(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+
+!     --- Compute radiation stress tensor
+
+      CALL SWFLD_RADSTR( FX2, FC2, FY2 )
+      CFILE = 'SXX.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','SXX','SXY','SYY'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               FX2(IX,IY),FC2(IX,IY),FY2(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+
+!     --- Compute radiation stress gradient
+
+#ifdef DEBUG
+      CALL SWFLD_RADSTG( FX2, FY2,
+     &     DDX, DDY, TX1, TX2, TX3, TX4, TY1, TY2, TY3, TY4 )
+#else
+      CALL SWFLD_RADSTG( FX2, FY2 )
+#endif
+      CFILE = 'FXY.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','FX','FY'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               FX2(IX,IY),FY2(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+#ifdef DEBUG
+      CFILE = 'TXY.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK',
+     &  'DDX','DDY','TX1','TX2','TX3','TX4','TY1','TY2','TY3','TY4'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               DDX(IX,IY),DDY(IX,IY),
+     &               TX1(IX,IY),TX2(IX,IY),TX3(IX,IY),TX4(IX,IY),
+     &               TY1(IX,IY),TY2(IX,IY),TY3(IX,IY),TY4(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+      CALL SWFLD_RADSTG_OLD( FX2, FY2 )
+      CFILE = 'FXYOLD.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','FX','FY'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               FX2(IX,IY),FY2(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+#endif
+
+!     --- Compute wave induced charnock parameter
+
+      CALL SWFLD_CHARNK( FX2, 0 )
+      CALL SWFLD_CHARNK( FC2, 1 )
+      CALL SWFLD_CHARNK( FY2, 2 )
+      CFILE = 'CHNK.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','CHNK0','CHNK1','CHNK2'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               FX2(IX,IY),FC2(IX,IY),FY2(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+
+!     --- Compute surface total wave induced stress
+!     --- Compute surface vector wave induced stress
+
+      CALL SWFLD_TAUW( FC2 )
+      CALL SWFLD_TAU( FX2, FY2 )
+      CFILE = 'TAUW.SWFLD'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'UF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open failed: ",TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      WRITE(IU,10) 'XGRD','YGRD','MASK','TAUW','TAUX','TAUY'
+      DO IY = IYF, IYL
+      DO IX = IXF, IXL
+        JY = IY + MYF - 1;  JX = IX + MXF - 1;
+        WRITE(IU,11) XGRDGL(JX,JY),YGRDGL(JX,JY),NINT(MASK(IX,IY)),
+     &               FC2(IX,IY),FX2(IX,IY),FY2(IX,IY)
+      ENDDO
+      ENDDO
+      CLOSE(IU)
+
+!     --- Finalize
+
+      CALL SWFLD_FINAL
+      DEALLOCATE(FX3,FY3,FX2,FC2,FY2)
+#ifdef DEBUG
+      DEALLOCATE(DDX,DDY,TX1,TX2,TX3,TX4,TY1,TY2,TY3,TY4)
+#endif
+
+10    FORMAT(2(A14),A5,50(A14))
+11    FORMAT(2E14.6,I5,50(E14.6))
+ 
+      END SUBROUTINE SWFLD_TEST
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_MASK
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+!     NONE
+!
+!     --- Local variables
+      INTEGER :: IX, IY, I
+      REAL(8), PARAMETER :: MLND=0.0, MSEA=1.0
+
+      DO IY = 1, MYC
+        DO IX = 1, MXC
+          I = KGRPNT(IX,IY)
+          IF (I.GT.1) THEN
+            IF (COMPDA(I,JDP2).GT.DEPMIN) THEN
+              MASK(IX,IY) = MSEA
+            ELSE
+              MASK(IX,IY) = MLND
+            ENDIF
+          ELSE
+            MASK(IX,IY) = MLND
+          ENDIF
+        ENDDO
+      ENDDO
+
+      END SUBROUTINE SWFLD_MASK
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_STOKES ( USX, USY )
+!                                                                      *
+!***********************************************************************
+!
+! References:
+!
+!  > Tang, C. L., et al. (2007), J. Geophys. R., 112, C10025,
+!    doi:10.1029/2006JC004028.
+!
+!           _         // _
+!           U = 4 pi || (k exp(2kz) f E) d f d theta
+!                   //
+!
+! Stokes drift current is computed as:
+!
+!             //
+!   U_sx = 2 || (k cos(theta) exp(2kz) sig^2 Ac) d sig d theta
+!           //
+!
+!             //
+!   U_sy = 2 || (k sin(theta) exp(2kz) sig^2 Ac) d sig d theta
+!           //
+!
+! Where:
+!
+!   Ac(theta,sig) = wave action density = E(theta,sig)/sig
+!   z = height (0 = mean sea level)
+!
+! Notes:
+!
+! > Integration over frequency space based on logarithmic discrete
+!   distribution of frequencies (FRINTF).  No high frequency tail
+!   contribution is added.  Integration over directional space assumes
+!   uniform spacing (DDIR).
+! > Computed for interior points only.
+! > AC2   : Contains action density at present time step
+! > SPCDIR: (*,1); spectral directions (radians)
+!           (*,2); cosine of spectral directions
+!           (*,3); sine of spectral directions
+!           (*,4); cosine^2 of spectral directions
+!           (*,5); cosine*sine of spectral directions
+!           (*,6); sine^2 of spectral directions
+! > SPCSIG: Relative frequencies in computational domain in sigma-space
+! > Mask takes into account both exception points and depth.
+!
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: USX(NZ,MXC,MYC)
+      REAL(ESMF_KIND_RX) :: USY(NZ,MXC,MYC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      INTEGER :: IX, IY, IZ, I, ID, IS
+      REAL    :: DPTH, PFAC, SFAC, ZFAC, DIX, DIY, SIG3(MSC)
+      REAL    :: CG(MSC), K(MSC), N(MSC), ND(MSC)
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      SIG3 = SPCSIG**3
+      USX = ZERO
+      USY = ZERO
+
+! --- Compute
+
+      PFAC = TWO*FRINTF*DDIR
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          I = KGRPNT(IX,IY)
+          DPTH = COMPDA(I,JDP2)
+          CALL KSCIP1(MSC,SPCSIG,DPTH,K,CG,N,ND)
+          DO IS = 1, MSC
+            DIX = ZERO
+            DIY = ZERO
+            DO ID = 1, MDC
+              DIX = DIX + SPCDIR(ID,2)*AC2(ID,IS,I)
+              DIY = DIY + SPCDIR(ID,3)*AC2(ID,IS,I)
+            ENDDO !ID
+            SFAC = K(IS)*SIG3(IS)
+            DO IZ=1,NZ
+              ZFAC = SFAC*EXP(TWO*K(IS)*ZL(IZ))
+              USX(IZ,IX,IY) = USX(IZ,IX,IY) + ZFAC*DIX
+              USY(IZ,IX,IY) = USY(IZ,IX,IY) + ZFAC*DIY
+            ENDDO !IZ
+          ENDDO !IS
+          USX(:,IX,IY) = PFAC*USX(:,IX,IY)
+          USY(:,IX,IY) = PFAC*USY(:,IX,IY)
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_STOKES
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_BOTCUR ( UBX, UBY, UBF )
+!                                                                      *
+!***********************************************************************
+!
+! References:
+!
+!   > Madsen, O. S. (1994), ICCE
+!
+! Wave bottom orbital velocity is computed as:
+!
+!                          //
+!   U_b         = sqrt( 2 || S_ub d sig d theta )
+!   (magnitude)          //
+!
+!                            //
+!                           || S_ub sin(theta) d sig d theta
+!                          //
+!   phi_b       = arctan( ---------------------------------- )
+!   (direction)              //
+!                           || S_ub cos(theta) d sig d theta
+!                          //
+!
+!                       //
+!                      || sig S_ub d sig d theta
+!                     //
+!   U_bf          =  ----------------------------
+!   (radian freq)         //
+!                        || S_ub d sig d theta
+!                       //
+!
+! Where:
+!
+!   S_ub(theta,sig) = near-bottom orbital velocity spectrum
+!                   = ( sig^2 / sinh^2(kd) ) * E(theta,sig)
+!                   = ( sig^2 / sinh^2(kd) ) * sig * Ac(theta,sig)
+!   Ac(theta,sig) = wave action density
+!   d = depth
+!
+! Notes:
+!
+! > Integration over frequency space based on logarithmic discrete
+!   distribution of frequencies (FRINTF).  No high frequency tail
+!   contribution is added.  Integration over directional space assumes
+!   uniform spacing (DDIR).
+! > Computed for interior points only.
+! > AC2   : Contains action density at present time step
+! > SPCDIR: (*,1); spectral directions (radians)
+!           (*,2); cosine of spectral directions
+!           (*,3); sine of spectral directions
+!           (*,4); cosine^2 of spectral directions
+!           (*,5); cosine*sine of spectral directions
+!           (*,6); sine^2 of spectral directions
+! > SPCSIG: Relative frequencies in computational domain in sigma-space
+! > Mask takes into account both exception points and depth.
+!
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: UBX(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: UBY(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: UBF(MXC,MYC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      INTEGER :: IX, IY, IZ, I, ID, IS
+      REAL    :: DPTH, DIT, DIC, DIS, SUMT, SUMC, SUMS, SUMF
+      REAL    :: SIG4(MSC), PFAC, SFAC, MAG, DIR
+      REAL    :: CG(MSC), K(MSC), N(MSC), ND(MSC)
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      SIG4 = SPCSIG**4
+      UBX = ZERO
+      UBY = ZERO
+      UBF = ZERO
+
+! --- Compute
+
+      PFAC = FRINTF*DDIR
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          I = KGRPNT(IX,IY)
+          DPTH = COMPDA(I,JDP2)
+          CALL KSCIP1(MSC,SPCSIG,DPTH,K,CG,N,ND)
+          SUMT = ZERO
+          SUMC = ZERO
+          SUMS = ZERO
+          SUMF = ZERO
+          DO IS = 1, MSC
+            DIT = ZERO
+            DIC = ZERO
+            DIS = ZERO
+            DO ID = 1, MDC
+              DIT = DIT + AC2(ID,IS,I)
+              DIC = DIC + SPCDIR(ID,2)*AC2(ID,IS,I)
+              DIS = DIS + SPCDIR(ID,3)*AC2(ID,IS,I)
+            ENDDO !ID
+            SFAC = SIG4(IS) / SINH(K(IS)*DPTH)**2
+            SUMT = SUMT + SFAC*DIT
+            SUMC = SUMC + SFAC*DIC
+            SUMS = SUMS + SFAC*DIS
+            SUMF = SUMF + SFAC*SPCSIG(IS)*DIT
+          ENDDO !IS
+          IF (SUMT.GT.ZERO) THEN
+            MAG = SQRT(TWO*PFAC*SUMT)
+            DIR = ATAN2(SUMS,SUMC)
+            UBX(IX,IY) = MAG*COS(DIR)
+            UBY(IX,IY) = MAG*SIN(DIR)
+            UBF(IX,IY) = SUMF / SUMT
+          ENDIF
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_BOTCUR
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_RADSTR ( SXX, SXY, SYY )
+!                                                                      *
+!***********************************************************************
+!
+! Radiation stresses are defined as:
+!
+!                   //
+!   Sxx = rho grav || ((N cos^2(theta) + N - 1/2) sig Ac) d sig d theta
+!                 //
+!                   //
+!   Sxy = rho grav || (N sin(theta) cos(theta) sig Ac) d sig d theta
+!                 //
+!                   //
+!   Syy = rho grav || ((N sin^2(theta) + N - 1/2) sig Ac) d sig d theta
+!                 //
+!
+! Where:
+!
+!   rho = density of sea water
+!   grav = acceleration due to gravity
+!   Ac(theta,sig) = wave action density
+!   N = Cg/C = ratio of group velocity and phase velocity
+!
+! Notes:
+! > Integration over frequency space based on logarithmic discrete
+!   distribution of frequencies (FRINTF).  No high frequency tail
+!   contribution is added.  Integration over directional space assumes
+!   uniform spacing (DDIR).
+! > Computed for interior and halo points.  The action densities at halo
+!   points are assumed to be up-to-date.
+! > AC2   : Contains action density at present time step
+! > SPCDIR: (*,1); spectral directions (radians)
+!           (*,2); cosine of spectral directions
+!           (*,3); sine of spectral directions
+!           (*,4); cosine^2 of spectral directions
+!           (*,5); cosine*sine of spectral directions
+!           (*,6); sine^2 of spectral directions
+! > SPCSIG: Relative frequencies in computational domain in sigma-space
+! > Mask takes into account both exception points and depth.
+!
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: SXX(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: SXY(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: SYY(MXC,MYC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      INTEGER :: IX, IY, IZ, I, ID, IS
+      REAL    :: DPTH, PFAC, SIG2(MSC), DFAC, DIXX, DIXY, DIYY
+      REAL    :: CG(MSC), K(MSC), N(MSC), ND(MSC)
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      PFAC = RHO*GRAV*FRINTF*DDIR
+      SIG2 = SPCSIG**2
+      SXX = ZERO
+      SXY = ZERO
+      SYY = ZERO
+
+! --- Compute
+
+      DO IY = 1, MYC
+        DO IX = 1, MXC
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          I = KGRPNT(IX,IY)
+          DPTH = COMPDA(I,JDP2)
+          CALL KSCIP1(MSC,SPCSIG,DPTH,K,CG,N,ND)
+          DO IS = 1, MSC
+            DIXX = ZERO
+            DIXY = ZERO
+            DIYY = ZERO
+            DO ID = 1, MDC
+              DFAC = N(IS)*(SPCDIR(ID,4) + ONE) - HALF
+              DIXX = DIXX + DFAC*AC2(ID,IS,I)
+              DFAC = N(IS)*SPCDIR(ID,5)
+              DIXY = DIXY + DFAC*AC2(ID,IS,I)
+              DFAC = N(IS)*(SPCDIR(ID,6) + ONE) - HALF
+              DIYY = DIYY + DFAC*AC2(ID,IS,I)
+            ENDDO !ID
+            SXX(IX,IY) = SXX(IX,IY) + SIG2(IS)*DIXX
+            SXY(IX,IY) = SXY(IX,IY) + SIG2(IS)*DIXY
+            SYY(IX,IY) = SYY(IX,IY) + SIG2(IS)*DIYY
+          ENDDO !IS
+          SXX(IX,IY) = PFAC*SXX(IX,IY)
+          SXY(IX,IY) = PFAC*SXY(IX,IY)
+          SYY(IX,IY) = PFAC*SYY(IX,IY)
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_RADSTR
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_RADSTG_OLD ( FX, FY )
+!                                                                      *
+!***********************************************************************
+!
+! Gradient (force) is computed as:
+!
+!   Fx = - @Sxx/@x - @Sxy/@y
+!   Fy = - @Syy/@y - @Sxy/@x
+!
+! Where @ = partial derivative
+!
+!
+! Notes:
+! > Computed for interior points only. The stress tensor at halo points
+!   are assumed to be up-to-date.
+! > Radiation stress tensor (Sxx,Sxy,Syy) is computed in SWFLD_RADSTR.
+! > Mask takes into account both exception points and depth.
+!
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: FX(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: FY(MXC,MYC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      INTEGER :: IX, IY, IXM1, IXP1, IYM1, IYP1
+      REAL(ESMF_KIND_RX) :: SXX(MXC,MYC), SXY(MXC,MYC), SYY(MXC,MYC)
+      REAL    :: DPTH, DPMN, FACP, FACQ
+      REAL    :: DSXXDP, DSXXDQ, DSYYDP, DSYYDQ, DSXYDP, DSXYDQ
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      FX = ZERO
+      FY = ZERO
+
+! --- Compute radiation stress tensor
+
+      CALL SWFLD_RADSTR ( SXX, SXY, SYY )
+
+! --- Compute gradient
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          IXM1 = MAX(1  ,IX-NINT(MASK(MAX(1  ,IX-1),IY)))
+          IXP1 = MIN(MXC,IX+NINT(MASK(MIN(MXC,IX+1),IY)))
+          IYM1 = MAX(1  ,IY-NINT(MASK(IX,MAX(1  ,IY-1))))
+          IYP1 = MIN(MYC,IY+NINT(MASK(IX,MIN(MYC,IY+1))))
+          FACP = -ONE/MAX(ONE,REAL(IXP1-IXM1))
+          FACQ = -ONE/MAX(ONE,REAL(IYP1-IYM1))
+          DSXXDP = FACP * ( SXX(IXP1,IY  ) - SXX(IXM1,IY  ) )
+          DSXXDQ = FACQ * ( SXX(IX  ,IYP1) - SXX(IX  ,IYM1) )
+          DSYYDP = FACP * ( SYY(IXP1,IY  ) - SYY(IXM1,IY  ) )
+          DSYYDQ = FACQ * ( SYY(IX  ,IYP1) - SYY(IX  ,IYM1) )
+          DSXYDP = FACP * ( SXY(IXP1,IY  ) - SXY(IXM1,IY  ) )
+          DSXYDQ = FACQ * ( SXY(IX  ,IYP1) - SXY(IX  ,IYM1) )
+          FX(IX,IY) = DSXXDP*DPDX(IX,IY) + DSXXDQ*DQDX(IX,IY)
+     &              + DSXYDP*DPDY(IX,IY) + DSXYDQ*DQDY(IX,IY)
+          FY(IX,IY) = DSYYDP*DPDY(IX,IY) + DSYYDQ*DQDY(IX,IY)
+     &              + DSXYDP*DPDX(IX,IY) + DSXYDQ*DQDX(IX,IY)
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_RADSTG_OLD
+
+
+!***********************************************************************
+!                                                                      *
+#ifdef DEBUG
+      SUBROUTINE SWFLD_RADSTG ( FX, FY,
+     &           DDX, DDY, TX1, TX2, TX3, TX4, TY1, TY2, TY3, TY4 )
+#else
+      SUBROUTINE SWFLD_RADSTG ( FX, FY )
+#endif
+!                                                                      *
+!***********************************************************************
+!
+! Radiation stresses are defined as:
+!
+!                   //
+!   Sxx = rho grav || ((N cos^2(theta) + N - 1/2) sig Ac) d sig d theta
+!                 //
+!                   //
+!   Sxy = rho grav || (N sin(theta) cos(theta) sig Ac) d sig d theta
+!                 //
+!                   //
+!   Syy = rho grav || ((N sin^2(theta) + N - 1/2) sig Ac) d sig d theta
+!                 //
+!
+! Where:
+!
+!   rho = density of sea water
+!   grav = acceleration due to gravity
+!   Ac(theta,sig,x,y) = wave action density
+!   N(sig,D) = Cg/C = ratio of group velocity and phase velocity
+!   D = D(x,y) = depth
+!
+! Gradient (force) is computed as:
+!
+!   Fx = - @Sxx/@x - @Sxy/@y
+!   Fy = - @Syy/@y - @Sxy/@x
+!
+! Where @ = partial derivative
+!
+! Equations for radiation stress gradient are:
+!
+!                             /              /
+!  Fx = - rho grav {   @D/@x | d sig sig Nd | d theta txx Ac
+!                           /              /
+!
+!                        /           /
+!                    +  | d sig sig | d theta (N txx - 1/2) @Ac/@x
+!                      /           /
+!
+!                              /              /
+!                    +  @D/@y | d sig sig Nd | d theta txy Ac
+!                            /              /
+!
+!                        /           /
+!                    +  | d sig sig | d theta N txy @Ac/@y   }
+!                      /           /
+!
+!                             /              /
+!  Fy = - rho grav {   @D/@y | d sig sig Nd | d theta tyy Ac
+!                           /              /
+!
+!                        /           /
+!                    +  | d sig sig | d theta (N tyy - 1/2) @Ac/@y
+!                      /           /
+!
+!                              /              /
+!                    +  @D/@x | d sig sig Nd | d theta txy Ac
+!                            /              /
+!
+!                        /           /
+!                    +  | d sig sig | d theta N txy @Ac/@x   }
+!                      /           /
+!
+! Where:
+!   Nd(sig,x,y) = @N/@D
+!   txx = cos^2(theta) + 1
+!   txy = cos(theta) sin(theta)
+!   tyy = sin^2(theta) + 1
+!
+! Note that @N/@x = @N/@D @D/@x = Nd @D/@x.
+!
+! Notes:
+! > Integration over frequency space based on logarithmic discrete
+!   distribution of frequencies (FRINTF).  No high frequency tail
+!   contribution is added.  Integration over directional space assumes
+!   uniform spacing (DDIR).
+! > Computed for interior points only. The action densities at halo points
+!   are assumed to be up-to-date.
+! > The value of N and its derivative w.r.t. the depth (Nd) are calculated
+!   in the KSCIP1 subroutine.
+! > AC2   : Contains action density at present time step
+! > SPCDIR: (*,1); spectral directions (radians)
+!           (*,2); cosine of spectral directions
+!           (*,3); sine of spectral directions
+!           (*,4); cosine^2 of spectral directions
+!           (*,5); cosine*sine of spectral directions
+!           (*,6); sine^2 of spectral directions
+! > SPCSIG: Relative frequencies in computational domain in sigma-space
+! > Mask takes into account both exception points and depth.
+!
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: FX(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: FY(MXC,MYC)
+#ifdef DEBUG
+      REAL(ESMF_KIND_RX), DIMENSION(MXC,MYC) :: !DEBUG
+     &  DDX, DDY, TX1, TX2, TX3, TX4, TY1, TY2, TY3, TY4 !DEBUG
+#endif
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      INTEGER :: IX, IY, IS, ID, IXM1, IXP1, IYM1, IYP1, I(0:4)
+      REAL    :: CG(MSC), K(MSC), N(MSC), ND(MSC)
+      REAL    :: PFAC, SIG2(MSC), DPTH(0:4), FACP, FACQ, TXX, TXY, TYY
+      REAL    :: DDDP, DDDQ, DDDX, DDDY, DACDP, DACDQ, DACDX, DACDY
+      REAL    :: DIFX(4), DIFY(4), SIFX(4), SIFY(4)
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      PFAC = -RHO*GRAV*FRINTF*DDIR
+      SIG2 = SPCSIG**2
+      FX = ZERO
+      FY = ZERO
+#ifdef DEBUG
+      DDX = ZERO;  DDY = ZERO;
+      TX1 = ZERO;  TX2 = ZERO;  TX3 = ZERO;  TX4 = ZERO;
+      TY1 = ZERO;  TY2 = ZERO;  TY3 = ZERO;  TY4 = ZERO;
+#endif
+
+! --- Compute
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+! ------- skip (IX,IY) if masked
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+! ------- 2d indices for neighboring points
+          IXM1 = MAX(1  ,IX-NINT(MASK(MAX(1  ,IX-1),IY))) ! west
+          IXP1 = MIN(MXC,IX+NINT(MASK(MIN(MXC,IX+1),IY))) ! east
+          IYM1 = MAX(1  ,IY-NINT(MASK(IX,MAX(1  ,IY-1)))) ! south
+          IYP1 = MIN(MYC,IY+NINT(MASK(IX,MIN(MYC,IY+1)))) ! north
+! ------- 1d (sequentialized) indices center and neighboring points
+          I(0) = KGRPNT(IX,IY)   ! center
+          I(1) = KGRPNT(IXM1,IY) ! west
+          I(2) = KGRPNT(IXP1,IY) ! east
+          I(3) = KGRPNT(IX,IYM1) ! south
+          I(4) = KGRPNT(IX,IYP1) ! north
+! ------- factors for @?/@p & @?/@q
+          FACP = ONE/MAX(ONE,REAL(IXP1-IXM1))
+          FACQ = ONE/MAX(ONE,REAL(IYP1-IYM1))
+! ------- compute derivatives of depth
+          DPTH(0:4) = COMPDA(I(0:4),JDP2)
+          DDDP = FACP*( DPTH(2) - DPTH(1) ) ! @D/@p
+          DDDQ = FACQ*( DPTH(4) - DPTH(3) ) ! @D/@q
+          DDDX = DDDP*DPDX(IX,IY) + DDDQ*DQDX(IX,IY) ! @D/@x = @D/@p*@p/@x + @D/@q*@q/@x
+          DDDY = DDDP*DPDY(IX,IY) + DDDQ*DQDY(IX,IY) ! @D/@y = @D/@p*@p/@y + @D/@q*@q/@y
+! ------- compute N and Nd = @N/@D
+          CALL KSCIP1(MSC,SPCSIG,DPTH(0),K,CG,N,ND)
+          SIFX = ZERO
+          SIFY = ZERO
+          DO IS = 1, MSC
+            DIFX = ZERO
+            DIFY = ZERO
+            DO ID = 1, MDC
+              TXX = SPCDIR(ID,4) + ONE
+              TXY = SPCDIR(ID,5)
+              TYY = SPCDIR(ID,6) + ONE
+! ----------- compute derivatives of action density
+              DACDP = FACP*( AC2(ID,IS,I(2)) - AC2(ID,IS,I(1)) )
+              DACDQ = FACQ*( AC2(ID,IS,I(4)) - AC2(ID,IS,I(3)) )
+              DACDX = DACDP*DPDX(IX,IY) + DACDQ*DQDX(IX,IY)
+              DACDY = DACDP*DPDY(IX,IY) + DACDQ*DQDY(IX,IY)
+! ----------- Fx theta integrands
+              DIFX(1) = DIFX(1) + TXX*AC2(ID,IS,I(0))
+              DIFX(2) = DIFX(2) + ( N(IS)*TXX - HALF )*DACDX
+              DIFX(3) = DIFX(3) + TXY*AC2(ID,IS,I(0))
+              DIFX(4) = DIFX(4) + N(IS)*TXY*DACDY
+! ----------- Fy theta integrands
+              DIFY(1) = DIFY(1) + TYY*AC2(ID,IS,I(0))
+              DIFY(2) = DIFY(2) + ( N(IS)*TYY - HALF )*DACDY
+              DIFY(3) = DIFY(3) + TXY*AC2(ID,IS,I(0))
+              DIFY(4) = DIFY(4) + N(IS)*TXY*DACDX
+            ENDDO !ID
+! --------- Fx sigma integrands
+            SIFX(1) = SIFX(1) + SIG2(IS)*ND(IS)*DIFX(1)
+            SIFX(2) = SIFX(2) + SIG2(IS)*DIFX(2)
+            SIFX(3) = SIFX(3) + SIG2(IS)*ND(IS)*DIFX(3)
+            SIFX(4) = SIFX(4) + SIG2(IS)*DIFX(4)
+! --------- Fy sigma integrands
+            SIFY(1) = SIFY(1) + SIG2(IS)*ND(IS)*DIFY(1)
+            SIFY(2) = SIFY(2) + SIG2(IS)*DIFY(2)
+            SIFY(3) = SIFY(3) + SIG2(IS)*ND(IS)*DIFY(3)
+            SIFY(4) = SIFY(4) + SIG2(IS)*DIFY(4)
+          ENDDO !IS
+          FX(IX,IY) = PFAC*( DDDX*SIFX(1) + SIFX(2) +
+     &                       DDDY*SIFX(3) + SIFX(4) )
+          FY(IX,IY) = PFAC*( DDDY*SIFY(1) + SIFY(2) +
+     &                       DDDX*SIFY(3) + SIFY(4) )
+#ifdef DEBUG
+          DDX(IX,IY) = DDDX
+          DDY(IX,IY) = DDDY
+          TX1(IX,IY) = PFAC*DDDX*SIFX(1)
+          TX2(IX,IY) = PFAC*SIFX(2)
+          TX3(IX,IY) = PFAC*DDDY*SIFX(3)
+          TX4(IX,IY) = PFAC*SIFX(4)
+          TY1(IX,IY) = PFAC*DDDY*SIFY(1)
+          TY2(IX,IY) = PFAC*SIFY(2)
+          TY3(IX,IY) = PFAC*DDDX*SIFY(3)
+          TY4(IX,IY) = PFAC*SIFY(4)
+#endif
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_RADSTG
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_TAU ( TAUX, TAUY )
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: TAUX(MXC,MYC)
+      REAL(ESMF_KIND_RX) :: TAUY(MXC,MYC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      LOGICAL :: ANYWND(MDC)
+      INTEGER :: IX, IY, I, IS, ID, IDWMIN, IDWMAX
+      REAL    :: DPTH, WNDS, WNDD, WNDX, WNDY, FPM, USTAR, TX, TY
+      REAL    :: CG(MSC), K(MSC), N(MSC), ND(MSC), ACK(MDC,MSC)
+! --- cutoff freq for DRAGWW3MM5
+      REAL   ,PARAMETER :: FCUT=0.35 !TODO: get cutoff frequency from input
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      TAUX = ZERO
+      TAUY = ZERO
+
+! --- Compute
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          I = KGRPNT(IX,IY)
+          DPTH = COMPDA(I,JDP2)
+          KCGRD(1) = I !this variable is used in WINDP1
+          CALL WINDP1(WNDS,WNDD,IDWMIN,IDWMAX,FPM,USTAR,
+     &                COMPDA(1,JWX2),COMPDA(1,JWY2),ANYWND,SPCDIR,
+     &                COMPDA(1,JVX2),COMPDA(1,JVY2),SPCSIG)
+          WNDX = WNDS*COS(WNDD);  WNDY = WNDS*SIN(WNDD);
+          IF (IWIND.EQ.4) THEN !computed in swancom3.ftn:SWIND4
+            USTAR = COMPDA(I,JUSTAR)
+          ENDIF
+          CALL KSCIP1(MSC,SPCSIG,DPTH,K,CG,N,ND)
+          !ACK: directional-wavenumber spectra
+          DO ID = 1, MDC
+            ACK(ID,:) = AC2(ID,:,I) / CG(:)
+          ENDDO
+          CALL DRAGWW3MM5(MDC,MSC,ACK,FCUT,WNDX,WNDY,USTAR,TX,TY)
+          TAUX(IX,IY) = TX
+          TAUY(IX,IY) = TY
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_TAU
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_CHARNK ( CHNK, CTYPE )
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: CHNK(MXC,MYC)
+      INTEGER :: CTYPE
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      LOGICAL :: ANYWND(MDC)
+      INTEGER :: IX, IY, I, IDWMIN, IDWMAX
+      REAL    :: DPTH, WNDS, WNDD, FPM, USTAR, ALPHA, RHOA
+      REAL    :: TAU, TAUW, BETA, WAGE, CP, EP
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      ALPHA  = PWIND(14)
+      RHOA   = PWIND(16)
+      CHNK = ZERO
+
+! --- Compute
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          I = KGRPNT(IX,IY)
+          DPTH = COMPDA(I,JDP2)
+          KCGRD(1) = I !this variable is used in WINDP1
+          CALL WINDP1(WNDS,WNDD,IDWMIN,IDWMAX,FPM,USTAR,
+     &                COMPDA(1,JWX2),COMPDA(1,JWY2),ANYWND,SPCDIR,
+     &                COMPDA(1,JVX2),COMPDA(1,JVY2),SPCSIG)
+          IF (IWIND.EQ.4) THEN !computed in swancom3.ftn:SWIND4
+            USTAR = COMPDA(I,JUSTAR)
+            TAU = RHOA * USTAR**2
+            TAUW = COMPDA(I,JTAUW)
+          ELSE !compute here
+            TAU = RHOA * USTAR**2
+            TAUW = TAUW_FUNC(WNDD,USTAR,DPTH,AC2(:,:,I))
+            TAUW = MIN( TAUW, 0.999*TAU )
+          ENDIF
+          SELECT CASE (CTYPE)
+          CASE (1) !w2a_janssen
+            CALL W2A_JANSSEN(WNDS,TAUW,BETA)
+          CASE (2) !w2a_moon
+            CALL GET_WAGE(MSC,MDC,AC2(:,:,I),SPCSIG,DDIR,
+     &                    USTAR,DPTH,WAGE,CP,EP)
+            CALL W2A_MOON(WNDS,WAGE,BETA)
+          CASE DEFAULT !local
+            BETA = ALPHA / SQRT( ONE - TAUW/TAU )
+          END SELECT
+          CHNK(IX,IY) = BETA
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_CHARNK
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWFLD_TAUW ( TAUW )
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: TAUW(MXC,MYC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      LOGICAL :: ANYWND(MDC)
+      INTEGER :: IX, IY, I, IDWMIN, IDWMAX
+      REAL    :: DPTH, WNDS, WNDD, FPM, USTAR
+!
+!***********************************************************************
+!
+! --- Initialize
+
+      TAUW = ZERO
+
+! --- Compute
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          IF (NINT(MASK(IX,IY)).EQ.0) CYCLE
+          I = KGRPNT(IX,IY)
+          DPTH = COMPDA(I,JDP2)
+          IF (IWIND.EQ.4) THEN !computed in swancom3.ftn:SWIND4
+            TAUW(IX,IY) = COMPDA(I,JTAUW)
+          ELSE !compute here
+            KCGRD(1) = I !this variable is used in WINDP1
+            CALL WINDP1(WNDS,WNDD,IDWMIN,IDWMAX,FPM,USTAR,
+     &                  COMPDA(1,JWX2),COMPDA(1,JWY2),ANYWND,SPCDIR,
+     &                  COMPDA(1,JVX2),COMPDA(1,JVY2),SPCSIG)
+            TAUW(IX,IY) = TAUW_FUNC(WNDD,USTAR,DPTH,AC2(:,:,I))
+          ENDIF
+        ENDDO !IX
+      ENDDO !IY
+
+      END SUBROUTINE SWFLD_TAUW
+
+
+!***********************************************************************
+!                                                                      *
+      FUNCTION TAUW_FUNC ( THETAW, USTAR, DPTH, ACLOC )
+     &RESULT(TAUW)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Return parameter
+      REAL :: TAUW
+!
+!     --- Arguments
+      REAL :: THETAW, USTAR, DPTH
+      REAL :: ACLOC(MDC,MSC)
+!
+!     --- Local variables
+      REAL, PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+      INTEGER :: ID, IS
+      REAL    :: CTW, STW, TEMP1, TEMP2, TEMP3
+      REAL    :: SIGMA, CINV, THETA, COSDIF
+      REAL    :: TAUWX, TAUWY, DIX, DIY, SIG3
+      REAL    :: CG(MSC), K(MSC), N(MSC), ND(MSC)
+      REAL    :: SRCB(MDC,MSC)
+!
+!***********************************************************************
+!
+      TAUW = ZERO
+      IF (DPTH.LE.DEPMIN) RETURN
+      CALL KSCIP1(MSC,SPCSIG,DPTH,K,CG,N,ND)
+!
+      SRCB = ZERO
+      CTW   = COS(THETAW)
+      STW   = SIN(THETAW)
+      TEMP1 = 0.25 * PWIND(9)
+      TEMP2 = 28.0 * USTAR
+      DO IS = 1, MSC
+        SIGMA = SPCSIG(IS)
+        CINV  = K(IS) / SIGMA
+        TEMP3 = TEMP2 * CINV
+        DO ID = 1, MDC
+          THETA  = SPCDIR(ID,1)
+          COSDIF = SPCDIR(ID,2)*CTW + SPCDIR(ID,3)*STW
+          SRCB(ID,IS) = TEMP1 * ( TEMP3 * COSDIF - ONE )
+          SRCB(ID,IS) = MAX ( ZERO , SRCB(ID,IS) * SIGMA )
+        ENDDO
+      ENDDO
+!
+      TAUWX = ZERO
+      TAUWY = ZERO
+      DO IS = 1, MSC
+        DIX = ZERO
+        DIY = ZERO
+        DO ID = 1, MDC
+          DIX = DIX + SPCDIR(ID,2)*SRCB(ID,IS)*ACLOC(ID,IS)
+          DIY = DIY + SPCDIR(ID,3)*SRCB(ID,IS)*ACLOC(ID,IS)
+        ENDDO !ID
+        SIG3 = SPCSIG(IS)**3
+        TAUWX = TAUWX + SIG3*DIX
+        TAUWY = TAUWY + SIG3*DIY
+      ENDDO !IS
+      TAUW  = RHO * FRINTF * DDIR * SQRT ( TAUWX**2 + TAUWY**2 )
+!
+      END FUNCTION TAUW_FUNC
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SETUP_CGRID ( XGRD, YGRD )
+!                                                                      *
+!***********************************************************************
+!
+!  Construct curvilinear grid derivatives and metric
+!
+!  x = x(p,q);  y = y(p,q);  dp = dq = 1;
+!
+!  When using spherical coordinates x = longitude and y = latitude.
+!  Also, the derivatives with respect to p are adjusted by the spherical
+!  coordinate metric.  In other words (with radius = 1),
+!
+!      dx/dp <= cos(y)*(dx/dp)  and  dy/dp <= cos(y)*(dy/dp).
+!
+!  The 2D curvilinear coordinates metric is
+!
+!      g_pq = (dx/dp)*(dx/dq) + (dy/dp)*(dy/dq),
+!      g_pp = (dx/dp)*(dx/dp) + (dy/dp)*(dy/dp),
+!      g_qq = (dx/dq)*(dx/dq) + (dy/dq)*(dy/dq).
+!
+!  Derivatives are computed with central differences for all non-boundary
+!  cells.  One-sided differences are used at boundary cells.  If the grid
+!  is a global grid, then the i-differences at the i=1 and i=nx boundary
+!  cells are computed with central differences using the wrapped cell
+!  x-coordinates.
+!
+!***********************************************************************
+!
+!     --- Arguments
+      REAL :: XGRD(MXCGL,MYCGL) !global x-coord
+      REAL :: YGRD(MXCGL,MYCGL) !global y-coord
+!
+!     --- Local parameters
+      REAL(8), PARAMETER :: PI = 3.14159265358979323846D0
+      REAL(8), PARAMETER :: D360 = 360D0
+      REAL(8), PARAMETER :: D180 = 180D0
+      REAL(8), PARAMETER :: D2R = PI/D180
+      REAL(8), PARAMETER :: R2D = 1D0/D2R
+      REAL(8), PARAMETER :: ONE=1.0, TWO=2.0, HALF=0.5, ZERO=0.0
+!
+!     --- Local variables
+      INTEGER :: IX, IY, JX, JY
+      REAL :: DXCIRC(3), FAC
+      REAL :: DXDP(MXC,MYC), DXDQ(MXC,MYC) ! DX/DP & DX/DQ
+      REAL :: DYDP(MXC,MYC), DYDQ(MXC,MYC) ! DY/DP & DY/DQ
+      REAL :: HPFAC(MXC,MYC) ! H_P = SQRT(G_PP)
+      REAL :: HQFAC(MXC,MYC) ! H_Q = SQRT(G_QQ)
+      REAL :: GSQRT(MXC,MYC) ! SQRT(G)
+!
+!***********************************************************************
+!
+!  Allocate
+!
+      ALLOCATE(DPDX(MXC,MYC),DPDY(MXC,MYC))
+      ALLOCATE(DQDX(MXC,MYC),DQDY(MXC,MYC))
+      ALLOCATE(COSCC(MXC,MYC),SINCC(MXC,MYC))
+!
+!  Compute dx/dp & dy/dp
+!
+      DO IY = 1, MYC
+      DO IX = 1, MXC
+        JY = IY + MYF - 1
+        JX = IX + MXF - 1
+        IF (LMXF.AND.IX.EQ.1) THEN
+! ------- Left: one-sided difference
+          IF (KSPHER.EQ.1) THEN
+            DXCIRC(1)   =      ( XGRD(JX+1,JY) - XGRD(JX  ,JY) ) - D360
+            DXCIRC(2)   =      ( XGRD(JX+1,JY) - XGRD(JX  ,JY) )
+            DXCIRC(3)   =      ( XGRD(JX+1,JY) - XGRD(JX  ,JY) ) + D360
+            DXDP(IX,IY) =      DXCIRC(MINLOC(ABS(DXCIRC),1))
+          ELSE
+            DXDP(IX,IY) =      ( XGRD(JX+1,JY) - XGRD(JX  ,JY) )
+          ENDIF
+          DYDP(IX,IY)   =      ( YGRD(JX+1,JY) - YGRD(JX  ,JY) )
+        ELSEIF (LMXL.AND.IX.EQ.MXC) THEN
+! ------- Right: one-sided difference
+          IF (KSPHER.EQ.1) THEN
+            DXCIRC(1)   =      ( XGRD(JX  ,JY) - XGRD(JX-1,JY) ) - D360
+            DXCIRC(2)   =      ( XGRD(JX  ,JY) - XGRD(JX-1,JY) )
+            DXCIRC(3)   =      ( XGRD(JX  ,JY) - XGRD(JX-1,JY) ) + D360
+            DXDP(IX,IY) =      DXCIRC(MINLOC(ABS(DXCIRC),1))
+          ELSE
+            DXDP(IX,IY) =      ( XGRD(JX  ,JY) - XGRD(JX-1,JY) )
+          ENDIF
+          DYDP(IX,IY)   =      ( YGRD(JX  ,JY) - YGRD(JX-1,JY) )
+        ELSE
+! ------- Interior: central difference
+          IF (KSPHER.EQ.1) THEN
+            DXCIRC(1)   =      ( XGRD(JX+1,JY) - XGRD(JX-1,JY) ) - D360
+            DXCIRC(2)   =      ( XGRD(JX+1,JY) - XGRD(JX-1,JY) )
+            DXCIRC(3)   =      ( XGRD(JX+1,JY) - XGRD(JX-1,JY) ) + D360
+            DXDP(IX,IY) = HALF*DXCIRC(MINLOC(ABS(DXCIRC),1))
+          ELSE
+            DXDP(IX,IY) = HALF*( XGRD(JX+1,JY) - XGRD(JX-1,JY) )
+          ENDIF
+          DYDP(IX,IY)   = HALF*( YGRD(JX+1,JY) - YGRD(JX-1,JY) )
+        ENDIF
+      ENDDO !IY
+      ENDDO !IX
+!
+!  Compute dx/dq & dy/dq
+!
+      IF (ONED) THEN
+      DXDQ = ZERO
+      DYDQ = ZERO
+      ELSE !.NOT.ONED
+      DO IY = 1, MYC
+      DO IX = 1, MXC
+        JY = IY + MYF - 1
+        JX = IX + MXF - 1
+        IF (LMYF.AND.IY.EQ.1) THEN
+! ------- Bottom: one-sided difference
+          IF (KSPHER.EQ.1) THEN
+            DXCIRC(1)   =      ( XGRD(JX,JY+1) - XGRD(JX,JY  ) ) - D360
+            DXCIRC(2)   =      ( XGRD(JX,JY+1) - XGRD(JX,JY  ) )
+            DXCIRC(3)   =      ( XGRD(JX,JY+1) - XGRD(JX,JY  ) ) + D360
+            DXDQ(IX,IY) =      DXCIRC(MINLOC(ABS(DXCIRC),1))
+          ELSE
+            DXDQ(IX,IY) =      ( XGRD(JX,JY+1) - XGRD(JX,JY  ) )
+          ENDIF
+          DYDQ(IX,IY)   =      ( YGRD(JX,JY+1) - YGRD(JX,JY  ) )
+        ELSEIF (LMYL.AND.IY.EQ.MYC) THEN
+! ------- Top: one-sided difference
+          IF (KSPHER.EQ.1) THEN
+            DXCIRC(1)   =      ( XGRD(JX,JY  ) - XGRD(JX,JY-1) ) - D360
+            DXCIRC(2)   =      ( XGRD(JX,JY  ) - XGRD(JX,JY-1) )
+            DXCIRC(3)   =      ( XGRD(JX,JY  ) - XGRD(JX,JY-1) ) + D360
+            DXDQ(IX,IY) =      DXCIRC(MINLOC(ABS(DXCIRC),1))
+          ELSE
+            DXDQ(IX,IY) =      ( XGRD(JX,JY  ) - XGRD(JX,JY-1) )
+          ENDIF
+          DYDQ(IX,IY)   =      ( YGRD(JX,JY  ) - YGRD(JX,JY-1) )
+        ELSE
+! ------- Interior: central difference
+          IF (KSPHER.EQ.1) THEN
+            DXCIRC(1)   =      ( XGRD(JX,JY+1) - XGRD(JX,JY-1) ) - D360
+            DXCIRC(2)   =      ( XGRD(JX,JY+1) - XGRD(JX,JY-1) )
+            DXCIRC(3)   =      ( XGRD(JX,JY+1) - XGRD(JX,JY-1) ) + D360
+            DXDQ(IX,IY) = HALF*DXCIRC(MINLOC(ABS(DXCIRC),1))
+          ELSE
+            DXDQ(IX,IY) = HALF*( XGRD(JX,JY+1) - XGRD(JX,JY-1) )
+          ENDIF
+          DYDQ(IX,IY)   = HALF*( YGRD(JX,JY+1) - YGRD(JX,JY-1) )
+        ENDIF
+      ENDDO !IY
+      ENDDO !IX
+      ENDIF !.NOT.ONED
+!
+!  Express metric w.r.t. Cartesian space
+!
+      IF (KSPHER.EQ.1) THEN
+        FAC = REARTH * D2R
+        DO IY = 1, MYC
+        DO IX = 1, MXC
+          JY = IY + MYF - 1
+          JX = IX + MXF - 1
+          DXDP(IX,IY) = DXDP(IX,IY) * FAC * COS(YGRD(JX,JY)*D2R)
+          DXDQ(IX,IY) = DXDQ(IX,IY) * FAC * COS(YGRD(JX,JY)*D2R)
+          DYDP(IX,IY) = DYDP(IX,IY) * FAC
+          DYDQ(IX,IY) = DYDQ(IX,IY) * FAC
+        ENDDO !IY
+        ENDDO !IX
+      ENDIF
+!
+!  HPFAC: h_p = sqrt(g_pp) = sqrt( (dx/dp)^2 + (dy/dp)^2 )
+!
+      IF (ONED) THEN
+        HPFAC = ABS(DXDP)
+      ELSE
+        HPFAC = SQRT( DXDP**2 + DYDP**2 )
+      ENDIF
+!
+!  HQFAC: h_q = sqrt(g_qq) = sqrt( (dx/dq)^2 + (dy/dq)^2 )
+!
+      IF (ONED) THEN
+        HQFAC = ZERO
+      ELSE
+        HQFAC = SQRT( DXDQ**2 + DYDQ**2 )
+      ENDIF
+!
+!  GSQRT: sqrt(g) = (dx/dp)(dy/dq) - (dx/dq)(dy/dp)
+!
+      IF (ONED) THEN
+        GSQRT = DXDP**2
+      ELSE
+        GSQRT = DXDP*DYDQ - DXDQ*DYDP
+      ENDIF
+!
+!  Compute curvilinear derivatives
+!  DPDX: dp/dx =  (1/sqrt(g))*(dy/dq)
+!  DPDY: dp/dy = -(1/sqrt(g))*(dx/dq)
+!  DQDX: dq/dx = -(1/sqrt(g))*(dy/dp)
+!  DQDY: dq/dy =  (1/sqrt(g))*(dx/dp)
+!
+      IF (ONED) THEN
+        DPDX =  ONE / DXDP
+        DPDY =  ZERO
+        DQDX =  ZERO
+        DQDY =  ZERO
+      ELSE
+        DPDX =  DYDQ / GSQRT
+        DPDY = -DXDQ / GSQRT
+        DQDX = -DYDP / GSQRT
+        DQDY =  DXDP / GSQRT
+      ENDIF
+!
+!  Cosine and sine arrays of local angle w.r.t. problem coordinates
+!
+      COSCC = DXDP / HPFAC
+      SINCC = DYDP / HPFAC
+
+      END SUBROUTINE SETUP_CGRID
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE GET_NCOM_ZGRID()
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+!     NONE
+!
+!     --- Local variables
+      INTEGER :: IU,IOS,K,NX,NY,NL
+      CHARACTER(14) :: CENV
+      CHARACTER(LENFNM) :: CFILE
+      REAL(4) :: L,LS
+      REAL(4), ALLOCATABLE :: ZW(:)
+
+!     --- Get number of z-levels from NCOM_DIMEN_0D
+
+      CENV = 'NCOM_DIMEN_0D';  CFILE = ' ';
+      CALL GETENV(CENV,CFILE)
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'OF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open NCOM_DIMEN_0D failed: ",
+     &    TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      READ(IU,*) !skip nnest
+      READ(IU,*) NX,NY,NL
+      CLOSE(IU)
+
+!     --- Get z-levels from NCOM_OVGRD_1D
+
+      ALLOCATE(ZW(NL))
+      CENV = 'NCOM_OVGRD_1D';  CFILE = ' ';
+      CALL GETENV(CENV,CFILE)
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'OU',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open NCOM_ODIMEN_0D failed: ",
+     &    TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      READ(IU) L,LS,ZW
+      CLOSE(IU)
+
+!     --- Set array size NZ based on ZMIN and allocate ZL
+
+      DO K=1,NL
+        IF (ZW(K).LT.ZMIN) EXIT
+      ENDDO
+      NZ = MIN(K,NL)-1
+      ALLOCATE(ZL(NZ))
+
+!     --- Compute midpoint of levels
+
+      IF (INODE.EQ.MASTER) WRITE(*,'(/A)') '***** SWAN Zlevels *****'
+      DO K=1,NZ
+        ZL(K) = 0.5*(ZW(K)+ZW(K+1))
+        IF (INODE.EQ.MASTER) WRITE(*,'(I3,E14.6)') K,ZL(K)
+      ENDDO
+      IF (INODE.EQ.MASTER) WRITE(*,'(A//)') '***********************'
+      DEALLOCATE(ZW)
+
+      END SUBROUTINE GET_NCOM_ZGRID
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE GET_ZGRID()
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+!     NONE
+!
+!     --- Local variables
+      INTEGER :: IU,IOS,K,NL
+      CHARACTER(LENFNM) :: CFILE
+      REAL(4), ALLOCATABLE :: ZW(:)
+
+!     --- Get z-levels from local zgrid.dat
+
+      CFILE = 'zgrid.dat'
+      IU = 0;  IOS = 0;  CALL FOR(IU,CFILE,'OF',IOS)
+      IF (IOS.NE.0) THEN
+        WRITE(*,'(3A,I3)') "Open zgrid.dat failed: ",
+     &    TRIM(CFILE),'; IOSTAT = ',IOS
+        CALL EXIT(1)
+      ENDIF
+      NL = 1000
+      ALLOCATE(ZW(NL))
+      DO K = 1,NL
+        READ(IU,*,END=101) ZW(K)
+      ENDDO
+101   CLOSE(IU)
+
+!     --- Set array size NZ and allocate ZL
+
+      NZ = K-1
+      ALLOCATE(ZL(NZ))
+      IF (INODE.EQ.MASTER) WRITE(*,'(/A)') '***** SWAN Zlevels *****'
+      DO K=1,NZ
+        ZL(K) = -ZW(K)
+        IF (INODE.EQ.MASTER) WRITE(*,'(I3,E14.6)') K,ZL(K)
+      ENDDO
+      IF (INODE.EQ.MASTER) WRITE(*,'(A//)') '***********************'
+      DEALLOCATE(ZW)
+
+      END SUBROUTINE GET_ZGRID
+
+
+      END MODULE SWFLD_MOD
+

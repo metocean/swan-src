@@ -1,0 +1,2449 @@
+#undef DEBUG_IMPORT_EXPORT
+!
+! ESMF macros for logging
+#define FILENAME "swanesmf.ftn"
+#define CONTEXT  __LINE__,FILENAME,METHOD
+!
+! Define real kind for data passed through ESMF interface
+#if defined(REAL8)
+#define ESMF_KIND_RX ESMF_KIND_R8
+#define ESMF_TYPEKIND_RX ESMF_TYPEKIND_R8
+#else
+#define ESMF_KIND_RX ESMF_KIND_R4
+#define ESMF_TYPEKIND_RX ESMF_TYPEKIND_R4
+#endif
+!
+!
+!***********************************************************************
+!
+      MODULE SWAN_MOD
+!
+!***********************************************************************
+!
+!     --- ESMF Module
+      USE ESMF_MOD
+!
+!     --- COAMPS standard fields module
+      USE COAMPS_Field_Mod
+!
+!     --- SWAN Field Module
+      USE SWFLD_MOD
+!
+!     --- SWAN Data Modules
+      USE TIMECOMM                                                        40.41
+      USE OCPCOMM2                                                        40.41
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM1                                                         40.41
+      USE SWCOMM2                                                         40.41
+      USE SWCOMM3                                                         40.41
+      USE SWCOMM4                                                         40.41
+      USE OUTP_DATA                                                       40.51
+      USE M_GENARR                                                        40.31
+      USE M_PARALL                                                        40.31
+      USE SwanGriddata                                                    40.80
+!
+!     --- Default type and scope
+      IMPLICIT NONE
+      PRIVATE
+      SAVE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2009  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     30.60: Nico Booij
+!     30.72: IJsbrand Haagsma
+!     30.74: IJsbrand Haagsma (Include version)
+!     30.82: IJsbrand Haagsma
+!     30.90: IJsbrand Haagsma (Equivalence verion)
+!     32.01: Roeland Ris & Cor van der Schelde
+!     32.02: Roeland Ris & Cor van der Schelde (1D-version)
+!     34.01: IJsbrand Haagsma
+!     40.00, 40.13: Nico Booij
+!     34.01: Jeroen Adema
+!     33.08: W. Erick Rogers
+!     40.22: John Cazes and Tim Campbell
+!     40.23: Marcel Zijlema
+!     40.30: Marcel Zijlema
+!     40.31: Marcel Zijlema
+!     40.41: Marcel Zijlema
+!     40.51: Marcel Zijlema
+!     40.80: Marcel Zijlema
+!     40.80: Tim Campbell (adapted from swanmain.ftn:SWMAIN)
+!
+!  1. Updates
+!
+!            10 FEB   Subroutine SWMAIN introduced
+!     30.60, Aug. 97: argument list of ERRCHK changed
+!     30.72, Sept 97: INTEGER*4 replaced by INTEGER
+!     30.72, Nov. 97: declaration of ITERMX removed because it is a common
+!                     variable, which is declared in the INCLUDE file
+!     30.72, Nov. 97: PWTAIL(3) is made dependent on PWTAIL(1), also in the
+!                     initialisation
+!     30.74, Nov. 97: Prepared for version with INCLUDE statements
+!     32.01, Jan. 98: Nautical convention included (project h3268)
+!     32.01, Jan. 98: Comparison of computed and prescribed significant
+!                     wave height (project h3268)
+!     32.02, Jan. 98: Introduction of 1D-version
+!     30.72, Mar. 98: Added instruction to change [maxerr] in case of a
+!                     terminating warning
+!     40.00, Nov. 97: time step loop reorganized,
+!                     argument list in call SNEXTI changed
+!                     declaration of ITERMX removed
+!                     argument added in call SWOUTP
+!     30.82, Sep. 98: Added check on error level each time step to prevent
+!                     continuation of computation
+!     30.90, Oct. 98: Introduced EQUIVALENCE POOL-arrays
+!     34.01, Feb. 99: Changed STOP statement in a jump to end of subroutine
+!     34.01, Feb. 99: Close all files at end of this subroutine
+!     34.01, Feb. 99: Introducing STPNOW
+!     33.08, July 98: S&L scheme-related changes
+!     40.13, July 01: coefficient PTRIAD(4) added
+!                     make file 'norm_end' if program ends normally
+!     40.22, Oct. 01: call SWCOMP changed in view of parallellization
+!     40.23, Aug. 02: Print of CPU times added
+!     40.30, Mar. 03: introduction distributed-memory approach using MPI
+!     40.31, Dec. 03: removing POOL mechanism and reconsidering this
+!                     subroutine
+!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.51, Feb. 05: re-design output process in parallel mode
+!     40.80, Jun. 07: extension to unstructured grids
+!
+!  2. Purpose
+!
+!     Module for providing standard ESMF interface (adapted from SWMAIN).
+!
+!  3. Method
+!
+!     ---
+!
+!  4. Argument variables
+!
+!  6. Local (module) variables
+!
+!     AC1   :     Contains action density at previous time step           40.31
+!     BGRIDP:     data concerning boundary grid points                    40.31
+!     BLKND :     array giving node number per subdomain                  40.41
+!     BLKNDC:     auxiliary array for collecting the array BLKND          40.41
+!     BSPECS:     array containing boundary spectra                       40.31
+!     CHARS :     array to pass character info to MSGERR                  40.41
+!     COMPDA:     array containing various data depending on grid         40.31
+!     CROSS :     integer array indicating obstacle crossing              40.30
+!                 (0=no, >0=yes)                                          40.30
+!     ILEN  :     length of array                                         40.30
+!     INERR :     number of the initialisation error                      40.31
+!     OURQT :     array indicating at what time requested output          40.51
+!                 is processed                                            40.51
+!     IUNIT :     counter for file unit numbers                           34.01
+!     LOPEN :     indicates whether a file is open                        34.01
+!     MSGSTR:     string to pass message to call MSGERR                   40.41
+!
+      INTEGER   IUNIT                                                     34.01
+      INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
+      INTEGER   INERR                                                     40.31
+      INTEGER   IERR                                                      40.31 40.00
+      INTEGER   ISTAT, IF1, IL1                                           40.41
+      CHARACTER PTYPE, PNAME *8, COMPUT *4, DTTIWR*18                     40.00
+      CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
+      CHARACTER*80 MSGSTR                                                 40.41
+      LOGICAL   LOPEN                                                     34.01
+
+      INTEGER, ALLOCATABLE :: CROSS(:)                                    40.80 40.31
+      INTEGER, ALLOCATABLE :: BGRIDP(:)                                   40.31
+      REAL   , ALLOCATABLE :: BSPECS(:,:,:,:)                             40.31
+      REAL   , ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)                     40.31
+!
+      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:), OURQT(:)               40.51 40.41
+!
+!     --- Import fields
+!     *** Order follows that of input grids in SWAN ***
+      INTEGER, PARAMETER :: NUMIMPFIELDS=NUMGRD
+      LOGICAL :: NOACTIVEIMPFIELDS
+      CHARACTER(ESMF_MAXSTR) :: IMPFIELDNAME(NUMIMPFIELDS)
+      LOGICAL :: ISVECIMPFIELD(NUMIMPFIELDS)
+      INTEGER :: ICFOLD(NUMIMPFIELDS)
+      INTEGER :: ICFNEW(NUMIMPFIELDS)
+      TYPE(ESMF_FIELD) :: IMPFIELD(NUMIMPFIELDS)
+      LOGICAL :: IMPLICIT_ATMOS_FORCING
+      LOGICAL :: IMPLICIT_OCEAN_FORCING
+!
+!     --- Export fields
+      INTEGER, PARAMETER :: NUMEXPFIELDS=14
+      LOGICAL :: NOACTIVEEXPFIELDS
+      CHARACTER(ESMF_MAXSTR) :: EXPFIELDNAME(NUMEXPFIELDS)
+      INTEGER :: EXPFIELDDIM(NUMEXPFIELDS)
+      LOGICAL :: ISACTIVEEXPFIELD(NUMEXPFIELDS)
+      TYPE(ESMF_FIELD) :: EXPFIELD(NUMEXPFIELDS)
+      INTEGER :: EXPORT_CHNK_TYPE
+      REAL :: DMAXZL=300.0
+!
+!     --- Grid related data
+      TYPE(ESMF_Grid) :: GRID1D
+      TYPE(ESMF_Grid) :: GRID2D
+      TYPE(ESMF_DISTGRID) :: DISTGRID1D !Mapping of 1D grid to PETs
+      TYPE(ESMF_DISTGRID) :: DISTGRID2D !Mapping of 2D grid to PETs
+      TYPE(ESMF_ARRAYSPEC) :: ARRAYSPEC1DR !ESMF 1D array spec
+      TYPE(ESMF_ARRAYSPEC) :: ARRAYSPEC2DR !ESMF 2D array spec
+      TYPE(ESMF_ARRAYSPEC) :: ARRAYSPEC3DR !ESMF 3D array spec
+      INTEGER :: HLW1D(1),HUW1D(1)
+      INTEGER :: HLW2D(2),HUW2D(2)
+      INTEGER :: IXF, IXL, IYF, IYL
+      INTEGER(ESMF_KIND_I4), ALLOCATABLE :: DEBL1D(:,:,:) !1D block layout
+      INTEGER(ESMF_KIND_I4), ALLOCATABLE :: DEBL2D(:,:,:) !2D block layout
+      LOGICAL :: INCLUDE3D
+!
+!     --- Miscellaneous ESMF related variables
+      TYPE(ESMF_VM) :: VM !ESMF Virtual Machine
+      INTEGER :: PETCOUNT, LOCALPET !Number of PETs and PET ID in VM
+      INTEGER :: LOCALDE=0
+      TYPE(ESMF_CONFIG) :: CONFIG !Config
+      TYPE(ESMF_CLOCK) :: CLOCK !Internal ESMF Clock
+      TYPE(ESMF_TIME) :: REFTIME, STARTTIME, STOPTIME
+      TYPE(ESMF_TIMEINTERVAL) :: TIMESTEP, ZEROTIMEINTERVAL
+      TYPE(ESMF_ALARM) :: HOTALARM
+      LOGICAL :: INIT1_COMPLETED = .FALSE.
+      LOGICAL :: INIT2_COMPLETED = .FALSE.
+      LOGICAL :: LOUTFF=.FALSE.
+      INTEGER :: OUTFFTAU=99999999
+!
+!  7. Common blocks used
+!
+!
+!  8. Subroutines used
+!
+!     SWINIT
+!     SWREAD
+!     FOR
+!     SWPREP
+!     ERRCHK
+!     SWRBC
+!     SWINCO
+!     SWCOLOUT                                                            40.30
+!     SWGATHER                                                            40.30
+!     SWSYNC                                                              40.30
+!     SWCOLLECT        Collects geographical field array from all nodes   40.41
+!     SNEXTI
+!     SWCOMP
+!     HSOBND: Generates warning if comp. and prescr. Hs differ more than  32.01
+!             a fraction HSRERR at the up-wave boundary                   32.01
+!     SWOUTP
+!TIMG!     SWPRTI                                                              40.23
+!TIMG!     SWTSTA                                                              40.23
+!TIMG!     SWTSTO                                                              40.23
+!     MSGERR : Handles error messages according to severity               40.41
+!     NUMSTR : Converts integer/real to string                            40.41
+!     TXPBLA : Removes leading and trailing blanks in string              40.41
+!
+      LOGICAL STPNOW                                                      34.01
+      EXTERNAL STPNOW, NUMSTR, DTTIWR
+!
+      INTERFACE
+        SUBROUTINE SWINITMPI ( COMM )
+          INTEGER, INTENT(IN), OPTIONAL :: COMM
+        END SUBROUTINE SWINITMPI
+        SUBROUTINE SWEXITMPI ( NOFINAL )
+          LOGICAL, INTENT(IN), OPTIONAL :: NOFINAL
+        END SUBROUTINE SWEXITMPI
+      END INTERFACE
+!
+!  9. Subroutines calling
+!
+!     Module subroutines will be invoked by ESMF.
+!
+! 10. Error Messages
+!
+!     ---
+!
+! 11. Remarks
+!
+!     Code in SWAN_INIT1, SWAN_INIT2, SWAN_RUN, and SWAN_FINAL
+!     is adapted from SWMAIN in swanmain.ftn.
+!
+! 12. Structure
+!
+!     ----------------------------------------------------------------
+!     Call SWINIT to initialize various common data
+!     Repeat                                                              40.00
+!         Call SWREAD to read and process user commands
+!         If last command was STOP
+!         Then exit from repeat
+!         -------------------------------------------------------------
+!         Call SWPREP to check input and prepare computation
+!         If nonstationary computation is to be made                      40.00
+!         Then start time step loop at IT=0 and                           40.00
+!         Call SWINCO to calculate initial wave spectra                   40.00
+!         -------------------------------------------------------------
+!         For requested number of time steps do                           40.00
+!             Call SNEXTI to update boundary conditions and input fields  40.00
+!             If IT>0                                                     40.00
+!             Then Call SWCOMP to calculate the wave field                40.00
+!             ---------------------------------------------------------
+!             Call SWOUTP to postprocess the results and create output
+!             Update time
+!     ----------------------------------------------------------------
+      PUBLIC  SETSERVICES       !Set entry points for SWAN in ESMF
+      PRIVATE SWAN_INIT1        !Initialize (phase 1) SWAN in ESMF
+      PRIVATE SWAN_INIT2        !Initialize (phase 2) SWAN in ESMF
+      PRIVATE SWAN_RUN          !Run SWAN in ESMF
+      PRIVATE SWAN_FINAL        !Finalize SWAN in ESMF
+!
+! 13. Source text
+!
+
+      CONTAINS
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SETSERVICES"
+      SUBROUTINE SETSERVICES(GRIDCOMP, RC)
+!                                                                      *
+!***********************************************************************
+!
+      TYPE(ESMF_GRIDCOMP) :: GRIDCOMP
+      INTEGER,INTENT(OUT) :: RC
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Set init1 entry point
+
+      CALL ESMF_GRIDCOMPSETENTRYPOINT( GRIDCOMP,
+     &     ESMF_SETINIT, SWAN_INIT1, PHASE=1, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set init1 entry point failed",
+     &    CONTEXT)) RETURN
+
+!     --- Set init2 entry point
+
+      CALL ESMF_GRIDCOMPSETENTRYPOINT( GRIDCOMP,
+     &     ESMF_SETINIT, SWAN_INIT2, PHASE=2, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set init2 entry point failed",
+     &    CONTEXT)) RETURN
+
+!     --- Set run entry point
+
+      CALL ESMF_GRIDCOMPSETENTRYPOINT( GRIDCOMP,
+     &     ESMF_SETRUN, SWAN_RUN, PHASE=ESMF_SINGLEPHASE, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set run entry point failed",
+     &    CONTEXT)) RETURN
+
+!     --- Set final entry point
+
+      CALL ESMF_GRIDCOMPSETENTRYPOINT( GRIDCOMP,
+     &     ESMF_SETFINAL, SWAN_FINAL, PHASE=ESMF_SINGLEPHASE, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set final entry point failed",
+     &    CONTEXT)) RETURN
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE SETSERVICES
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SWAN_INIT1"
+      SUBROUTINE SWAN_INIT1(GRIDCOMP, IMPSTATE, EXPSTATE, EXTCLOCK, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      TYPE(ESMF_GRIDCOMP) :: GRIDCOMP
+      TYPE(ESMF_STATE)    :: IMPSTATE
+      TYPE(ESMF_STATE)    :: EXPSTATE
+      TYPE(ESMF_CLOCK)    :: EXTCLOCK
+      INTEGER,INTENT(OUT) :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      INTEGER :: I, K
+      INTEGER :: MPICOMMUNICATOR
+      INTEGER(ESMF_KIND_I4) :: MSIZE
+      INTEGER(ESMF_KIND_I4), ALLOCATABLE :: CPDD(:)
+      TYPE(ESMF_TIMEINTERVAL) :: EXTTIMESTEP
+      TYPE(ESMF_TIME) :: EXTREFTIME, EXTSTARTTIME, EXTSTOPTIME
+      TYPE(ESMF_TIMEINTERVAL) :: TINTERVAL
+      INTEGER(ESMF_KIND_I4) :: IDATE(6), ITIME(0:3)
+      REAL(ESMF_KIND_R8) :: DTIME(0:3)
+      INTEGER(ESMF_KIND_I8) :: ISEC8
+      REAL :: TIMESC
+      REAL, EXTERNAL :: DTTIME
+      LOGICAL :: LCONCURRENT
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Report
+
+      CALL ESMF_LOGWRITE("SWAN initialize phase 1 routine called",
+     &     ESMF_LOG_INFO)
+
+!     --- Get Config & VM from gridComp
+      CALL ESMF_GRIDCOMPGET(GRIDCOMP, CONFIG=CONFIG, VM=VM, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridCompGet",
+     &    CONTEXT)) RETURN
+
+!     --- Get ESMF VM info
+
+      CALL ESMF_VMGET(VM,
+     &     PETCOUNT=PETCOUNT, LOCALPET=LOCALPET,
+     &     MPICOMMUNICATOR=MPICOMMUNICATOR, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "VMGet failed",
+     &    CONTEXT)) RETURN
+      WRITE(MSG,'(A,I4)') "SWAN_INIT1: PETCOUNT = ",petCount
+      CALL ESMF_LOGWRITE(MSG, ESMF_LOG_INFO)
+
+!     --- Get root working directory from config
+
+      WRKDIR=' '
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, WRKDIR,
+     &     LABEL=TRIM(CONFIG_LABEL_WAVE_DATA_DIR), DEFAULT='.', RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Config get wave_data_dir failed",
+     &    CONTEXT)) RETURN
+      WRITE(MSG,'(2A)') "SWAN_INIT1: WRKDIR = ", TRIM(WRKDIR)
+      CALL ESMF_LOGWRITE(MSG, ESMF_LOG_INFO)
+
+!     --- Get ff output flag and interval from config
+
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, LOUTFF,
+     &     LABEL=TRIM(CONFIG_LABEL_WAVE_OUTFF_FLAG), DEFAULT=.FALSE.,
+     &     RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &    "Config get wave_outff_flag failed",
+     &    CONTEXT)) RETURN
+      IF (LOUTFF) THEN
+        CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, OUTFFTAU,
+     &       LABEL=TRIM(CONFIG_LABEL_WAVE_OUTFF_INTERVAL), RC=RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &      "Config get wave_outff_interval failed",
+     &      CONTEXT)) RETURN
+      ENDIF
+
+!     --- Set zero time interval
+
+      CALL ESMF_TIMEINTERVALSET(ZEROTIMEINTERVAL, S=0, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set zero time interval failed",
+     &    CONTEXT)) RETURN
+
+!     --- initialize SWAN MPI environment
+
+      CALL SWINITMPI ( MPICOMMUNICATOR )
+
+!     --- initialize various data
+!TIMG
+!TIMG      DCUMTM(:,1:2) = 0D0                                                 40.23
+!TIMG      NCUMTM(:)     = 0                                                   40.23
+!TIMG      CALL SWTSTA(1)                                                      40.23
+
+      LEVERR=0                                                            40.23
+      MAXERR=1                                                            34.01
+      ITRACE=0                                                            40.23
+      INERR =0                                                            40.31
+
+!TIMG      CALL SWTSTA(2)                                                      40.23
+      CALL SWINIT (INERR)                                                 40.31 34.01
+!TIMG      CALL SWTSTO(2)                                                      40.23
+      IF (INERR.GT.0) GOTO 901                                            34.01
+      IF (STPNOW()) GOTO 901                                              34.01
+
+!     --- Set internal ESMF component flag
+
+      ESMFCM = .TRUE.
+
+!     --- Force nonstationary mode and 2D SWAN model
+
+      NSTATM = 1
+      NSTATC = 1
+      ONED = .FALSE.
+      ICOND = 1 !default initial condition (override with INPUT)
+      PNUMS(30) = 0. !no relaxation (override with INPUT)
+      INITST = .FALSE. !default initial stationary comput (override with INPUT)
+      OUTHOT = .FALSE. !default hotstart output (override with INPUT)
+
+!     --- Get time from external clock
+
+      CALL ESMF_CLOCKGET(EXTCLOCK,
+     &     TIMESTEP=EXTTIMESTEP, REFTIME=EXTREFTIME,
+     &     STARTTIME=EXTSTARTTIME, STOPTIME=EXTSTOPTIME, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from external clock failed",
+     &    CONTEXT)) RETURN
+
+!     --- Use external reference time to set reference day
+!         (prior to processing user commands)
+
+      CALL ESMF_TIMEGET(EXTREFTIME,
+     &     YY=IDATE(1), MM=IDATE(2), DD=IDATE(3), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get reference time failed",
+     &    CONTEXT)) RETURN
+      IDATE(4) = 0
+      IDATE(5) = 0
+      IDATE(6) = 0
+      TIMESC = DTTIME (IDATE) !first call to DTTIME initializes REFDAY
+      CALL ESMF_TIMESET(REFTIME,
+     &     YY=IDATE(1), MM=IDATE(2), DD=IDATE(3), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set reference time failed",
+     &    CONTEXT)) RETURN
+
+!     --- Set compute times with external start and stop times
+!         (prior to processing user commands)
+
+      STARTTIME = EXTSTARTTIME
+      TINTERVAL = STARTTIME - REFTIME
+      CALL ESMF_TIMEINTERVALGET(TINTERVAL, S_I8=ISEC8)
+      TINIC = REAL(ISEC8)
+      STOPTIME = EXTSTOPTIME
+      TINTERVAL = STOPTIME - REFTIME
+      CALL ESMF_TIMEINTERVALGET(TINTERVAL, S_I8=ISEC8)
+      TFINC = REAL(ISEC8)
+
+!     --- Initialize import lists
+!         (prior to processing user commands)
+
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, LCONCURRENT,
+     &     LABEL=TRIM(CONFIG_LABEL_CONCURRENT_CPL_MODE),
+     &     DEFAULT=.FALSE., RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &    "config get concurrent_cpl_mode flag failed",
+     &    CONTEXT)) RETURN
+      IMPLICIT_ATMOS_FORCING = .NOT.LCONCURRENT
+      IMPLICIT_OCEAN_FORCING = .FALSE.
+      CALL INIT_IMPORT_LIST(RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "INIT_IMPORT_LIST failed",
+     &    CONTEXT)) RETURN
+!
+      COMPUT = '    '
+
+!       --- read and process user commands
+
+!TIMG        CALL SWTSTA(3)                                                    40.23
+        CALL SWREAD (COMPUT)                                              40.31 30.90
+!TIMG        CALL SWTSTO(3)                                                    40.23
+        IF (STPNOW()) GOTO 901                                            34.01
+
+!       --- if last command was STOP then return with error
+
+        IF (COMPUT.EQ.'STOP') THEN                                        40.13
+          IUNIT  = 0                                                      40.13
+          IOSTAT = 0                                                      40.13
+          FILENM = 'norm_end'                                             40.13
+          CALL FOR (IUNIT, FILENM, 'UF', IOSTAT)                          40.13
+          WRITE (IUNIT, *) ' Normal end of run ', PROJNR                  40.13
+          CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &         "SWAN: STOP command was reached during initialize!",
+     &         RCTORETURN=RC)
+        ENDIF                                                             40.13
+
+!TODO: Currently only support structured grids with ESMF
+      IF ( OPTG.EQ.5 ) THEN
+        CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &       "SWAN currently only supports structured grids with ESMF!",
+     &       RCTORETURN=RC)
+        RETURN
+      ENDIF
+
+!     --- Initialize export lists (after processing user commands)
+
+      CALL INIT_EXPORT_LIST(RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "INIT_EXPORT_LIST failed",
+     &    CONTEXT)) RETURN
+
+!     --- Set time step (obtained from COMPUTE command)
+
+      DTIME(0)=DT
+      ITIME(0)=INT(DTIME(0))
+      DO I=1,3
+        DTIME(I) = (DTIME(I-1)-ITIME(I-1))*1000.D0
+        ITIME(I) = INT(DTIME(I))
+      ENDDO
+      CALL ESMF_TIMEINTERVALSET(TIMESTEP,
+     &     S=ITIME(0), MS=ITIME(1), US=ITIME(2), NS=ITIME(3), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set timestep failed",
+     &    CONTEXT)) RETURN
+      IF (MOD(EXTTIMESTEP,TIMESTEP) /= ZEROTIMEINTERVAL) THEN
+        CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &       "SWAN: External time step is not a multiple "//
+     &       "of the time step!", RCTORETURN=RC)
+        RETURN
+      ENDIF
+
+!     --- Create clock and set to GridComp
+
+      CLOCK = ESMF_CLOCKCREATE("SWAN Clock",
+     &        TIMESTEP=TIMESTEP, STARTTIME=STARTTIME,
+     &        STOPTIME=STOPTIME, REFTIME=REFTIME, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Create clock failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_GRIDCOMPSET(GRIDCOMP, CLOCK=CLOCK, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Set gridComp clock failed",
+     &    CONTEXT)) RETURN
+
+!     --- Setup alarm for restart output
+!         (output interval is obtained from COMPUTE command)
+
+      IF (OUTHOT) THEN
+        DTIME(0)=DTHOT
+        ITIME(0)=INT(DTIME(0))
+        DO I=1,3
+          DTIME(I) = (DTIME(I-1)-ITIME(I-1))*1000.D0
+          ITIME(I) = INT(DTIME(I))
+        ENDDO
+        CALL ESMF_TIMEINTERVALSET(TINTERVAL,
+     &       S=ITIME(0), MS=ITIME(1), US=ITIME(2), NS=ITIME(3), RC=RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC, "Set timestep failed",
+     &      CONTEXT)) RETURN
+        IF (MOD(TINTERVAL,TIMESTEP) /= ZEROTIMEINTERVAL) THEN
+          CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &         "SWAN: Restart output interval is not a multiple "//
+     &         "of the time step!", RCTORETURN=RC)
+          RETURN
+        ENDIF
+        IF (MOD(TINTERVAL,EXTTIMESTEP) /= ZEROTIMEINTERVAL) THEN
+          CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &         "SWAN: Restart output interval is not a multiple "//
+     &         "of the external time step!", RCTORETURN=RC)
+          RETURN
+        ENDIF
+        IF (SNGHOT) THEN
+          HOTALARM = ESMF_ALARMCREATE('restart', CLOCK,
+     &               RINGTIME=STARTTIME+TINTERVAL, RC=RC)
+        ELSE
+          HOTALARM = ESMF_ALARMCREATE('restart', CLOCK,
+     &               RINGINTERVAL=TINTERVAL, RC=RC)
+        ENDIF
+        IF (ESMF_LOGMSGFOUNDERROR(RC, "Create restart alarm failed",
+     &      CONTEXT)) RETURN
+      ENDIF
+
+!       --- allocate some arrays meant for computation                    40.31
+
+        IF (NUMOBS .GT. 0) THEN
+           IF (OPTG.NE.5) THEN                                            40.80
+!             structured grid                                             40.80
+              ILEN = 2*MCGRD                                              40.80
+           ELSE                                                           40.80
+!             unstructured grid                                           40.80
+              ILEN = nfaces                                               40.80
+           ENDIF                                                          40.80
+           IF (.NOT.ALLOCATED(CROSS)) ALLOCATE(CROSS(ILEN))               40.80 40.31
+        ELSE
+           IF (.NOT.ALLOCATED(CROSS)) ALLOCATE(CROSS(0))                  40.80 40.31
+        ENDIF                                                             34.01
+        IF (.NOT.ALLOCATED(BSPECS)) ALLOCATE(BSPECS(MDC,MSC,NBSPEC,2))    40.31
+        IF (.NOT.ALLOCATED(BGRIDP)) ALLOCATE(BGRIDP(6*NBGRPT))            40.31
+
+!       --- do some preparations before computation                       40.31
+
+!TIMG        CALL SWTSTA(4)                                                    40.23
+        CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
+     &                KGRBND, SPCDIR, SPCSIG )                            40.31
+        IF (OPTG.EQ.5) CALL SwanPrepComp ( CROSS )                        40.80
+        IF (STPNOW()) GOTO 901                                            40.80
+!TIMG        CALL SWTSTO(4)                                                    40.23
+
+!       --- check all possible flags and if necessary change
+!           if option is not correct
+
+        CALL ERRCHK                                                       30.60
+        IF (STPNOW()) GOTO 901                                            34.01
+
+!       --- initialisation of necessary grids for depth,
+!           current, wind and friction
+
+        IF (ALOCMP.AND.ALLOCATED(COMPDA)) DEALLOCATE(COMPDA)              40.97
+        IF (.NOT.ALLOCATED(COMPDA)) THEN                                  40.97
+           ALLOCATE(COMPDA(MCGRD,MCMVAR),STAT=ISTAT)                      40.97 40.41 40.31
+           ALOCMP = .FALSE.                                               40.97
+        END IF                                                            40.97
+        IF ( ISTAT.NE.0 ) THEN                                            40.41
+           CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                           40.41
+           CALL TXPBLA(CHARS(1),IF1,IL1)                                  40.41
+           MSGSTR =                                                       40.41
+     &         'Allocation problem: array COMPDA and return code is '//   40.41
+     &         CHARS(1)(IF1:IL1)                                          40.41
+           CALL MSGERR ( 4, MSGSTR )                                      40.41
+           GOTO 901                                                       40.41
+        END IF                                                            40.41
+
+!       --- allocate AC1 in case of non-stationary situation or in case   40.31
+!           of using the S&L scheme                                       40.31
+
+        IF ( NSTATM.EQ.1 .AND. MXITNS.GT.1 .OR. PROPSC.EQ.3 ) THEN        40.31
+           IF (.NOT.ALLOCATED(AC1)) THEN                                  40.41 40.31
+              ALLOCATE(AC1(MDC,MSC,MCGRD),STAT=ISTAT)                     40.41
+           ELSE IF (SIZE(AC1).EQ.0) THEN                                  40.41
+              DEALLOCATE(AC1)                                             40.41
+              ALLOCATE(AC1(MDC,MSC,MCGRD),STAT=ISTAT)                     40.41
+           END IF                                                         40.41
+           IF ( ISTAT.NE.0 ) THEN                                         40.41
+              CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')                        40.41
+              CALL TXPBLA(CHARS(1),IF1,IL1)                               40.41
+              MSGSTR =                                                    40.41
+     &            'Allocation problem: array AC1 and return code is '//   40.41
+     &            CHARS(1)(IF1:IL1)                                       40.41
+              CALL MSGERR ( 4, MSGSTR )                                   40.41
+              GOTO 901                                                    40.41
+           END IF                                                         40.41
+           AC1 = 0.                                                       40.31
+        ELSE                                                              40.31
+           IF(.NOT.ALLOCATED(AC1)) ALLOCATE(AC1(0,0,0))                   40.31
+        ENDIF
+
+        IF (LEVERR.GT.MAXERR) THEN                                        40.00
+
+          WRITE (PRINTF, 6010) LEVERR
+          IF (LEVERR.LT.4) WRITE (PRINTF, 6011)                           30.72
+ 6010     FORMAT(' ** No start of computation because of error level:'
+     &      ,I3)
+ 6011     FORMAT(' ** To ignore this error, change [maxerr] with the',    30.72
+     &           ' SET command')                                          30.72
+          GOTO 901
+
+        ELSE
+!
+          IF (ITEST.GE.40) THEN                                           40.00
+            IF (NSTATC.EQ.1) THEN                                         33.08
+              WRITE (PRINTF, '(" Type of computation: dynamic")')         32.02
+            ELSE                                                          32.02
+              IF (ONED) THEN                                              32.02
+                WRITE (PRINTF, '(" Type of computation: static 1-D")')    32.02
+              ELSE                                                        32.02
+                WRITE (PRINTF, '(" Type of computation: static 2-D")')    32.02
+              ENDIF                                                       32.02
+            ENDIF                                                         32.02
+          ENDIF
+
+        END IF
+
+!     --- Allocate output request array
+
+      IF ( .NOT.ALLOCATED(OURQT) ) THEN
+         ALLOCATE (OURQT(MAX_OUTP_REQ))
+         OURQT = -9999.
+      ENDIF
+
+!     --- Setup import/export fields
+
+      CALL SETUP_FIELDS(IMPSTATE, EXPSTATE, RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Setup import/export fields failed",
+     &    CONTEXT)) RETURN
+
+!     --- initialisation of necessary grids for depth,
+!         current, wind and friction
+
+!TIMG      CALL SWTSTA(5)
+      CALL SWRBC(COMPDA)
+!TIMG      CALL SWTSTO(5)
+
+!     --- Load export fields
+
+      CALL LOAD_EXPORT(RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Load export fields failed",
+     &    CONTEXT)) RETURN
+      IF (LOUTFF.AND.MOD(NINT(TIMCO),OUTFFTAU).EQ.0) THEN
+        DO K=1,NUMEXPFIELDS
+          IF (ISACTIVEEXPFIELD(K))
+     &    CALL COAMPS_FIELDWRITE(EXPFIELD(K),CLOCK,VM,DIR=TRIM(WRKDIR))
+        ENDDO
+      ENDIF
+
+!TIMG      CALL SWTSTO(1)                                                      40.23
+
+!     --- Return success
+
+      INIT1_COMPLETED = .TRUE.
+      RC = ESMF_SUCCESS
+      RETURN
+
+!     --- Log message and set return error
+
+ 901  CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &     "SWAN: internal error -- check Errfile!", RCTORETURN=RC)
+
+      END SUBROUTINE SWAN_INIT1
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SWAN_INIT2"
+      SUBROUTINE SWAN_INIT2(GRIDCOMP, IMPSTATE, EXPSTATE, EXTCLOCK, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      TYPE(ESMF_GRIDCOMP) :: GRIDCOMP
+      TYPE(ESMF_STATE)    :: IMPSTATE
+      TYPE(ESMF_STATE)    :: EXPSTATE
+      TYPE(ESMF_CLOCK)    :: EXTCLOCK
+      INTEGER,INTENT(OUT) :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      TYPE(ESMF_TIME) :: CURRTIME
+      TYPE(ESMF_TIME) :: EXTCURRTIME, EXTPREVTIME
+      CHARACTER(ESMF_MAXSTR) :: CSTR
+      INTEGER :: K, IT
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Report
+
+      CALL ESMF_LOGWRITE("SWAN initialize phase 2 routine called",
+     &     ESMF_LOG_INFO)
+
+!     --- Require initialize phase 1 be completed first
+
+      IF (.NOT.INIT1_COMPLETED) THEN
+        CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &       "SWAN: initialize phase 1 must be completed first!",
+     &       RCTORETURN=RC)
+        RETURN
+      ENDIF
+
+!     --- Get time info from external clock
+
+      CALL ESMF_CLOCKGET(EXTCLOCK, CURRTIME=EXTCURRTIME,
+     &     PREVTIME=EXTPREVTIME, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from external clock failed",
+     &    CONTEXT)) RETURN
+
+!     --- Get time info from clock
+
+      CALL ESMF_CLOCKGET(CLOCK, CURRTIME=CURRTIME, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from clock failed",
+     &    CONTEXT)) RETURN
+
+!     --- Report clock times to log file
+
+      CALL ESMF_TIMEGET(CURRTIME, TIMESTRINGISOFRAC=CSTR)
+      CALL ESMF_LOGWRITE("SWAN_INIT2: IntCurrTime = "//TRIM(CSTR),
+     &     ESMF_LOG_INFO)
+      CALL ESMF_TIMEGET(EXTCURRTIME, TIMESTRINGISOFRAC=CSTR)
+      CALL ESMF_LOGWRITE("SWAN_INIT2: ExtCurrTime = "//TRIM(CSTR),
+     &     ESMF_LOG_INFO)
+
+!     --- Load import fields
+
+      CALL LOAD_IMPORT(EXTPREVTIME, EXTCURRTIME, RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Load import fields failed",
+     &    CONTEXT)) RETURN
+
+!     --- compute default initial conditions
+
+      IF (ICOND.EQ.1) THEN
+!TIMG        CALL SWTSTA(6)
+        CALL SWINCO ( AC2   , COMPDA, XCGRID, YCGRID,
+     &                KGRPNT, SPCDIR, SPCSIG, XYTST )
+!TIMG        CALL SWTSTO(6)
+!       --- reset ICOND to prevent second computation of initial condition
+        ICOND = 0
+      ENDIF
+
+!     --- synchronize nodes
+
+      CALL SWSYNC
+      IF (STPNOW()) GOTO 901
+
+!     --- update boundary conditions and input fields
+
+!TIMG      CALL SWTSTA(7)
+      CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,
+     &              SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,
+     &              XYTST , DEPTH , WLEVL , FRIC  , UXB   ,
+     &              UYB   , WXI   , WYI   )
+!TIMG      CALL SWTSTO(7)
+      IF (STPNOW()) GOTO 901
+!
+      SAVITE = ITEST
+      IF (IOUTES .GT. ITEST) ITEST = IOUTES
+
+!     --- synchronize nodes
+
+      CALL SWSYNC
+      IF (STPNOW()) GOTO 901
+
+!     --- initialize with static computation
+
+      IF (INITST.AND.ICOND.NE.4) THEN
+        IF (INODE.EQ.MASTER) THEN
+          WRITE(SCREEN,11)
+          WRITE(SCREEN,12) MXITST
+        ENDIF
+        WRITE(PRINTF,11)
+        WRITE(PRINTF,12) MXITST
+ 11     FORMAT(/' Initializing with static model computation')
+ 12     FORMAT(' Max number of iterations: ',I8)
+        PROPSC = PROPSS
+        NSTATC = 0
+        MTC    = INT(RCOMPT(1,2))
+        TFINC  = RCOMPT(1,3)
+        TINIC  = RCOMPT(1,4)
+        DT     = RCOMPT(1,5)
+        RDTIM  = 1./DT
+        ITERMX = MXITST
+        IT = 1
+        IF (OPTG.NE.5) THEN
+           CALL SWCOMP( AC1   , AC2   , COMPDA, SPCDIR, SPCSIG,
+     &                  XYTST , IT    , KGRPNT, XCGRID, YCGRID,
+     &                  CROSS )
+        ELSE
+           CALL SwanCompUnstruc ( AC2   , AC1   , COMPDA,
+     &                            SPCSIG, SPCDIR, XYTST ,
+     &                            CROSS , IT    )
+        ENDIF
+        IF (STPNOW()) GOTO 901
+        PROPSC = PROPSN
+        NSTATC = 1
+        MTC    = INT(RCOMPT(2,2))
+        TFINC  = RCOMPT(2,3)
+        TINIC  = RCOMPT(2,4)
+        DT     = RCOMPT(2,5)
+        RDTIM  = 1./DT
+        ITERMX = MXITNS
+      ENDIF
+
+!     --- carry out the output requests
+
+!TIMG      CALL SWTSTA(9)
+      CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,
+     &              KGRPNT, XCGRID, YCGRID, OURQT )
+!TIMG      CALL SWTSTO(9)
+      IF (STPNOW()) GOTO 901
+
+!     --- Update land/sea mask
+
+      CALL SWFLD_MASK
+#ifdef DEBUG_IMPORT_EXPORT
+      CALL FWRITE(MASK,'mask')
+#endif /* DEBUG_IMPORT_EXPORT */
+
+!     --- Load export fields
+
+      CALL LOAD_EXPORT(RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Load export fields failed",
+     &    CONTEXT)) RETURN
+      IF (LOUTFF.AND.MOD(NINT(TIMCO),OUTFFTAU).EQ.0) THEN
+        DO K=1,NUMEXPFIELDS
+          IF (ISACTIVEEXPFIELD(K))
+     &    CALL COAMPS_FIELDWRITE(EXPFIELD(K),CLOCK,VM,DIR=TRIM(WRKDIR))
+        ENDDO
+      ENDIF
+!
+      IF (ERRPTS.GT.0) REWIND(ERRPTS)
+      ITEST = SAVITE
+
+!     --- Return success
+
+      INIT2_COMPLETED = .TRUE.
+      RC = ESMF_SUCCESS
+      RETURN
+
+!     --- Log message and set return error
+
+ 901  CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &     "SWAN: internal error -- check Errfile!", RCTORETURN=RC)
+
+      END SUBROUTINE SWAN_INIT2
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SWAN_RUN"
+      SUBROUTINE SWAN_RUN(GRIDCOMP, IMPSTATE, EXPSTATE, EXTCLOCK, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      TYPE(ESMF_GRIDCOMP) :: GRIDCOMP
+      TYPE(ESMF_STATE)    :: IMPSTATE
+      TYPE(ESMF_STATE)    :: EXPSTATE
+      TYPE(ESMF_CLOCK)    :: EXTCLOCK
+      INTEGER,INTENT(OUT) :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      INTEGER :: I, J, K, IT
+      TYPE(ESMF_TIME) :: CURRTIME
+      TYPE(ESMF_TIME) :: EXTCURRTIME, EXTPREVTIME, EXTSTOPTIME
+      INTEGER(ESMF_KIND_I8) :: ICOUNT
+      CHARACTER(ESMF_MAXSTR) :: CSTR
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Report
+
+      CALL ESMF_LOGWRITE("SWAN run routine called",
+     &     ESMF_LOG_INFO)
+
+!     --- Require initialize phases be completed first
+
+      IF (.NOT.INIT1_COMPLETED) THEN
+        CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &       "SWAN: initialize phase 1 must be completed first!",
+     &       RCTORETURN=RC)
+        RETURN
+      ENDIF
+      IF (.NOT.INIT2_COMPLETED) THEN
+        CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &       "SWAN: initialize phase 2 must be completed first!",
+     &       RCTORETURN=RC)
+        RETURN
+      ENDIF
+!
+!TIMG      CALL SWTSTA(1)
+
+!     --- Get time info from external clock
+!     *** External clock current time is treated as the stop time for
+!         this invocation ***
+
+      CALL ESMF_CLOCKGET(EXTCLOCK,
+     &     CURRTIME=EXTCURRTIME, PREVTIME=EXTPREVTIME,
+     &     STOPTIME=EXTSTOPTIME, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from external clock failed",
+     &    CONTEXT)) RETURN
+
+!     --- Get time info from clock
+
+      CALL ESMF_CLOCKGET(CLOCK,
+     &     CURRTIME=CURRTIME, ADVANCECOUNT=ICOUNT, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from clock failed",
+     &    CONTEXT)) RETURN
+      IT = ICOUNT
+
+!     --- Report clock times to log file
+
+      CALL ESMF_TIMEGET(CURRTIME, TIMESTRINGISOFRAC=CSTR)
+      CALL ESMF_LOGWRITE("SWAN_RUN: IntCurrTime = "//TRIM(CSTR),
+     &     ESMF_LOG_INFO)
+      CALL ESMF_TIMEGET(EXTCURRTIME, TIMESTRINGISOFRAC=CSTR)
+      CALL ESMF_LOGWRITE("SWAN_RUN: ExtCurrTime = "//TRIM(CSTR),
+     &     ESMF_LOG_INFO)
+
+!     --- Load import fields
+
+      CALL LOAD_IMPORT(EXTPREVTIME, EXTCURRTIME, RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Load import fields failed",
+     &    CONTEXT)) RETURN
+
+!     --- Advance to external current time
+
+      TIMESTEP_LOOP: DO WHILE (CURRTIME < EXTCURRTIME)
+!
+            IF (LEVERR.GT.MAXERR) THEN                                    30.82
+              WRITE (PRINTF, 6030) LEVERR                                 30.82
+              IF (LEVERR.LT.4) WRITE (PRINTF, 6011)                       40.30 30.82
+ 6030         FORMAT(' ** No continuation of computation because ',       30.82
+     &               'of error level:',I3)                                30.82
+              GOTO 901                                                    40.30
+            ENDIF                                                         30.82
+
+!           --- update time
+
+            CALL ESMF_CLOCKADVANCE(CLOCK, RC=RC)
+            IF (ESMF_LOGMSGFOUNDERROR(RC, "Clock advance failed",
+     &          CONTEXT)) RETURN
+            CALL ESMF_CLOCKGET(CLOCK,
+     &           CURRTIME=CURRTIME, ADVANCECOUNT=ICOUNT, RC=RC)
+            IF (ESMF_LOGMSGFOUNDERROR(RC, "Get current time failed",
+     &          CONTEXT)) RETURN
+            TIMCO = TIMCO + DT
+            IT = ICOUNT
+            CHTIME = DTTIWR(ITMOPT, TIMCO)
+            WRITE (PRINTF, 222) CHTIME, TIMCO
+ 222        FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)
+
+!           --- synchronize nodes
+
+            CALL SWSYNC                                                   40.30
+            IF (STPNOW()) GOTO 901                                        40.30
+!
+!           --- update boundary conditions and input fields
+!
+!TIMG            CALL SWTSTA(7)                                                40.23
+            CALL SNEXTI ( BSPECS, BGRIDP, COMPDA, AC1   , AC2   ,         40.31
+     &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
+     &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
+     &                    UYB   , WXI   , WYI   )                         40.31
+!TIMG            CALL SWTSTO(7)                                                40.23
+            IF (STPNOW()) GOTO 901                                        34.01
+!
+!           --- synchronize nodes
+
+            CALL SWSYNC                                                   40.30
+            IF (STPNOW()) GOTO 901                                        40.30
+
+            IF (COMPUT.NE.'NOCO' .AND. IT.GT.0) THEN                      40.00
+
+              SAVITE = ITEST                                              30.21
+              IF (ICOTES .GT. ITEST) ITEST = ICOTES
+!
+!             --- compute action density for current time step
+!
+!TIMG              CALL SWTSTA(8)                                              40.23
+              IF (OPTG.NE.5) THEN                                         40.80
+!                structured grid                                          40.80
+                 CALL SWCOMP( AC1   , AC2   , COMPDA, SPCDIR, SPCSIG,     40.31
+     &                        XYTST , IT    , KGRPNT, XCGRID, YCGRID,     40.31
+     &                        CROSS )                                     40.31
+              ELSE                                                        40.80
+!                unstructured grid                                        40.80
+                 CALL SwanCompUnstruc ( AC2   , AC1   , COMPDA,           40.80
+     &                                  SPCSIG, SPCDIR, XYTST ,           40.80
+     &                                  CROSS , IT    )                   40.80
+              ENDIF                                                       40.80
+!TIMG              CALL SWTSTO(8)                                              40.23
+              IF (STPNOW()) GOTO 901                                      34.01
+!
+!             --- set ICOND=4 for stationary computation, for next
+!                 (stationary) COMPUTE command                            40.13
+              ICOND = 4                                                   40.13
+!
+!             --- check whether computed significant wave height at       32.01
+!                 boundary differs from prescribed value given in         32.01
+!                 boundary command values of incident Hs                  32.01
+!
+              IF ( BNDCHK ) THEN                                          32.01
+                CALL HSOBND ( AC2, SPCSIG, COMPDA(1,JHSIBC), KGRPNT )     40.31
+              ENDIF                                                       32.01
+!
+              ITEST = SAVITE                                              30.21
+
+            ENDIF
+!
+            SAVITE = ITEST                                                30.21
+            IF (IOUTES .GT. ITEST) ITEST = IOUTES
+
+!           --- synchronize nodes
+
+            CALL SWSYNC                                                   40.30
+            IF (STPNOW()) GOTO 901                                        40.30
+
+!           --- carry out the output requests
+
+!TIMG            CALL SWTSTA(9)                                                40.30
+            CALL SWOUTP ( AC2   , SPCSIG, SPCDIR, COMPDA, XYTST ,         40.31
+     &                    KGRPNT, XCGRID, YCGRID, OURQT )                 40.51 40.31
+!TIMG            CALL SWTSTO(9)                                                40.30
+            IF (STPNOW()) GOTO 901                                        40.30
+!
+            IF (ERRPTS.GT.0) REWIND(ERRPTS)                               30.50
+            ITEST = SAVITE                                                30.21
+ 
+      ENDDO TIMESTEP_LOOP
+
+!     --- Output restart file
+
+      IF (OUTHOT) THEN
+        IF (ESMF_ALARMISRINGING(HOTALARM)) THEN
+          FILENM = TRIM(FNBHOT)
+          IF (FNTHOT) FILENM = TRIM(FILENM)//'_'//TRIM(CHTIME)
+          CALL BACKUP( AC2, SPCSIG, SPCDIR, KGRPNT, XCGRID, YCGRID )
+          IF (STPNOW()) GOTO 901
+          WRITE (PRINTF, '(A/)') 'Output restart: '//TRIM(FILENM)
+          CALL ESMF_ALARMRINGEROFF(HOTALARM)
+        ENDIF
+      ENDIF
+
+!     --- Update land/sea mask (if dynamic depth)
+
+      IF (IFLDYN(1).EQ.1) THEN
+        CALL SWFLD_MASK
+#ifdef DEBUG_IMPORT_EXPORT
+        CALL FWRITE(MASK,'mask')
+#endif /* DEBUG_IMPORT_EXPORT */
+      ENDIF
+
+!     --- Load export fields
+
+      CALL LOAD_EXPORT(RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Load export fields failed",
+     &    CONTEXT)) RETURN
+      IF (LOUTFF.AND.MOD(NINT(TIMCO),OUTFFTAU).EQ.0) THEN
+        DO K=1,NUMEXPFIELDS
+          IF (ISACTIVEEXPFIELD(K))
+     &    CALL COAMPS_FIELDWRITE(EXPFIELD(K),CLOCK,VM,DIR=TRIM(WRKDIR))
+        ENDDO
+      ENDIF
+!
+!TIMG      CALL SWTSTO(1)
+!
+!     --- Format statements
+
+ 6011 FORMAT(' ** To ignore this error, change [maxerr] with the',
+     &       ' SET command')
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+      RETURN
+
+!     --- Log message and set return error
+
+ 901  CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &     "SWAN: internal error -- check Errfile!", RCTORETURN=RC)
+
+      END SUBROUTINE SWAN_RUN
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SWAN_FINAL"
+      SUBROUTINE SWAN_FINAL(GRIDCOMP, IMPSTATE, EXPSTATE, EXTCLOCK, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      TYPE(ESMF_GRIDCOMP) :: GRIDCOMP
+      TYPE(ESMF_STATE)    :: IMPSTATE
+      TYPE(ESMF_STATE)    :: EXPSTATE
+      TYPE(ESMF_CLOCK)    :: EXTCLOCK
+      INTEGER,INTENT(OUT) :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      INTEGER :: I, J
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Report
+
+      CALL ESMF_LOGWRITE("SWAN finalize routine called",
+     &     ESMF_LOG_INFO)
+
+!     --- check for normal entry
+
+      IF (LEVERR.GT.MAXERR) THEN
+        WRITE (PRINTF, 6010) LEVERR
+        IF (LEVERR.LT.4) WRITE (PRINTF, 6011)
+        GOTO 901
+      END IF
+
+      DO IUNIT=IUNMIN,HIOPEN                                              34.01
+        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
+        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
+      END DO                                                              34.01
+
+!     --- collect contents of individual process files for                40.30
+!         output requests in case of parallel computation                 40.30
+
+      CALL SWSYNC                                                         40.30
+!TIMG      CALL SWTSTA(9)                                                      40.30
+      IF ( PARLL ) THEN                                                   40.30
+         ALLOCATE (BLKND(MXC*MYC))                                        40.51 40.41
+         BLKND = REAL(INODE)                                              40.41
+         IF ( INODE.EQ.MASTER ) THEN
+            ALLOCATE(BLKNDC(MXCGL*MYCGL))                                 40.51 40.41
+            BLKNDC = 0.                                                   40.96
+         END IF
+         CALL SWCOLLECT ( BLKNDC, BLKND, .TRUE. )                         40.51 40.41
+         IF (STPNOW()) GOTO 901                                           40.41
+         IF ( INODE.EQ.MASTER ) THEN                                      40.30
+            CALL SWCOLOUT ( OURQT, BLKNDC )                               40.51 40.41 40.30
+            DEALLOCATE(BLKNDC)                                            40.41 40.30
+         END IF                                                           40.30
+      END IF                                                              40.30
+!TIMG      CALL SWTSTO(9)                                                      40.30
+!
+!TIMG      CALL SWPRTI                                                         40.23
+!
+      INQUIRE(UNIT=PRINTF,OPENED=LOPEN)                                   40.30
+      IF (LOPEN) CLOSE(PRINTF)                                            40.30
+
+!     --- destroy internal clock
+
+      CALL ESMF_CLOCKDESTROY(CLOCK)
+
+!     --- release memory for import/export fields
+
+      DO I = 1,NUMIMPFIELDS
+        IF (.NOT.IGESMF(I)) CYCLE
+        CALL ESMF_FIELDDESTROY(IMPFIELD(I))
+      ENDDO
+      DO I = 1,NUMEXPFIELDS
+        IF (.NOT.ISACTIVEEXPFIELD(I)) CYCLE
+        CALL ESMF_FIELDDESTROY(EXPFIELD(I))
+      ENDDO
+      CALL SWFLD_FINAL
+
+!     --- release memory for grids
+
+      CALL ESMF_GRIDDESTROY(GRID2D)
+      CALL ESMF_DISTGRIDDESTROY(DISTGRID2D)
+!
+!     --- deallocate all allocated arrays                                 40.31
+
+      IF (ALLOCATED(AC1   )) DEALLOCATE(AC1   )                           40.31
+      IF (ALLOCATED(BGRIDP)) DEALLOCATE(BGRIDP)                           40.31
+      IF (ALLOCATED(BSPECS)) DEALLOCATE(BSPECS)                           40.31
+      IF (ALLOCATED(COMPDA)) DEALLOCATE(COMPDA)                           40.31
+      IF (ALLOCATED(CROSS )) DEALLOCATE(CROSS )                           40.31
+      IF (ALLOCATED(OURQT )) DEALLOCATE(OURQT )                           40.51 40.30
+      IF (ALLOCATED(BLKND )) DEALLOCATE(BLKND )                           40.41
+      CALL SWCLME                                                         40.31
+!
+!     --- finalize SWAN MPI environment
+
+      CALL SWEXITMPI ( .TRUE. )
+!
+!     --- Format statements
+
+ 6010 FORMAT(' ** No finalization because of error level:',I3)
+ 6011 FORMAT(' ** To ignore this error, change [maxerr] with the',
+     &       ' SET command')
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+      RETURN
+
+!     --- Log message and set return error
+
+ 901  CALL ESMF_LOGMSGSETERROR(ESMF_FAILURE,
+     &     "SWAN: internal error -- check Errfile!", RCTORETURN=RC)
+
+      END SUBROUTINE SWAN_FINAL
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SETUP_FIELDS"
+      SUBROUTINE SETUP_FIELDS(IMPSTATE, EXPSTATE, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      TYPE(ESMF_STATE) :: IMPSTATE
+      TYPE(ESMF_STATE) :: EXPSTATE
+      INTEGER :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      CHARACTER(ESMF_MAXSTR) :: FNAME, LABEL
+      INTEGER :: I, K, N, IX, IY
+      TYPE(ESMF_FIELD) :: FTMP
+      INTEGER :: TLB(2), TUB(2), ELB(2), EUB(2)
+      INTEGER(ESMF_KIND_I4) :: IBUFS(4), IBUFR(4*NPROC)
+      INTEGER(ESMF_KIND_I4), POINTER :: IPTR(:,:)
+      REAL(ESMF_KIND_RX), POINTER :: RPTR(:,:), RPTR1(:,:), RPTR2(:,:)
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Initialize SWFLD
+      IF (INCLUDE3D) THEN
+        CALL SWFLD_INIT( COMPDA, OPT_ZL=1, DMAX=DMAXZL )
+      ELSE
+        CALL SWFLD_INIT( COMPDA, OPT_ZL=0 )
+      ENDIF
+
+!     --- Create array specifications
+
+      CALL ESMF_ARRAYSPECSET(ARRAYSPEC1DR,
+     &     RANK=1, TYPEKIND=ESMF_TYPEKIND_RX, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "ArraySpecSet 1D failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_ARRAYSPECSET(ARRAYSPEC2DR,
+     &     RANK=2, TYPEKIND=ESMF_TYPEKIND_RX, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "ArraySpecSet 2D failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_ARRAYSPECSET(ARRAYSPEC3DR,
+     &     RANK=3, TYPEKIND=ESMF_TYPEKIND_RX, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "ArraySpecSet 3D failed",
+     &    CONTEXT)) RETURN
+
+!     --- Create ESMF DistGrid to match SWAN 2D decomposition
+!         Global grid bounds: 1,1,MXCGL,MYCGL
+!         Exclusive bounds (global index): DEBL(:,:,INODE)
+!         Total bounds (global index): MXF,MYF,MXL,MYL
+!     *** If there are excluded rows or columns, then they
+!         will not be included in the ESMF DistGrid.  In other
+!         words, the index space defined by DEBL may be smaller
+!         than (1:MXCGL,1:MYCGL).
+
+      ALLOCATE(DEBL2D(2,2,NPROC))
+      IF (MXCGL.GT.MYCGL) THEN !Decomposed along x-direction
+        ! Lower bounds
+        IF (INODE.EQ.1) THEN
+          IBUFS(1) = MXF
+          HLW2D(1) = 0
+        ELSE
+          IBUFS(1) = MXF+IHALOX
+          HLW2D(1) = IHALOX
+        ENDIF
+        IBUFS(2) = MYF
+        HLW2D(2) = 0
+        ! Upper bounds
+        IF (INODE.EQ.NPROC) THEN
+          IBUFS(3) = MXL
+          HUW2D(1) = 0
+        ELSE
+          IBUFS(3) = MXL-IHALOX
+          HUW2D(1) = IHALOX
+        ENDIF
+        IBUFS(4) = MYL
+        HUW2D(2) = 0
+      ELSE !(MXCGL.LE.MYCGL) -- Decomposed along y-direction
+        ! Lower bounds
+        IBUFS(1) = MXF
+        HLW2D(1) = 0
+        IF (INODE.EQ.1) THEN
+          IBUFS(2) = MYF
+          HLW2D(2) = 0
+        ELSE
+          IBUFS(2) = MYF+IHALOY
+          HLW2D(2) = IHALOY
+        ENDIF
+        ! Upper bounds
+        IBUFS(3) = MXL
+        HUW2D(1) = 0
+        IF (INODE.EQ.NPROC) THEN
+          IBUFS(4) = MYL
+          HUW2D(2) = 0
+        ELSE
+          IBUFS(4) = MYL-IHALOY
+          HUW2D(2) = IHALOY
+        ENDIF
+      ENDIF
+      CALL ESMF_VMALLGATHER(VM, IBUFS, IBUFR, 4, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "DEBL2D AllGather failed",
+     &    CONTEXT)) RETURN
+      DO I=1,NPROC
+        DEBL2D(1,1,I) = IBUFR(4*(I-1)+1) !X-lower-bound
+        DEBL2D(2,1,I) = IBUFR(4*(I-1)+2) !Y-lower-bound
+        DEBL2D(1,2,I) = IBUFR(4*(I-1)+3) !X-upper-bound
+        DEBL2D(2,2,I) = IBUFR(4*(I-1)+4) !Y-upper-bound
+      ENDDO
+      DISTGRID2D = ESMF_DISTGRIDCREATE(
+     &             MININDEX=(/DEBL2D(1,1,    1),DEBL2D(2,1,    1)/),
+     &             MAXINDEX=(/DEBL2D(1,2,NPROC),DEBL2D(2,2,NPROC)/),
+     &             DEBLOCKLIST=DEBL2D, VM=VM, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "DistGridCreate 2D failed",
+     &    CONTEXT)) RETURN
+
+!     --- Exclusive bounds (local index): IXF,IYF,IXL,IYL
+!         Total bounds (local index): 1,1,MXC,MYC
+
+      IXF = 1   + HLW2D(1)
+      IXL = MXC - HUW2D(1)
+      IYF = 1   + HLW2D(2)
+      IYL = MYC - HUW2D(2)
+      IF (ITEST.GE.10) THEN
+        WRITE(PRTEST,'(A,4I6)')
+     &    'Total Bounds (global): ',MXF,MYF,MXL,MYL
+        WRITE(PRTEST,'(A,4I6)')
+     &    'Total Bounds (local) : ',1,1,MXC,MYC
+        WRITE(PRTEST,'(A,4I6)')
+     &    'Exclusive Bounds (global):',DEBL2D(:,:,INODE)
+        WRITE(PRTEST,'(A,4I6)')
+     &    'Exclusive Bounds (local) : ',IXF,IYF,IXL,IYL
+      ENDIF
+
+!     --- Create ESMF grid
+
+      GRID2D = ESMF_GRIDCREATE(DISTGRID=DISTGRID2D, NAME="WAVE:grid",
+     &         COORDTYPEKIND=ESMF_TYPEKIND_RX,
+     &         INDEXFLAG=ESMF_INDEX_DELOCAL,
+     &         GRIDEDGELWIDTH=(/0,0/), GRIDEDGEUWIDTH=(/0,0/), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridCreate failed",
+     &    CONTEXT)) RETURN
+
+!     --- Add coordinate arrays and land/sea mask to ESMF grid
+!         and set values.  Land/sea mask is fixed in time and
+!         based on excluded points only.  COAMPS standard mask
+!         values are used.
+
+      CALL ESMF_GRIDADDCOORD(GRID2D,
+     &     STAGGERLOC=ESMF_STAGGERLOC_CENTER, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridAddCoord failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_GRIDADDITEM(GRID2D, ITEM=ESMF_GRIDITEM_MASK,
+     &     STAGGERLOC=ESMF_STAGGERLOC_CENTER, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridAddItem mask failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_GRIDGETCOORD(GRID2D, LOCALDE=LOCALDE, COORDDIM=1,
+     &     STAGGERLOC=ESMF_STAGGERLOC_CENTER, FPTR=RPTR1, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridGetCoord 1 failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_GRIDGETCOORD(GRID2D, LOCALDE=LOCALDE, COORDDIM=2,
+     &     STAGGERLOC=ESMF_STAGGERLOC_CENTER, FPTR=RPTR2, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridGetCoord 2 failed",
+     &    CONTEXT)) RETURN
+      CALL ESMF_GRIDGETITEM(GRID2D, LOCALDE=LOCALDE,
+     &     ITEM=ESMF_GRIDITEM_MASK, STAGGERLOC=ESMF_STAGGERLOC_CENTER,
+     &     EXCLUSIVELBOUND=ELB, EXCLUSIVEUBOUND=EUB,
+     &     TOTALLBOUND=TLB, TOTALUBOUND=TUB, FPTR=IPTR, RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "GridGetItem mask failed",
+     &    CONTEXT)) RETURN
+      CALL SET_ESMF_GRID(RPTR1,RPTR2,IPTR)
+      FTMP = ESMF_FIELDCREATE(GRID2D, ARRAYSPEC2DR,
+     &       INDEXFLAG=ESMF_INDEX_DELOCAL,
+     &       STAGGERLOC=ESMF_STAGGERLOC_CENTER,
+     &       MAXHALOLWIDTH=HLW2D, MAXHALOUWIDTH=HUW2D, NAME='esmf_mask')
+      CALL ESMF_FIELDGET(FTMP, LOCALDE, RPTR)
+      RPTR(ELB(1):EUB(1),ELB(2):EUB(2))
+     &  = IPTR(ELB(1):EUB(1),ELB(2):EUB(2))
+#ifdef DEBUG_IMPORT_EXPORT
+      CALL COAMPS_FIELDWRITE(FTMP,CLOCK,VM,DIR=TRIM(WRKDIR))
+#endif /* DEBUG_IMPORT_EXPORT */
+      CALL ESMF_FIELDDESTROY(FTMP)
+
+!     --- Create import fields & add to import state
+
+      DO I = 1,NUMIMPFIELDS
+        IF (.NOT.IGESMF(I)) CYCLE
+        FNAME = TRIM(IMPFIELDNAME(I))
+        IMPFIELD(I) = ESMF_FIELDCREATE(GRID2D, ARRAYSPEC2DR,
+     &                INDEXFLAG=ESMF_INDEX_DELOCAL,
+     &                STAGGERLOC=ESMF_STAGGERLOC_CENTER,
+     &                MAXHALOLWIDTH=HLW2D, MAXHALOUWIDTH=HUW2D,
+     &                NAME=TRIM(FNAME), RC=RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(FNAME)//": create failed",
+     &      CONTEXT)) RETURN
+        CALL ESMF_STATEADD(IMPSTATE, IMPFIELD(I), RC=RC)
+        IF (ESMF_LogMsgFoundError(rc, TRIM(FNAME)//": state add failed",
+     &      CONTEXT)) RETURN
+      ENDDO
+
+!     --- Create export fields & add to export state
+
+      DO I = 1,NUMEXPFIELDS
+        IF (.NOT.ISACTIVEEXPFIELD(I)) CYCLE
+        FNAME = TRIM(EXPFIELDNAME(I))
+        SELECT CASE (EXPFIELDDIM(I))
+        CASE (2)
+          EXPFIELD(I) = ESMF_FIELDCREATE(GRID2D, ARRAYSPEC2DR,
+     &                  INDEXFLAG=ESMF_INDEX_DELOCAL,
+     &                  STAGGERLOC=ESMF_STAGGERLOC_CENTER,
+     &                  MAXHALOLWIDTH=HLW2D, MAXHALOUWIDTH=HUW2D,
+     &                  NAME=TRIM(FNAME), RC=RC)
+          IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(FNAME)//": create failed",
+     &        CONTEXT)) RETURN
+        CASE (3)
+          EXPFIELD(I) = ESMF_FIELDCREATE(GRID2D, ARRAYSPEC3DR,
+     &                  INDEXFLAG=ESMF_INDEX_DELOCAL,
+     &                  STAGGERLOC=ESMF_STAGGERLOC_CENTER,
+     &                  GRIDTOFIELDMAP=(/2,3/),
+     &                  UNGRIDDEDLBOUND=(/1/), UNGRIDDEDUBOUND=(/NZ/),
+     &                  MAXHALOLWIDTH=HLW2D, MAXHALOUWIDTH=HUW2D,
+     &                  NAME=TRIM(FNAME), RC=RC)
+          IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(FNAME)//": create failed",
+     &        CONTEXT)) RETURN
+        CASE DEFAULT
+          WRITE(MSG,'(2A,I3)') "Unsupported export field dim ",
+     &                         TRIM(FNAME),EXPFIELDDIM(I)
+          CALL ESMF_LOGWRITE(TRIM(MSG), ESMF_LOG_ERROR)
+          RC = ESMF_FAILURE
+          RETURN
+        END SELECT
+        CALL ESMF_STATEADD(EXPSTATE, EXPFIELD(I), RC=RC)
+        IF (ESMF_LogMsgFoundError(rc, TRIM(FNAME)//": state add failed",
+     &      CONTEXT)) RETURN
+      ENDDO
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE SETUP_FIELDS
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "INIT_EXPORT_LIST"
+      SUBROUTINE INIT_EXPORT_LIST(RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      INTEGER :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      CHARACTER(ESMF_MAXSTR) :: LABEL
+      INTEGER :: I, K, N
+      LOGICAL :: LCPL_W2A, LCPL_W2O
+      INTEGER :: NW2A, NW2O
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Initialize active export field flag
+
+      ISACTIVEEXPFIELD = .FALSE.
+      INCLUDE3D = .FALSE.
+
+!     --- Setup W2A export fields
+
+      LABEL=TRIM(CONFIG_LABEL_W2A_FLAG)
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, LCPL_W2A,
+     &     LABEL=TRIM(LABEL), DEFAULT=.FALSE., RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get flag failed',
+     &    CONTEXT)) RETURN
+      NW2A = 0
+      IF (LCPL_W2A) THEN
+        LABEL=TRIM(CONFIG_LABEL_W2A_LIST)
+        CALL GET_EXPFIELD_LIST(LABEL, NW2A, RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &      TRIM(LABEL)//' get field list failed',
+     &      CONTEXT)) RETURN
+        LABEL="wave_export_chnk_type:"
+        CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, EXPORT_CHNK_TYPE,
+     &       LABEL=TRIM(LABEL), DEFAULT=2, RC=RC) !1=w2a_janssen; 2=w2a_moon;
+        IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &      TRIM(LABEL)//' get chnk type failed',
+     &      CONTEXT)) RETURN
+      ENDIF !LCPL_W2A
+
+!     --- Setup W2O export fields
+
+      LABEL=TRIM(CONFIG_LABEL_W2O_FLAG)
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, LCPL_W2O,
+     &     LABEL=TRIM(LABEL), DEFAULT=.FALSE., RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get flag failed',
+     &    CONTEXT)) RETURN
+      NW2O = 0
+      IF (LCPL_W2O) THEN
+        LABEL=TRIM(CONFIG_LABEL_W2O_LIST)
+        CALL GET_EXPFIELD_LIST(LABEL, NW2O, RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &      TRIM(LABEL)//' get field list failed',
+     &      CONTEXT)) RETURN
+        LABEL=TRIM(CONFIG_LABEL_W2O_DMAX)
+        CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, DMAXZL,
+     &       LABEL=TRIM(LABEL), DEFAULT=300.0, RC=RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get dmax failed',
+     &      CONTEXT)) RETURN
+      ENDIF !LCPL_W2O
+
+!     --- Set active export flag
+
+      NOACTIVEEXPFIELDS = NW2A.EQ.0.AND.NW2O.EQ.0
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE INIT_EXPORT_LIST
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "GET_EXPFIELD_LIST"
+      SUBROUTINE GET_EXPFIELD_LIST(LABEL, N, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      CHARACTER(ESMF_MAXSTR), INTENT(IN) :: LABEL
+      INTEGER, INTENT(OUT) :: N
+      INTEGER, INTENT(OUT) :: RC
+!
+!     --- Local Variables
+      INTEGER :: I, K, IFLD
+      CHARACTER(ESMF_MAXSTR) :: FLDN, MSG
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Get number of fields
+
+      N = ESMF_CONFIGGETLEN(CONFIG, LABEL=TRIM(LABEL), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get length failed',
+     &    CONTEXT)) RETURN
+      IF (N.GT.NUMEXPFIELDS) THEN
+        WRITE(MSG,'(A,I2)') TRIM(LABEL)//' invalid length: ',N
+        CALL ESMF_LOGWRITE(TRIM(MSG), ESMF_LOG_ERROR)
+        RC = ESMF_FAILURE
+        RETURN
+      ENDIF
+
+!     --- Go through field list and set attributes
+
+      IF (N.GT.0) THEN
+        CALL ESMF_CONFIGFINDLABEL(CONFIG, TRIM(LABEL))
+        DO I=1,N
+          CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, FLDN, RC=RC)
+          IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &        TRIM(LABEL)//' get field failed',
+     &        CONTEXT)) RETURN
+          K = COAMPS_FIELDCODE(TRIM(FLDN))
+          SELECT CASE (K)
+! ------- Export Field 1: wave_induced_charnock_parameter
+          CASE (COAMPS_FIELD_CHNK)
+            IFLD = 1
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 2: surface_total_wave_induced_stress (Pascal)
+          CASE (COAMPS_FIELD_WVST)
+            IFLD = 2
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 3: surface_eastward_wave_induced_stress (Pascal)
+          CASE (COAMPS_FIELD_WVSU)
+            IFLD = 3
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 4: surface_northward_wave_induced_stress (Pascal)
+          CASE (COAMPS_FIELD_WVSV)
+            IFLD = 4
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 5: eastward_stokes_drift_current (m/s)
+          CASE (COAMPS_FIELD_SDCU)
+            IFLD = 5
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 3
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+            INCLUDE3D = .TRUE.
+! ------- Export Field 6: northward_stokes_drift_current (m/s)
+          CASE (COAMPS_FIELD_SDCV)
+            IFLD = 6
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 3
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+            INCLUDE3D = .TRUE.
+! ------- Export Field 7: eastward_wave_bottom_current (m/s)
+          CASE (COAMPS_FIELD_WBCU)
+            IFLD = 7
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 8: northward_wave_bottom_current (m/s)
+          CASE (COAMPS_FIELD_WBCV)
+            IFLD = 8
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 9: wave_bottom_current_radian_frequency (rad/s)
+          CASE (COAMPS_FIELD_WBCF)
+            IFLD = 9
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 10: eastward_wave_radiation_stress (Pa m)
+          CASE (COAMPS_FIELD_WSUU)
+            IFLD = 10
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 11: eastward_northward_wave_radiation_stress (Pa m)
+          CASE (COAMPS_FIELD_WSUV)
+            IFLD = 11
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 12: northward_wave_radiation_stress (Pa m)
+          CASE (COAMPS_FIELD_WSVV)
+            IFLD = 12
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 13: eastward_wave_radiation_stress_gradient (Pa)
+          CASE (COAMPS_FIELD_WSGU)
+            IFLD = 13
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Export Field 14: northward_wave_radiation_stress_gradient (Pa)
+          CASE (COAMPS_FIELD_WSGV)
+            IFLD = 14
+            EXPFIELDNAME(IFLD)      = TRIM(FLDN)
+            EXPFIELDDIM(IFLD)       = 2
+            ISACTIVEEXPFIELD(IFLD)  = .TRUE.
+! ------- Default: error
+          CASE DEFAULT
+            WRITE(MSG,'(2A)') "Unsupported export field: ",TRIM(FLDN)
+            CALL ESMF_LOGWRITE(TRIM(MSG), ESMF_LOG_ERROR)
+            RC = ESMF_FAILURE
+            RETURN
+          END SELECT !K
+        ENDDO !I
+      ENDIF !N.GT.0
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE GET_EXPFIELD_LIST
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "INIT_IMPORT_LIST"
+      SUBROUTINE INIT_IMPORT_LIST(RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      INTEGER :: RC
+!
+!     --- Local Variables
+      CHARACTER(ESMF_MAXSTR) :: MSG
+      CHARACTER(ESMF_MAXSTR) :: LABEL
+      INTEGER :: I, K, N
+      LOGICAL :: LCPL_A2W, LCPL_O2W
+      INTEGER :: NA2W, NO2W
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Initialize active import field flag
+
+      IGESMF = .FALSE.
+
+!     --- Setup A2W import fields
+
+      LABEL=TRIM(CONFIG_LABEL_A2W_FLAG)
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, LCPL_A2W,
+     &     LABEL=TRIM(LABEL), DEFAULT=.FALSE., RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get flag failed',
+     &    CONTEXT)) RETURN
+      NA2W = 0
+      LABEL=TRIM(CONFIG_LABEL_A2W_LIST)
+      IF (LCPL_A2W) THEN
+        CALL GET_IMPFIELD_LIST(LABEL, NA2W, RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &      TRIM(LABEL)//' get field list failed',
+     &      CONTEXT)) RETURN
+      ENDIF !LCPL_A2W
+
+!     --- Setup O2W import fields
+
+      LABEL=TRIM(CONFIG_LABEL_O2W_FLAG)
+      CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, LCPL_O2W,
+     &     LABEL=TRIM(LABEL), DEFAULT=.FALSE., RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get flag failed',
+     &    CONTEXT)) RETURN
+      NO2W = 0
+      LABEL=TRIM(CONFIG_LABEL_O2W_LIST)
+      IF (LCPL_O2W) THEN
+        CALL GET_IMPFIELD_LIST(LABEL, NO2W, RC)
+        IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &      TRIM(LABEL)//' get field list failed',
+     &      CONTEXT)) RETURN
+      ENDIF !LCPL_O2W
+
+!     --- Set active import flag
+
+      NOACTIVEIMPFIELDS = NA2W.EQ.0.AND.NO2W.EQ.0
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE INIT_IMPORT_LIST
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "GET_IMPFIELD_LIST"
+      SUBROUTINE GET_IMPFIELD_LIST(LABEL, N, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      CHARACTER(ESMF_MAXSTR), INTENT(IN) :: LABEL
+      INTEGER, INTENT(OUT) :: N
+      INTEGER, INTENT(OUT) :: RC
+!
+!     --- Local Variables
+      INTEGER :: I, K, IFLD
+      CHARACTER(ESMF_MAXSTR) :: FLDN, MSG
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Get number of fields
+
+      N = ESMF_CONFIGGETLEN(CONFIG, LABEL=TRIM(LABEL), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, TRIM(LABEL)//' get length failed',
+     &    CONTEXT)) RETURN
+      IF (N.GT.NUMIMPFIELDS) THEN
+        WRITE(MSG,'(A,I2)') TRIM(LABEL)//' invalid length: ',N
+        CALL ESMF_LOGWRITE(TRIM(MSG), ESMF_LOG_ERROR)
+        RC = ESMF_FAILURE
+        RETURN
+      ENDIF
+
+!     --- Go through field list and set attributes
+
+      IF (N.GT.0) THEN
+        CALL ESMF_CONFIGFINDLABEL(CONFIG, TRIM(LABEL))
+        DO I=1,N
+          CALL ESMF_CONFIGGETATTRIBUTE(CONFIG, FLDN, RC=RC)
+          IF (ESMF_LOGMSGFOUNDERROR(RC,
+     &        TRIM(LABEL)//' get field failed',
+     &        CONTEXT)) RETURN
+          K = COAMPS_FIELDCODE(TRIM(FLDN))
+          SELECT CASE (K)
+! ------- Import field 1: bottom_depth
+          CASE (COAMPS_FIELD_BDPT)
+            IFLD = 1
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_OCEAN_FORCING
+            ICFOLD(IFLD) = JDP2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JDP3
+            ELSE
+              ICFNEW(IFLD) = JDP2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .FALSE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 2: surface_eastward_sea_water_velocity
+          CASE (COAMPS_FIELD_SSCU)
+            IFLD = 2
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            ICUR = 1
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_OCEAN_FORCING
+            ICFOLD(IFLD) = JVX2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JVX3
+            ELSE
+              ICFNEW(IFLD) = JVX2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .TRUE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 3: surface_northward_sea_water_velocity
+          CASE (COAMPS_FIELD_SSCV)
+            IFLD = 3
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            ICUR = 1
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_OCEAN_FORCING
+            ICFOLD(IFLD) = JVY2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JVY3
+            ELSE
+              ICFNEW(IFLD) = JVY2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .TRUE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 4: bottom_friction_coefficient
+          CASE (COAMPS_FIELD_BFRC)
+            IFLD = 4
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            VARFR  = .TRUE.
+            MCMVAR = MCMVAR + 2
+            JFRC2  = MCMVAR - 1
+            JFRC3  = MCMVAR
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_OCEAN_FORCING
+            ICFOLD(IFLD) = JFRC2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JFRC3
+            ELSE
+              ICFNEW(IFLD) = JFRC2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .FALSE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 5: eastward_10m_wind
+!         ESMFIMport WInd
+          CASE (COAMPS_FIELD_WNDU)
+            IFLD = 5
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            VARWI  = .TRUE.
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_ATMOS_FORCING
+            ICFOLD(IFLD) = JWX2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JWX3
+            ELSE
+              ICFNEW(IFLD) = JWX2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .TRUE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 6: northward_10m_wind
+          CASE (COAMPS_FIELD_WNDV)
+            IFLD = 6
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            VARWI  = .TRUE.
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_ATMOS_FORCING
+            ICFOLD(IFLD) = JWY2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JWY3
+            ELSE
+              ICFNEW(IFLD) = JWY2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .TRUE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 7: sea_surface_height_above_sea_level
+          CASE (COAMPS_FIELD_SSH)
+            IFLD = 7
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            VARWLV = .TRUE.
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_OCEAN_FORCING
+            ICFOLD(IFLD) = JWLV2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JWLV3
+            ELSE
+              ICFNEW(IFLD) = JWLV2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .FALSE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Import field 8: not used
+! ------- Import field 9: not used
+! ------- Import field 10: air_sea_temperature_difference
+          CASE (COAMPS_FIELD_ASTD)
+            IFLD = 10
+            IFLDYN(IFLD) = 1 !1=non-stationary
+            VARAST = .TRUE.
+            IF (JASTD2.LE.1) THEN
+              MCMVAR = MCMVAR + 2
+              JASTD2 = MCMVAR - 1
+              JASTD3 = MCMVAR
+            ENDIF
+            IGESMF(IFLD) = .TRUE.
+            IMESMF(IFLD) = IMPLICIT_OCEAN_FORCING
+            ICFOLD(IFLD) = JASTD2
+            IF (IMESMF(IFLD)) THEN
+              ICFNEW(IFLD) = JASTD3
+            ELSE
+              ICFNEW(IFLD) = JASTD2
+            ENDIF
+            ISVECIMPFIELD(IFLD) = .FALSE.
+            IMPFIELDNAME(IFLD) = TRIM(FLDN)
+! ------- Default: error
+          CASE DEFAULT
+            WRITE(MSG,'(2A)') "Unsupported import field: ",TRIM(FLDN)
+            CALL ESMF_LOGWRITE(TRIM(MSG), ESMF_LOG_ERROR)
+            RC = ESMF_FAILURE
+            RETURN
+          END SELECT !K
+        ENDDO !I
+      ENDIF !N.GT.0
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE GET_IMPFIELD_LIST
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "LOAD_IMPORT"
+      SUBROUTINE LOAD_IMPORT(TOLD, TNEW, RC)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      TYPE(ESMF_TIME), INTENT(IN) :: TOLD, TNEW
+      INTEGER, INTENT(OUT) :: RC
+!
+!     --- Local variables
+      INTEGER :: I, J, K
+      TYPE(ESMF_TIMEINTERVAL) :: ETOLD, ETNEW
+      INTEGER(ESMF_KIND_I4) :: ITIME(0:3)
+      REAL :: ETSOLD, ETSNEW
+      REAL(ESMF_KIND_RX), DIMENSION(:,:), POINTER :: P2DX, P2DY
+      LOGICAL, SAVE :: FIRSTCALL = .TRUE.
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Compute elapsed time in seconds (real)
+
+      ETOLD = TOLD - REFTIME
+      CALL ESMF_TIMEINTERVALGET(ETOLD,
+     &     S=ITIME(0), MS=ITIME(1), US=ITIME(2), NS=ITIME(3), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from time interval failed",
+     &    CONTEXT)) RETURN
+      ETSOLD = REAL(ITIME(0))
+      DO I=1,3; ETSOLD = ETSOLD + REAL(ITIME(I))/1000.0**I; ENDDO;
+      ETNEW = TNEW - REFTIME
+      CALL ESMF_TIMEINTERVALGET(ETNEW,
+     &     S=ITIME(0), MS=ITIME(1), US=ITIME(2), NS=ITIME(3), RC=RC)
+      IF (ESMF_LOGMSGFOUNDERROR(RC, "Get from time interval failed",
+     &    CONTEXT)) RETURN
+      ETSNEW = REAL(ITIME(0))
+      DO I=1,3; ETSNEW = ETSNEW + REAL(ITIME(I))/1000.0**I; ENDDO;
+
+!     --- Load import fields into COMPDA
+
+      J = 1
+      DO WHILE (J.LE.NUMIMPFIELDS)
+        IF (IGESMF(J)) THEN
+          IF (IMESMF(J)) THEN ! two time-level
+            IFLTIM(J) = ETSNEW
+          ELSE                ! one time-level
+            IFLTIM(J) = ETSOLD
+          END IF
+          CALL ESMF_FIELDGET(IMPFIELD(J), LOCALDE, P2DX)
+#ifdef DEBUG_IMPORT_EXPORT
+          CALL FWRITE(P2DX,TRIM(IMPFIELDNAME(J)))
+#endif /* DEBUG_IMPORT_EXPORT */
+          IF (ISVECIMPFIELD(J)) THEN
+            K = J + 1
+            CALL ESMF_FIELDGET(IMPFIELD(K), LOCALDE, P2DY)
+#ifdef DEBUG_IMPORT_EXPORT
+          CALL FWRITE(P2DY,TRIM(IMPFIELDNAME(K)))
+#endif /* DEBUG_IMPORT_EXPORT */
+            CALL COPY_TO_COMPDA(ICFNEW(J), P2DX,
+     &                          ICFNEW(K), P2DY)
+            IFLTIM(K) = IFLTIM(J)
+            J = K
+          ELSE
+            CALL COPY_TO_COMPDA(ICFNEW(J), P2DX)
+          ENDIF
+          IF (ITEST.GE.10) THEN
+            WRITE(PRTEST,'(2A,1I4,1L2,2F9.0)')
+     &      'import field: ',TRIM(IMPFIELDNAME(J)),
+     &      ICFNEW(J),IMESMF(J),IFLTIM(J),TIMCO
+          ENDIF
+        ENDIF
+        J = J + 1
+      ENDDO
+
+!     --- If first call, then also load fields into ICFOLD
+
+      IF (FIRSTCALL) THEN
+      J = 1
+      DO WHILE (J.LE.NUMIMPFIELDS)
+        IF (IGESMF(J)) THEN
+          CALL ESMF_FIELDGET(IMPFIELD(J), LOCALDE, P2DX)
+          IF (ISVECIMPFIELD(J)) THEN
+            K = J + 1
+            CALL ESMF_FIELDGET(IMPFIELD(K), LOCALDE, P2DY)
+            CALL COPY_TO_COMPDA(ICFOLD(J), P2DX,
+     &                          ICFOLD(K), P2DY)
+            J = K
+          ELSE
+            CALL COPY_TO_COMPDA(ICFOLD(J), P2DX)
+          ENDIF
+        ENDIF
+        J = J + 1
+      ENDDO
+      FIRSTCALL = .FALSE.
+      ENDIF
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE LOAD_IMPORT
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "LOAD_EXPORT"
+      SUBROUTINE LOAD_EXPORT(RC)
+!                                                                      *
+!***********************************************************************
+!
+!     ---- Arguments
+      INTEGER, INTENT(OUT) :: RC
+!
+!     --- Local variables
+      INTEGER :: K1,K2,K3
+      REAL(ESMF_KIND_RX), DIMENSION(:,:), POINTER :: P2DX, P2DC, P2DY
+      REAL(ESMF_KIND_RX), DIMENSION(:,:,:), POINTER :: P3DX, P3DY
+
+!     --- Assume failure
+
+      RC = ESMF_FAILURE
+
+!     --- Load export state data from COMPDA
+
+! ------- Export Field 1: wave_induced_charnock_parameter
+
+      K1 = 1
+      IF (ISACTIVEEXPFIELD(K1)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DC)
+        CALL SWFLD_CHARNK(P2DC, EXPORT_CHNK_TYPE)
+      ENDIF
+
+! ------- Export Field 2: surface_total_wave_induced_stress (Pascal)
+
+      K1 = 2
+      IF (ISACTIVEEXPFIELD(K1)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DC)
+        CALL SWFLD_TAUW(P2DC)
+      ENDIF
+
+! ------- Export Field 3: surface_eastward_wave_induced_stress (Pascal)
+! ------- Export Field 4: surface_northward_wave_induced_stress (Pascal)
+
+      K1 = 3; K2 = 4;
+      IF (ISACTIVEEXPFIELD(K1).AND.ISACTIVEEXPFIELD(K2)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DX)
+        CALL ESMF_FIELDGET(EXPFIELD(K2), LOCALDE, P2DY)
+        CALL SWFLD_TAU(P2DX, P2DY)
+      ENDIF
+
+      K1 = 3; K2 = 4;
+      IF (ISACTIVEEXPFIELD(K1).AND.ISACTIVEEXPFIELD(K2)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DX)
+        CALL ESMF_FIELDGET(EXPFIELD(K2), LOCALDE, P2DY)
+      ENDIF
+
+! ------- Export Field 5: eastward_stokes_drift_current (m/s)
+! ------- Export Field 6: northward_stokes_drift_current (m/s)
+
+      K1 = 5; K2 = 6;
+      IF (ISACTIVEEXPFIELD(K1).AND.ISACTIVEEXPFIELD(K2)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P3DX)
+        CALL ESMF_FIELDGET(EXPFIELD(K2), LOCALDE, P3DY)
+        CALL SWFLD_STOKES(P3DX, P3DY)
+      ENDIF
+
+! ------- Export Field 7: eastward_wave_bottom_current (m/s)
+! ------- Export Field 8: northward_wave_bottom_current (m/s)
+! ------- Export Field 9: wave_bottom_current_frequency (rad/s)
+
+      K1 = 7; K2 = 8; K3 = 9;
+      IF (ISACTIVEEXPFIELD(K1).AND.
+     &    ISACTIVEEXPFIELD(K2).AND.ISACTIVEEXPFIELD(K3)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DX)
+        CALL ESMF_FIELDGET(EXPFIELD(K2), LOCALDE, P2DY)
+        CALL ESMF_FIELDGET(EXPFIELD(K3), LOCALDE, P2DC)
+        CALL SWFLD_BOTCUR(P2DX, P2DY, P2DC)
+      ENDIF
+
+! ------- Export Field 10: eastward_wave_radiation_stress (Pa m)
+! ------- Export Field 11: eastward_northward_wave_radiation_stress (Pa m)
+! ------- Export Field 12: northward_wave_radiation_stress (Pa m)
+
+      K1 = 10; K2 = 11; K3 = 12;
+      IF (ISACTIVEEXPFIELD(K1).AND.
+     &    ISACTIVEEXPFIELD(K2).AND.ISACTIVEEXPFIELD(K3)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DX)
+        CALL ESMF_FIELDGET(EXPFIELD(K2), LOCALDE, P2DC)
+        CALL ESMF_FIELDGET(EXPFIELD(K3), LOCALDE, P2DY)
+        CALL SWFLD_RADSTR(P2DX, P2DC, P2DY)
+      ENDIF
+
+! ------- Export Field 13: eastward_wave_radiation_stress_gradient (Pa)
+! ------- Export Field 14: northward_wave_radiation_stress_gradient (Pa)
+
+      K1 = 13; K2 = 14;
+      IF (ISACTIVEEXPFIELD(K1).AND.ISACTIVEEXPFIELD(K2)) THEN
+        CALL ESMF_FIELDGET(EXPFIELD(K1), LOCALDE, P2DX)
+        CALL ESMF_FIELDGET(EXPFIELD(K2), LOCALDE, P2DY)
+        CALL SWFLD_RADSTG(P2DX, P2DY)
+      ENDIF
+
+!     --- Return success
+
+      RC = ESMF_SUCCESS
+
+      END SUBROUTINE LOAD_EXPORT
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "COPY_TO_COMPDA"
+      SUBROUTINE COPY_TO_COMPDA(I1, ADAT1, I2, ADAT2)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      INTEGER, INTENT(IN) :: I1
+      REAL(ESMF_KIND_RX), INTENT(IN) :: ADAT1(MXC,MYC)
+      INTEGER, INTENT(IN), OPTIONAL :: I2
+      REAL(ESMF_KIND_RX), INTENT(IN), OPTIONAL :: ADAT2(MXC,MYC)
+!
+!     --- Local variables
+      INTEGER :: IX, IY, I
+      REAL :: V1, V2
+
+! --- Load data into COMPDA
+
+      IF (PRESENT(I2)) THEN
+! --- Vector
+
+        DO IY = IYF, IYL
+          DO IX = IXF, IXL
+            I = KGRPNT(IX,IY)
+            IF (I.LE.1) CYCLE
+            V1 = ADAT1(IX,IY)
+            V2 = ADAT2(IX,IY)
+            COMPDA(I,I1) =  V1*COSCC(IX,IY) + V2*SINCC(IX,IY)
+            COMPDA(I,I2) = -V1*SINCC(IX,IY) + V2*COSCC(IX,IY)
+          ENDDO
+        ENDDO
+        CALL SWEXCHF( COMPDA(:,I1), KGRPNT )
+        CALL SWEXCHF( COMPDA(:,I2), KGRPNT )
+
+      ELSE
+! --- Scalar
+
+        DO IY = IYF, IYL
+          DO IX = IXF, IXL
+            I = KGRPNT(IX,IY)
+            IF (I.LE.1) CYCLE
+            COMPDA(I,I1) = ADAT1(IX,IY)
+          ENDDO
+        ENDDO
+        CALL SWEXCHF( COMPDA(:,I1), KGRPNT )
+
+      ENDIF
+
+      END SUBROUTINE COPY_TO_COMPDA
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "SET_ESMF_GRID"
+      SUBROUTINE SET_ESMF_GRID(XC,YC,MSK)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX) :: XC(IXF:IXL,IYF:IYL)
+      REAL(ESMF_KIND_RX) :: YC(IXF:IXL,IYF:IYL)
+      INTEGER(ESMF_KIND_I4) :: MSK(IXF:IXL,IYF:IYL)
+!
+!     --- Local variables
+      INTEGER :: IX, IY, I
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          XC(IX,IY) = XCGRID(IX,IY)
+          YC(IX,IY) = YCGRID(IX,IY)
+          I = KGRPNT(IX,IY)
+          IF (I.GT.1) THEN
+            MSK(IX,IY) = COAMPS_MASK_WATER
+          ELSE
+            MSK(IX,IY) = COAMPS_MASK_LAND
+          ENDIF
+        ENDDO
+      ENDDO
+
+      END SUBROUTINE SET_ESMF_GRID
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "FWRITE"
+      SUBROUTINE FWRITE(DA,FNM)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL(ESMF_KIND_RX), TARGET :: DA(:,:)
+      CHARACTER(*) :: FNM
+!
+!     --- Local variables
+      TYPE(ESMF_FIELD) :: F
+
+      F = ESMF_FIELDCREATE(GRID2D, DA,
+     &        INDEXFLAG=ESMF_INDEX_DELOCAL,
+     &        COPYFLAG=ESMF_DATA_REF,
+     &        STAGGERLOC=ESMF_STAGGERLOC_CENTER,
+     &        MAXHALOLWIDTH=HLW2D, MAXHALOUWIDTH=HUW2D, NAME=TRIM(FNM))
+
+      CALL COAMPS_FIELDWRITE(F,CLOCK,VM,DIR=TRIM(WRKDIR))
+
+      CALL ESMF_FIELDDESTROY(F)
+
+      END SUBROUTINE FWRITE
+
+
+!***********************************************************************
+!                                                                      *
+#undef METHOD
+#define METHOD "AWRITE"
+      SUBROUTINE AWRITE(DA,FNM)
+!                                                                      *
+!***********************************************************************
+!
+!     --- Arguments
+      REAL, INTENT(IN) :: DA(:)
+      CHARACTER(*) :: FNM
+!
+!     --- Local variables
+      TYPE(ESMF_ARRAY) :: A
+      REAL(ESMF_KIND_RX), POINTER :: P(:,:)
+      INTEGER :: IX, IY, I
+
+      A = ESMF_ARRAYCREATE(ARRAYSPEC2DR, DISTGRID=DISTGRID2D,
+     &    TOTALLWIDTH=HLW2D, TOTALUWIDTH=HUW2D,
+     &    INDEXFLAG=ESMF_INDEX_DELOCAL, NAME=TRIM(FNM))
+
+      CALL ESMF_ARRAYGET(A, LOCALDE, P)
+
+      DO IY = IYF, IYL
+        DO IX = IXF, IXL
+          I = KGRPNT(IX,IY)
+          IF (I.GT.1) THEN
+            P(IX,IY) = DA(I)
+          ELSE
+            P(IX,IY) = HUGE(0.)
+          ENDIF
+        ENDDO
+      ENDDO
+
+      CALL COAMPS_ARRAYWRITE(A,CLOCK,VM)
+
+      CALL ESMF_ARRAYDESTROY(A)
+
+      END SUBROUTINE AWRITE
+
+
+      END MODULE SWAN_MOD
+
