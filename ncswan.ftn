@@ -218,8 +218,8 @@
       TYPE(OPSDAT), POINTER :: CUOPS
       REAL    OURQT(MAX_OUTP_REQ)
       integer ncerr,iblk,itime,ivar,i,funit
-      real rdx,t0,dttime
-      real*8 ttime
+      real rdx,dttime
+      real*8 t0,ttime
       type(ncvar) :: varnc
       character (len=8) psname
       integer timevec(6)
@@ -345,7 +345,7 @@
 	    READ(funit,*,ERR=50,END=50) dat
 	    itime=itime+1
 	    ncerr=writeslab(varnc,itime,dat,mxk,myk)
-	    ttime=DBLE(726469.+(TIMCO-t0)/86400.)
+	    ttime=726469D0+dble(TIMCO-t0)/86400D0
 	    if (iblk.eq.1) ncerr=writetime(itime,ttime)
   50        CONTINUE
                
