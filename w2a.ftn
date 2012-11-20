@@ -1,0 +1,1081 @@
+      module w2a_mod
+!
+!  module to compute the wave feedback to atmosphere
+!
+      implicit none
+
+      private
+      save
+      integer :: niter=10, itaumax, jumax
+      real    :: xm=0.5, xnu=0.00001, g=9.806, eps1=0.00001
+      real     :: alpha=0.01
+
+      PARAMETER (ITAUMAX=100, JUMAX=100)
+
+      real, dimension(0:itaumax,0:jumax) :: taut
+
+      public dragww3mm5, w2a_moon, w2a_janssen, get_wage
+
+
+      contains
+
+
+      subroutine get_wage(msc,mdc,acloc,spcsig,ddir,ustar,depth,
+     &                    wage,cp,ep)
+!
+!  subroutine to compute wave age
+!
+      integer :: msc,mdc
+      real    :: acloc(mdc,msc),spcsig(msc),ddir,ustar,depth,wage
+      integer :: ip,is,id
+      real    :: ep,ei,cp,wk,cg,rgp,nd
+
+!     identify peak relative frequency
+      ep = 0.
+      ip = -1
+      do is = 1, msc
+        ei = 0.
+        do id = 1, mdc
+          ei = ei + spcsig(is)*acloc(id,is)*ddir
+        enddo
+        if (ei.gt.ep) then
+          ep  = ei
+          ip = is
+        endif
+      enddo
+
+!     compute phase speed of the peak: c_p
+      cp = 0.
+      wage = 1.
+      if (ip.gt.0) then
+        call kscip1(1,spcsig(ip),depth,wk,cg,rgp,nd)
+        cp = cg / rgp !rgp = c_group / c_phase
+
+!     compute wave age: c_p / u_star
+        if (ustar.ge.1e-6) wage = cp / ustar
+!     cap wave age (todo: is there a better way to handle this?)
+        wage = min(wage,1.0)
+
+      endif
+      end subroutine get_wage
+
+
+      subroutine w2a_moon(u10,wage,beta)
+!
+!   Subroutine to compute the charnock number from wave age.
+!   For hurricane simulation only.
+!   Based on the Moon, et.al. (2004), Geophys. Res. Lett., 31, L20302.
+!   Coefficients are linearly interpolated within wind speed bins.
+!
+      real :: u10, wage, beta
+      integer,parameter :: l=9
+      real :: uv(l) = (/10.0, 15.0, 20.0,
+     &                  25.0, 30.0, 35.0,
+     &                  40.0, 45.0, 50.0/)
+      real :: mv(l) = (/-1.30182  ,-0.594894 ,-0.302122,
+     &                  -0.118524 , 0.0483266, 0.186318,
+     &                   0.260749 , 0.3540439, 0.441526/)
+      real :: nv(l) = (/ 0.817809 , 0.082168 , 0.0307755,
+     &                   0.0166773, 0.0099775, 0.0066187,
+     &                   0.0052136, 0.0039632, 0.0030941/)
+      integer :: i
+      real    :: a, m, n
+
+      if (wage.le.0.or.u10.lt.uv(1)) then
+        beta = 0.011
+      else
+        do i = 2,l
+          if (u10.lt.uv(i)) then
+            a = (uv(i)-u10)/(uv(i)-uv(i-1))
+            exit
+          endif
+        enddo
+        if (i.le.l) then
+          m = (1-a)*mv(i-1)+a*mv(i)
+          n = (1-a)*nv(i-1)+a*nv(i)
+        else
+          m = mv(l)
+          n = nv(l)
+        endif
+        beta=n*(wage)**m
+      endif
+
+      end subroutine w2a_moon
+
+
+      subroutine w2a_janssen(u10,tauw,beta)
+!   
+!   driver subroutine to compute charnock from Janssen wave stress 
+!   u10     : 10 m wind speed
+!   tauw    : wave induced stress
+!   beta    : non-dimensional charnock number
+
+      real    :: u10,tauw,beta
+      logical,save :: firstcall=.true.
+      real,save    :: deltauw, delu
+      real         :: ust,z0new
+
+! first call: create lookup table for atmos stress from wave stress
+      if (firstcall) then
+        call stress(deltauw,delu)
+        firstcall=.false.
+      endif
+! compute atmos stress
+      call airsea(u10,tauw,ust,z0new,deltauw,delu)
+! compute charnock
+      call outbeta(beta,z0new,ust)
+      end subroutine w2a_janssen 
+
+      SUBROUTINE OUTBETA (BETA, Z0NEW, USNEW)
+C
+C ----------------------------------------------------------------------
+C
+C**** *OUTBETA* - OUTPUT OF CHARNOCK CONSTANT FOR ATMOSPHERIC
+C****             MODEL IN GRIDDED FORMAT.
+C
+C     P.JANSSEN      KNMI/ECMWF  JANUARY 1992
+C
+C
+C*    PURPOSE.
+C     --------
+C
+C       OUTPUT OF CHARNOCK CONSTANT FOR ATMOSPHERIC MODEL
+C
+C
+C**   INTERFACE.
+C     ----------
+C
+C       *CALL* *OUTBETA (IJS, IJL, IG, IGL)*
+C         *IJS*    - INDEX OF FIRST GRIDPOINT.
+C         *IJL*    - INDEX OF LAST GRIDPOINT.
+C         *IG*     - BLOCK NUMBER.
+C
+C     EXTERNALS.
+C     ----------
+C
+C       *MAKEGRID*  - GENERATES GRIDDED FIELDS.
+C
+C     METHOD.
+C     -------
+C
+C       NONE.
+C
+C     REFERENCE.
+C     ----------
+C
+C       NONE.
+C
+C ----------------------------------------------------------------------
+C
+C      include 'parall.h'
+C
+C      include 'parcons.h'
+C
+C      include 'comcoup.h'
+C
+C      include 'comintp.h'
+C
+C      include 'comstat.h'
+C
+C      include 'comtest.h'
+C
+C      include 'comwind.h'
+C
+C ----------------------------------------------------------------------
+C
+	real :: beta, z0new,usnew
+
+c      DIMENSION BETA(NIBLO)
+C     POINTER (IBETAW,BETAG(NGX,NGY))
+c      DIMENSION BETAG(NLONW,NLATW)
+C
+C     CALL LOCATE(IBETAW,'BETAW',3)
+C
+C ----------------------------------------------------------------------
+C
+C*    1. COMPUTE CHARNOCK 'CONSTANT' BETA.
+C        ---------------------------------
+C
+c      DO 2000 IJ = IJS,IJL
+         BETA = G*Z0NEW /(USNEW**2 +0.0001)
+         IF (BETA.EQ.0.0) THEN
+c            BETA = 0.018a
+            BETA = 0.011
+         END IF
+c 2000 CONTINUE
+C
+C*    1.2 STORE PARAMETERS FOR ACTUAL BLOCK IN GRID ARRAYS.
+C         -------------------------------------------------
+C
+C      CALL MAKEGRID (BETA , BETAG  , IJS, IJL, IG)
+C
+C*    1.2 SET LANDVALUES TO CHARNOCK CONSTANT.
+C         ------------------------------------
+C
+C      IF (IG.EQ.IGL) THEN
+C         print *,' OUTBETA IG=',IG,IGL
+C         print *,' NGX=',NGX,' NGY=',NGY
+C         DO 1200 I=1,NGX
+C            DO 1250 J=1,NGY
+C               IF (BETAG(I,J).EQ.0.0) THEN
+C                  BETAG(I,J) = 0.018
+C               END IF
+C 1250       CONTINUE
+C 1200    CONTINUE
+C
+C      END IF
+C
+C ----------------------------------------------------------------------
+C
+
+      END SUBROUTINE OUTBETA
+
+      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, deltauw,delu)
+c      SUBROUTINE AIRSEA (U10, TAUW, US, Z0, IJS, IJL, deltauw)
+c     1                  ,taut,itaumax,jumax)
+C..........................START PROLOGUE..............................
+C
+C  SCCS IDENTIFICATION:	@(#)airsea.f	1.2 1/27/94
+C			18:49:33 /home/library/wam/src/sub/SCCS/s.airsea.f	
+C  ORIGINAL PROGRAMMER: P. Janssen, Aug 1990.
+C
+C  CURRENT PROGRAMMER:  P. Wittmann, Aug 1993.
+C 
+C  CONFIGURATION IDENTIFICATION:  None.
+C 
+C  MODULE NAME:  AIRSEA
+C
+C  DESCRIPTION:  Computes wind stress.
+C
+C  COPYRIGHT:                  WAMDI Group, 1992.
+C
+C  CONTRACT NUMBER AND TITLE:  None.
+C
+C  REFERENCES:   WAM Software Design Document.
+C
+C  CLASSIFICATION:  Unclassified
+C
+C  RESTRICTIONS:  None.
+C
+C  COMPUTER/OPERATING SYSTEM
+C     DEPENDENCIES:  UNIX file systemwith Korn shell.
+C
+C  LIBRARIES OF RESIDENCE:  /a/ops/lib/wam_glo.a
+C
+C  USAGE: CALL AIRSEA (U10, TAUW, US, Z0, IJS, IJL)  
+C
+C  PARAMETERS:
+C     Name         Type        Usage             Description
+C   --------      -------      ------   ------------------------------
+C   U10           real         in       WINDSPEED
+C   TAUW          real         in       WAVE STRESSES
+C   US            real         out      SURFACE STRESSES
+C   ZO            real         out      ROUGHNESS LENGTH
+C   IJS           integer      in       INDEX OF FIRST GRIDPOINT
+C   IJL           integer      in       INDEX OF LAST GRIDPOINT
+C
+C  COMMON BLOCKS:              Common Blocks are documented where they
+C                              are defined in the code within include
+C                              files.  This module uses the following
+C                              Common Blocks:
+C
+C    Block     Notes
+C   --------  -------------------------------------------------------
+C   COUPL     parameters for coupling
+C   TABLE     table for total stress
+C
+C  FILES:  None.
+C
+C  DATA BASES:  None.
+C
+C  NON-FILE INPUT/OUTPUT:  None.
+C
+C  ERROR CONDITIONS:  None.
+C
+C  ADDITIONAL COMMENTS:  None.
+C
+C...................MAINTENANCE SECTION................................
+C
+C  MODULES CALLED:  None.
+C
+C  LOCAL VARIABLES AND         Structures are documented in detail 
+C           STRUCTURES:        where they are defined in the code 
+C                              within include files. 
+C
+C  METHOD:  Linear interpolation.
+C
+C  INCLUDE FILES:
+C             Name              Description
+C          -----------    --------------------------------------- 
+C          parall.h       global parameters
+C          parcons.h      constants
+C          comcoup.h      COUPL common block
+C          comtabl.h      TABLE common block
+C
+C  COMPILER DEPENDENCIES:  None.
+C
+C  COMPILE OPTIONS:  None.
+C
+C  MAKEFILE: /a/ops/ocn/wam/src/sub/wam_glo.mak
+C
+C  RECORD OF CHANGES:  None.
+C
+C...................END PROLOGUE.......................................
+C*CALL PARALL
+c     include 'parall.h'
+C
+C*CALL COMCOUP
+c     include 'comcoup.h'
+C
+C*CALL COMTABL
+c     include 'comtabl.h'
+C
+C ----------------------------------------------------------------------
+C
+c      DIMENSION U10(NIBLO), TAUW(NIBLO), US(NIBLO), Z0(NIBLO)
+c      REAL TAUT(0:ITAUMAX,0:JUMAX)
+C
+C ----------------------------------------------------------------------
+C
+C*CALL PARCONS
+c     include 'parcons.h'
+      
+      integer :: i, j
+      real    :: u10, tauw, us, z0,deltauw, xi, xj, deli1, deli2, delu
+     &           ,delj1, delj2, deltold, ust, x
+     
+C
+C ----------------------------------------------------------------------
+C
+C*    1. DETERMINE TOTAL STRESS FROM TABLE.
+C        ----------------------------------
+C
+C 1000 CONTINUE
+c      DO 1001 IJ=IJS,IJL
+         XI      = max(0.,TAUW)/DELTAUW
+         I       = MIN ( ITAUMAX-1, INT(XI) )
+         DELI1   = XI - FLOAT(I)
+         DELI2   = 1. - DELI1
+         XJ      = U10/DELU
+         J       = MIN ( JUMAX-1, INT(XJ) )
+         DELJ1   = XJ - FLOAT(J)
+         DELJ2   = 1. - DELJ1
+         DELTOLD = (TAUT(I,J  )*DELI2 + TAUT(I+1,J  )*DELI1)*DELJ2
+     1           + (TAUT(I,J+1)*DELI2 + TAUT(I+1,J+1)*DELI1)*DELJ1
+         US      = SQRT(DELTOLD)
+C 1001 CONTINUE
+C
+C*    2. DETERMINE ROUGHNESS LENGTH.
+C        ---------------------------
+C
+C 2000 CONTINUE
+c      DO 2001 IJ=IJS,IJL
+         UST     = MAX (US, 0.000001)
+         X       = MIN (max(0.,TAUW)/UST**2, 0.999)
+         Z0  = ALPHA*UST**2 / (G*SQRT(1.-X))
+c	if(tauw .lt.0.2) then
+c	 print *,'i,j,ust,tauw,z0=', i,j,tauw,ust,z0
+c         print *,' '
+c	print *,'deli2,deli1,delj2,delj1=',
+c     &      deli2,deli1,delj2,delj1
+c	print *,'deltold,TAUT(I,J  ),TAUT(I+1,J  )'
+c     & //',TAUT(I,J+1),TAUT(I+1,J+1)=',deltold,TAUT(I,J  ),TAUT(I+1,J  )
+c     & ,TAUT(I,J+1),TAUT(I+1,J+1)
+c        endif
+c 2001 CONTINUE
+C
+      END SUBROUTINE AIRSEA
+
+c      SUBROUTINE STRESS(TAUT,DELTAUW,ITAUMAX,JUMAX)
+      SUBROUTINE STRESS(DELTAUW,delu)
+
+C..........................START PROLOGUE..............................
+C
+C  SCCS IDENTIFICATION:	@(#)stress.f	1.2 1/27/94
+C			18:50:16 /home/library/wam/src/sub/SCCS/s.stress.f	
+C  ORIGINAL PROGRAMMER: P. Janssen, Aug 1990.
+C
+C  CURRENT PROGRAMMER:  J. Doyle, April 2008 (generalize)
+C 
+C  CONFIGURATION IDENTIFICATION:  None.
+C 
+C  MODULE NAME: STRESS
+C
+C  DESCRIPTION: TO GENERATE STRESS TABLE TAU(TAUW,U10).
+C
+C  COPYRIGHT:                  WAMDI Group, 1992.
+C
+C  CONTRACT NUMBER AND TITLE:  None.
+C
+C  REFERENCES:   WAM Software Design Document.
+C
+C  CLASSIFICATION:  Unclassified
+C
+C  RESTRICTIONS:  None.
+C
+C  COMPUTER/OPERATING SYSTEM
+C     DEPENDENCIES:  UNIX file systemwith Korn shell.
+C
+C  LIBRARIES OF RESIDENCE:  /a/ops/lib/wam_glo.a
+C
+C  USAGE: CALL STRESS 
+C
+C  PARAMETERS: None.
+C
+C  COMMON BLOCKS:              Common Blocks are documented where they
+C                              are defined in the code within include
+C                              files.  This module uses the following
+C                              Common Blocks:
+C
+C      Block     Notes
+C     --------  -----------------------------------------------------
+C     COUPLE    PARAMETERS FOR COUPLING.
+C     TABEL     TABLE FOR TOTAL STRESS AND HIGH FREQ STRESS.
+C
+C  FILES: None.
+C
+C  DATA BASES: None.
+C
+C  NON-FILE INPUT/OUTPUT: None. 
+C
+C  ERROR CONDITIONS: None.
+C
+C  ADDITIONAL COMMENTS: None.
+C
+C...................MAINTENANCE SECTION................................
+C
+C  MODULES CALLED: None.
+C
+C  LOCAL VARIABLES AND         Structures are documented in detail 
+C           STRUCTURES:        where they are defined in the code 
+C                              within include files. 
+C
+C          Name      Type                 Description
+C         ------     ----       ----------------------------------
+C      *XM*        REAL      POWER OF TAUW/TAU IN ROUGHNESS LENGTH.
+C      *XNU*       REAL      KINEMATIC VISCOSITY OF AIR.
+C      *G*         REAL      ACCELERATION OF GRAVITY.
+C      *NITER*     INTEGER   NUMBER OF ITERATIONS TO OBTAIN TOTAL STRESS
+C      *EPS1*      REAL      SMALL NUMBER TO MAKE SURE THAT A SOLUTION
+C                            IS OBTAINED IN ITERATION WITH TAU>TAUW.
+C  METHOD:
+C       A STEADY STATE WIND PROFILE IS ASSUMED.
+C       THE WIND STRESS IS COMPUTED USING THE ROUGHNESSLENGTH
+C
+C                  Z1=Z0/SQRT(1-TAUW/TAU)
+C
+C       WHERE Z0 IS THE CHARNOCK RELATION , TAUW IS THE WAVE-
+C       INDUCED STRESS AND TAU IS THE TOTAL STRESS.
+C       WE SEARCH FOR STEADY-STATE SOLUTIONS FOR WHICH TAUW/TAU < 1.
+C
+C  INCLUDE FILES:
+C             Name              Description
+C          -----------    --------------------------------------- 
+C          comcoup.h      COUPLE common block.
+C          comtabl.h      TABEL common block.
+C
+C  COMPILER DEPENDENCIES:  None.
+C
+C  COMPILE OPTIONS:  None.
+C
+C  MAKEFILE: /a/ops/ocn/wam/src/sub/wam_glo.mak
+C
+C  RECORD OF CHANGES:  None.
+C
+C...................END PROLOGUE.......................................
+C
+*CALL COMCOUP
+c     include 'comcoup.h'
+C
+*CALL COMTABL
+c     include 'comtabl.h'
+C
+C ----------------------------------------------------------------------
+C
+c
+c      REAL TAUT(ITAUMAX,JUMAX)
+      integer :: i, j, iter
+      real    :: deltauw, umax, tauwmax, delu, ztauw, utop, cdrag, wcd
+     &           ,ustold,tauold, x, ust, z0, znu, f,delf
+      real    :: xkappa=0.41, xnlev=10.0
+C
+C
+C ----------------------------------------------------------------------
+C
+C*    1.DETERMINE TOTAL STRESS.
+C       -----------------------
+C
+C*    1.1 INITIALISE CONSTANTS.
+C         ---------------------
+C
+      UMAX    = 50.
+      TAUWMAX = 5.
+      DELU    = UMAX/FLOAT(JUMAX)
+      DELTAUW = TAUWMAX/FLOAT(ITAUMAX)
+C
+C*    1.2 DETERMINE STRESS.
+C         -----------------
+C
+c	print *,'ITAUMAX,JUMAX=',ITAUMAX,JUMAX
+      DO 1000 I=0,ITAUMAX
+         DO 1100 J=0,JUMAX
+            ZTAUW   = FLOAT(I)*DELTAUW
+            UTOP    = FLOAT(J)*DELU
+            CDRAG   = 0.0012875
+            WCD     = SQRT(CDRAG)
+            USTOLD  = UTOP*WCD
+            TAUOLD  = MAX(USTOLD**2, ZTAUW+EPS1)
+C
+            DO 1200 ITER=1,NITER
+               X      = ZTAUW/TAUOLD
+               UST    = SQRT(TAUOLD)
+               Z0     = ALPHA*UST**2/(G)/(1.-X)**XM
+               ZNU    = 0.1*XNU/UST
+               Z0     = MAX(ZNU,Z0)
+               F      = UST-XKAPPA*UTOP/(ALOG(XNLEV/Z0))
+               DELF   = 1.-XKAPPA*UTOP/(ALOG(XNLEV/Z0))**2*2./UST*
+     *                  (1.-(XM+1)*X)/(1.-X)
+               UST    = UST-F/DELF
+               TAUOLD =  MAX(UST**2., ZTAUW+EPS1)
+c	print *,'ust,XKAPPA,utop,xnlev,z0=',ust,XKAPPA,utop,xnlev,z0
+c	print *,'iter,delf,f,ust,tauold=',iter,delf,f,ust,tauold
+ 1200       CONTINUE
+            TAUT(I,J)  = TAUOLD
+ 1100    CONTINUE
+C
+C*    END DO LOOP OVER INDICES OF TAU-TABLE
+C
+c	print *,'taut=',taut
+ 1000 CONTINUE
+
+      END SUBROUTINE STRESS
+
+      subroutine dragww3mm5(nth,nk,ww3spec,fcut,u,v,ust,tx,ty)
+!      subroutine dragww3mm5(nk0,ww3spec,wn,fcut,u,v,ust,tx,ty,taux,tauy)
+
+C***   This subroutine computes surface stress using directional wavenumber 
+C***   spectra from a wave model. The wave spectrum is interpolated to a 
+C***   standard wavenumber space wn(50) (i.e., exp[-5:0.1:-0.1]) 
+C***   before passing to this subroutine. A cut-off frequency (fcut), 
+C***   wind velocity (u,v), and frictional velocity u* (ust) are also needed 
+C***   as input. 
+C***   tx and ty are the east and north components of the surface stress.
+C***   References: Donelan et al. (2004), Chen et al. (2008, JAS)
+ 
+      INTEGER         NTH, NTAIL, NK
+!      PARAMETER     ( NTH    =      48 )
+      PARAMETER     ( NTAIL  =     100 )
+!      PARAMETER     ( NK     =      50 )
+
+
+      real wn(NK),ww3spec(NTH,NK)
+      real lk(ntail),k(ntail),dk(ntail),kk(ntail),dkk(ntail)
+      real lam(ntail),lam2(ntail),fac(ntail),alpha(ntail),na(ntail)
+      real c(ntail),omega(ntail),wd(NTH),wnn(ntail),dkw(ntail)
+      real kall(ntail),wavendf(ntail+2)
+      real wavegm(ntail+1),specall(NTH,ntail)
+      real Ulam(ntail),F(NTH,ntail),mom(NTH,ntail)
+      real m(nth),uoc(ntail),betaom(ntail),betadom(ntail)
+      real mss(ntail),msstmp(ntail)
+      real lamw(ntail),lam2w(ntail),Ulamw(ntail),cw(ntail)
+
+      real pi,rd,temp,ht,gcgs,gmks,rhow,rhoa,gamma,nu
+      real fcut,wncut,u,v,ust,ws,Wdir,ustsm,costh,cds2,ustnew
+      real taux,tauy,tauxw,tauyw,cd,cdw,cdsmooth,tx,ty
+      real tauxs,tauys,fcut0
+      real xlon,ylat,xlonhc,ylathc,swh,cp,rhorat,delwd,dwd
+      real markcon,markcon2
+      real pkf,wnpkf,pkf2,wnpkf2,w0
+      real :: wnstart,w1,c0,c1,tspec,cdall
+
+      integer fpk,fpk2,i,j,ith,jd,n,kkkk,ik,just
+      integer :: ndrag,kc1
+
+      pi=3.1415926
+      rd=180./pi
+      temp=28.   ! Water temperature in C
+      ht=12.     ! Height of measurement of u* [m]
+      gcgs=981.  ! Gravitational acceleration in cgs units
+      gmks=9.81  ! Gravitational acceleration in MKS units
+      RHOW=1000. ! Water density in MKS
+      RHOA=1.25  ! Air density in MKS
+      gamma=74.  ! Surface tension in cgs
+      wnstart=-5.0 ! Starting number in standard wavenumber space
+      ndrag=2    ! Option for sheltering coefficient, lab (=1) or table (=2)
+
+ 
+C***   Setup parameters in wavenumber space
+      do i=1,ntail
+        lk(i)=wnstart+0.1*(i-1) 
+        k(i)=exp(lk(i))
+        kk(i)=k(i)/100. ! wavenumber [cm^{-1}]
+        lam(i)=2.*pi/k(i) ! Wavelength [m]
+        lam2(i)=lam(i)/2.
+      enddo
+      do i=1,ntail-1
+        dk(i)=k(i+1)-k(i)
+      enddo
+      dk(ntail)=0.
+
+      do i=1,ntail
+        fac(i)=(abs(2.-(gcgs+3.*gamma*kk(i)**2)/
+     1         (gcgs+gamma*kk(i)**2)))**3
+        alpha(i)=exp(17.4*fac(i)+4.6)
+        na(i)=3.85*fac(i)+1.15
+        c(i)=sqrt(gcgs/100./k(i))
+        omega(i)=k(i)*c(i)
+      enddo
+
+      do i=1,ntail
+        kall(i)=k(i)
+        wnn(i)=k(i)
+      enddo
+
+      call viscosmm5(temp,nu) ! kinematic viscosity in cm^2/s
+      nu = nu*0.0001
+      rhorat=0.00125
+      delwd=360./NTH       ! wind direction increment in degrees
+
+      do ith=1,NTH
+      wd(ith)=(ith-1)*360./NTH
+      enddo
+      dwd=delwd/rd
+
+C***   Get peak frequency of windsea (pkf) and wave numver at pkf
+C***   In WAVEWATCH III, peak frequency of windsea is 1/3 of cut-off frequency.
+
+      fcut0=fcut
+      pkf=fcut0/3.
+      wnpkf=(2*pi*pkf)**2/gmks
+      do i=1,ntail-1
+        if (kall(i+1).gt.wnpkf  .and. kall(i).le.wnpkf ) fpk =i
+      enddo
+
+C***   Set a cut-off frequency limit to 0.35 to control the WW3 spectrum ¡°ends¡±
+      if (fcut.gt.0.35) fcut=0.35
+      wncut=(2.*pi*fcut)**2/gmks
+      kc1=0
+      do i=1,ntail-1
+        if ( k(i).le.wncut .and. k(i+1).gt.wncut) kc1 = i
+      enddo
+
+C***   Compute dks
+      wavendf(1)=k(1)*k(1)/k(2)
+      do i=1,ntail
+        wavendf(i+1)=k(i)
+      enddo
+      wavendf(ntail+2)=k(ntail)*k(ntail)/k(ntail-1)
+
+      do i=1,ntail+1
+        wavegm(i)=sqrt(wavendf(i)*wavendf(i+1))
+      enddo
+
+      do i=1,ntail
+        dk(i)=wavegm(i+1)-wavegm(i)
+      enddo
+
+      do i=1,ntail
+        dkw(i)=dk(i)
+      enddo
+      do i=1,ntail
+        dkk(i)=dk(i)
+      enddo
+
+      ws=sqrt(u*u+v*v)
+      if (ws.lt.1.) ws=1.
+      Wdir=atan2(v,u)*rd
+      Wdir=Wdir+360.
+      Wdir=mod(Wdir,360.0)
+
+      ustnew=ust
+      do i=1,ntail
+        Ulam(i)=ws+2.5*ustnew*log(lam2(i)/ht)
+      enddo
+      do i=1,ntail
+        if (Ulam(i) .gt. ws) Ulam(i)=ws
+      enddo
+
+      do i=1,NTH
+      M(i)=0.
+      do j=1,ntail
+        F(i,j)= 0.
+        MOM(i,j)=0.
+      enddo
+      enddo
+
+C***   Compute Donelan spectrum tail
+
+      do ith=1,NTH
+        costh=cos((Wdir-wd(ith))/rd)
+        do j=1,ntail
+          uoc(j)=costh*Ulam(j)/c(j)-1.
+          if (uoc(j).lt.0. .or. Ulam(j).lt.0.) uoc(j)=0.
+          betaom(j)=0.28*rhorat*uoc(j)**2
+          betadom(j)=4.*nu*k(j)/c(j)
+          if (betaom(j) .gt. betadom(j)) then
+            F(ith,j)=k(j)**(-4)*((betaom(j)-betadom(j))/
+     1               alpha(j))**(1./na(j))  ! Energy spectrum
+          endif
+        enddo
+      enddo
+
+C***   1st correction for the mean square slope (mss)
+
+      do i=1,kc1
+        msstmp(i)=0.
+        do j=1,NTH
+          msstmp(i)=msstmp(i)+ww3spec(j,i)
+        enddo
+      enddo
+
+      do i=kc1+1,ntail
+        msstmp(i)=0.
+        do j=1,NTH
+          msstmp(i)=msstmp(i)+F(j,i)
+        enddo
+      enddo
+
+      do i=1,ntail
+        msstmp(i)=msstmp(i)*dwd*kall(i)**2*dk(i)
+      enddo
+
+      do i=1,ntail
+        mss(i)=0
+        do j=1,i
+          mss(i)=mss(i)+msstmp(j)
+        enddo
+      enddo
+
+
+      Cds2=mss(fpk)
+
+      do i=1,ntail
+         mss(i)=mss(i)/cds2
+      enddo
+
+      do ith=1,NTH
+        costh=cos((Wdir-wd(ith))/rd)
+        do j=1,ntail
+          uoc(j)=costh*Ulam(j)/c(j)-1.
+          if (uoc(j).lt.0. .or. Ulam(j).lt.0.) uoc(j)=0.
+          betaom(j)=0.28*rhorat*uoc(j)**2
+          betadom(j)=4.*nu*k(j)/c(j)
+          if (betaom(j) .gt. betadom(j)) then
+            F(ith,j)=k(j)**(-4)*((betaom(j)-betadom(j))/
+     1              (alpha(j)*mss(j)**2))**(1./na(j))  
+          endif
+        enddo
+      enddo
+
+
+C***   2nd correction for mss
+
+      do i=1,kc1
+        msstmp(i)=0.
+        do j=1,NTH
+          msstmp(i)=msstmp(i)+ww3spec(j,i)
+        enddo
+      enddo
+
+      do i=kc1+1,ntail
+        msstmp(i)=0.
+        do j=1,NTH
+          msstmp(i)=msstmp(i)+F(j,i)
+        enddo
+      enddo
+
+      do i=1,ntail
+        msstmp(i)=msstmp(i)*dwd*kall(i)**2*dk(i)
+      enddo
+
+      do i=1,ntail
+        mss(i)=0
+        do j=1,i
+          mss(i)=mss(i)+msstmp(j)
+        enddo
+      enddo
+
+      Cds2=mss(fpk)
+
+      do i=1,ntail
+        mss(i)=mss(i)/cds2
+      enddo
+
+      do ith=1,NTH
+        costh=cos((Wdir-wd(ith))/rd)
+        do j=1,ntail
+          uoc(j)=costh*Ulam(j)/c(j)-1.
+          if (uoc(j).lt.0. .or. Ulam(j).lt.0.) uoc(j)=0.
+          betaom(j)=0.28*rhorat*uoc(j)**2
+          betadom(j)=4.*nu*k(j)/c(j)
+          if (betaom(j) .gt. betadom(j)) then
+            F(ith,j)=k(j)**(-4)*((betaom(j)-betadom(j))/
+     1               (alpha(j)*mss(j)**2))**(1./na(j))  ! Energy spectrum
+          endif
+        enddo
+      enddo
+
+C***   3rd correction for mss
+
+      do i=1,kc1
+        msstmp(i)=0.
+        do j=1,NTH
+          msstmp(i)=msstmp(i)+ww3spec(j,i)
+        enddo
+      enddo
+
+      do i=kc1+1,ntail
+        msstmp(i)=0.
+        do j=1,NTH
+          msstmp(i)=msstmp(i)+F(j,i)
+        enddo
+      enddo
+
+      do i=1,ntail
+        msstmp(i)=msstmp(i)*dwd*kall(i)**2*dk(i)
+      enddo
+
+      do i=1,ntail
+        mss(i)=0
+        do j=1,i
+          mss(i)=mss(i)+msstmp(j)
+        enddo
+      enddo
+
+      Cds2=mss(fpk)
+
+      do i=1,ntail
+        mss(i)=mss(i)/cds2
+      enddo
+
+      do ith=1,NTH
+        costh=cos((Wdir-wd(ith))/rd)
+        do j=1,ntail
+          uoc(j)=costh*Ulam(j)/c(j)-1.
+          if (uoc(j).lt.0. .or. Ulam(j).lt.0.) uoc(j)=0.
+          betaom(j)=0.28*rhorat*uoc(j)**2
+          betadom(j)=4.*nu*k(j)/c(j)
+          if (betaom(j) .gt. betadom(j)) then
+            F(ith,j)=k(j)**(-4)*((betaom(j)-betadom(j))/
+     1               (alpha(j)*mss(j)**2))**(1./na(j))  ! Energy spectrum
+          endif
+        enddo
+      enddo
+
+C***   Smooth the gap between WW3 spectrum and Donelan tail
+
+      do ith=1,NTH
+        do j=kc1+1,kc1+10
+	  w0=(j-kc1)/10.
+	  if (F(ith,j).lt.1.e-10 .or. ww3spec(ith,kc1).lt.1.e-10 
+     1       .or. ww3spec(ith,kc1-1).lt.1.e-10) then
+	    F(ith,j)=0.
+	  else
+	    tspec=log10(ww3spec(ith,kc1-1))-log10(ww3spec(ith,kc1))
+	    if (tspec.lt. 0.) tspec=0.
+	    tspec=log10(ww3spec(ith,kc1))-tspec*(j-kc1)
+            tspec=log10(F(ith,j))*w0+tspec*(1.-w0)
+	    if (tspec.lt.-10) then
+	      F(ith,j)=0.
+	    else
+	      F(ith,j)=10.**(tspec)
+	    endif
+	  endif
+        enddo
+      enddo
+
+
+C***   A sheltering coefficient (markcon) is a wave property used 
+C***   in the stress calculation. It is currently determined based on 
+C***   laboratory measurements, which is 0.28 and 0.11 for waves 
+C***   propagating in and opposing the direction of the wind, respectively 
+C***   (Donelan 1999).
+C***   To get the Cd curve measured by Donelan et al. (2004), the sheltering
+C***   coefficient should vary from 0.28 at low wind speed to 0.11 at very 
+C***   high wind speed with an exponential fit. 
+C***   However, it may vary slightly in actual wind and wave conditions
+C***   outside of the lab environment or in coupled models. A data
+C***   table (from subroutine getmcon) can be used for markcon
+C***   to get a smooth fit in a coupled wind-wave model. 
+
+      if (ndrag.eq.1) then
+        markcon=0.11+(0.28-0.11)*exp(-1.*(ws-33.)/16.5)
+      elseif (ndrag.eq.2) then
+        call getmcon(ws,markcon)
+        markcon=0.33*markcon
+      endif
+      
+
+
+
+C***   Compute momentum input to added DP (Donelan and Pierson 1987) spectrum
+
+      do ith=1,NTH
+        M(ith)=0.
+        costh=cos((Wdir-wd(ith))/rd)
+        do j=1,ntail
+          uoc(j)=costh*Ulam(j)/c(j)-1.
+          if (uoc(j).lt.0. .or. Ulam(j).lt.0.) uoc(j)=0.
+          betaom(j)=markcon*rhorat*uoc(j)**2
+          if (fpk2 .gt. j) betaom(j)=betaom(j)*markcon2/markcon
+        enddo
+        do j=kc1+1,ntail
+          M(ith)=M(ith)+RHOW*gmks*betaom(j)
+     1        *F(ith,j)*k(j)*dkk(j) ! Directional Momentum Input
+        enddo
+      enddo
+
+      taux=0.
+      tauy=0.
+      do ith=1,NTH
+        taux=taux+M(ith)*cos(wd(ith)/rd)*dwd
+        tauy=tauy+M(ith)*sin(wd(ith)/rd)*dwd
+      enddo
+
+
+C***   Compute momentum input to WW3 spectrum
+
+      do i=1,kc1
+        lamw(i)=2.*pi/wnn(i) ! Wavelength [m]
+        lam2w(i)=lamw(i)/2.
+        ULAMw(i)=ws+2.5*ustnew*log(LAM2w(i)/ht)
+        if (Ulamw(i) .gt. ws) Ulamw(i)=ws
+        cw(i)=sqrt(gmks/wnn(i))
+      enddo
+
+      do ith=1,NTH
+        M(ith)=0.
+        costh=cos((Wdir-wd(ith))/rd)
+        do j=1,kc1
+          uoc(j)=costh*Ulamw(j)/cw(j)-1.
+          betaom(j)=markcon*rhorat*uoc(j)**2
+          if (fpk2 .gt. j) betaom(j)=betaom(j)*markcon2/markcon
+          if (uoc(j).lt.0. )
+     1      betaom(j)=-0.11*rhorat*uoc(j)**2
+          if (costh.lt.0. ) betaom(j)=0.11*rhorat*uoc(j)**2
+        enddo
+        do j=1,kc1
+          M(ith)=M(ith)+RHOW*gmks*betaom(j)
+     1       *ww3spec(ith,j)*wnn(j)*dkw(j) ! Directional Momentum Input
+        enddo
+      enddo
+
+      tauxw=0.
+      tauyw=0.
+      do ith=1,NTH
+        tauxw=tauxw+M(ith)*cos(wd(ith)/rd)*dwd
+        tauyw=tauyw+M(ith)*sin(wd(ith)/rd)*dwd
+      enddo
+
+
+C***   Compute skin stress (tauxs, tauys)
+  
+      call smoothmm5(ws,ht,ustsm) ! Smooth law u*
+
+      if (ws.gt.0.) then
+        cd = sqrt(taux**2+tauy**2)/(ws*ws*RHOA)
+        CDw = sqrt(TAUXw**2+TAUYw**2)/(ws*ws*RHOA)
+        cdsmooth=(ustsm/ws)**2
+        tauxs=RHOA*cdsmooth*ws*ws*cos(Wdir/rd)
+        tauys=RHOA*cdsmooth*ws*ws*sin(Wdir/rd)
+        ustnew=sqrt(sqrt((taux+TAUXw+tauxs)**2+
+     1                 (tauy+TAUYw+tauys)**2)/RHOA)
+      else
+        cd = 0.
+        CDw = 0.
+        cdsmooth=0.
+        tauxs=0.
+        tauys=0.
+        ustnew=0.
+      endif
+
+C***   Compute total stress (tx, ty), which include stress from WW3 spectrum
+C***   (tauxw, tauyw), stress from the spectrum tail (taux, tauy), 
+C***   and the skin stress (tauxs, tauys).
+
+      tx=taux+tauxw+tauxs
+      ty=tauy+tauyw+tauys
+      tx=tx/RHOA
+      ty=ty/RHOA
+      taux=taux/RHOA
+      tauy=tauy/RHOA
+
+      cdall=sqrt(tx**2+ty**2)/ws**2
+      if (cdall .lt. 0.0006) then
+        tx=0.0006*ws*u+1.e-5
+        ty=0.0006*ws*v+1.e-5
+      endif
+
+      do ith=1,NTH
+        do j=1,kc1
+          specall(ith,j)=ww3spec(ith,j)
+        enddo
+        do j=kc1+1,ntail
+          specall(ith,j)=F(ith,j)
+        enddo
+      enddo
+      end subroutine dragww3mm5
+
+      subroutine smoothmm5(ws,z,ustar)
+
+      real z0,z1,nu,del,ws,z,ust,ustar
+      integer :: m,k
+
+      z0=0.001
+      z1=0.002
+      nu=0.156/10000
+      del=0.00001
+
+      z1=z0+2.*del
+      m=0
+      do k=1,6
+        m=m+1
+        z1=z0
+        ust=0.4*ws/(log(z/z0))
+        z0=0.132*nu/ust
+      enddo
+      ustar=ust
+      end subroutine smoothmm5
+
+      subroutine viscosmm5(t,nu)
+
+      real t,lu,nu
+
+      lu = 1301./(998.333 + 8.1855*(t-20.)
+     1       + 0.00585*(t-20.)**2) - 3.30233
+      nu = 10.**lu
+      if ( t .gt. 20.) then 
+        lu = (1.3272*(20.-t) - 0.001053*(t-20.)**2)/(t+105.)
+        nu = 10.**lu
+        nu=nu*10.**(1301./998.333 - 3.30233)
+      endif
+
+      end subroutine viscosmm5
+
+      subroutine getmcon(ws,mcon)
+
+      integer :: n
+      real    :: w0,w1,c0,c1
+      real ws,mcon,wt(9),ct(9)
+      data wt /10.,15.,20.,   25.,   30.,   35.,   40.,   45.,   80./
+      data ct / 1., 1., 1.,0.8736,0.7632,0.6263,0.5581,0.4889,0.2990/
+
+      if ( ws .le. wt(1)) then
+        mcon=ct(1)
+      elseif ( ws .ge. wt(9)) then
+        mcon=ct(9)
+      else
+        do n=1,8
+          w0=wt(n)
+          w1=wt(n+1)
+	  if(ws.ge.w0 .and. ws.lt.w1) then
+	    c0=ct(n)
+	    c1=ct(n+1)  
+            mcon=(ws-w0)/(w1-w0)*(c1-c0)+c0
+	  endif
+	enddo
+      endif
+      
+      end subroutine getmcon
+
+      end module w2a_mod
