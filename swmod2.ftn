@@ -25,7 +25,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -82,12 +82,10 @@
 !     ETOT1  : First moment of the energy density
 !     ETOT2  : Second moment of the energy density
 !     ETOT4  : Fourth moment of the energy density
-!     KM_WAM : Mean wavenumber according to the WAM-formulation
-!     KM_20  : Mean wavenumber according to zeroth and second order moments
-!     KM01   : Mean wavenumber according to first and zeroth order moments
-!     SIGM_20: Mean frequency according to zeroth and second order moments
-!     SIGM_10: Mean frequency according to zeroth and first order moments
-!     SIGM01 : Mean frequency according to first and zeroth order moments
+!     KM_WAM : Mean average wavenumber according to the WAM-formulation
+!     KM01   : Mean average wavenumber according to first order moment
+!     SIGM_10: Mean frequency according to zeroth order moment
+!     SIGM01 : Mean frequency according to first order moment
 !
       REAL, SAVE    :: ACTOT
       REAL, SAVE    :: EDRKTOT
@@ -96,14 +94,12 @@
       REAL, SAVE    :: ETOT2
       REAL, SAVE    :: ETOT4
       REAL, SAVE    :: KM_WAM
-      REAL, SAVE    :: KM_20
       REAL, SAVE    :: KM01
-      REAL, SAVE    :: SIGM_20
       REAL, SAVE    :: SIGM_10
       REAL, SAVE    :: SIGM01
 !
 !$OMP THREADPRIVATE(ACTOT, EDRKTOT, EKTOT, ETOT1, ETOT2, ETOT4,
-!$OMP&              KM_WAM, KM_20, KM01, SIGM_20, SIGM_10, SIGM01)
+!$OMP&              KM_WAM, KM01, SIGM_10, SIGM01)
 !
 !     SIGPOW : contains powers of relative frequencies
 !              second dimension indicates power of sigma
@@ -118,9 +114,7 @@
 !
 !     SSFILL :
 !     SINTGRL: Calculating integral paramters
-!     SWCAP  : Calculating whitecapping source term
-!     SSURF  : use SIGM_20 for nkd scaling
-!     BRKPAR : use KM_20 for nkd scaling
+!     WCAP   : Calculating whitecapping source term
 !
 ! 10. Error messages
 !
@@ -152,7 +146,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -295,7 +289,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -397,7 +391,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -542,7 +536,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -654,7 +648,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -794,7 +788,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -856,7 +850,6 @@
 !
 !     *** variables for parallel process with MPI:
 !
-!     IAMMASTER: indicate whether this CPU is master or not
 !     INODE   : rank of present node
 !     NPROC   : number of nodes
 !     PARLL   : flag to denote run as parallel (.TRUE.) or not (.FALSE.)
@@ -869,7 +862,7 @@
       INTEGER INODE, NPROC
       INTEGER SWINT, SWREAL
       INTEGER SWMAX, SWMIN, SWSUM
-      LOGICAL IAMMASTER, PARLL
+      LOGICAL PARLL
 !
 !     *** information related to global domain and subdomains
 !
@@ -974,7 +967,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2010  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1061,7 +1054,3 @@
 !MPI!/impi      MODULE MPI
 !MPI!/impi      INCLUDE 'mpif.h'
 !MPI!/impi      END MODULE MPI
-!PUN!/impi
-!PUN!/impi      MODULE MPI
-!PUN!/impi      INCLUDE 'mpif.h'
-!PUN!/impi      END MODULE MPI

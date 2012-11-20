@@ -63,20 +63,14 @@ fi
 # check whether machinefile is available (if necessary)
 #-----------------------------------------------------------------------
 #
-# Note: no machinefile is needed on small multi-core shared-memory Linux machine or on SGI platform
+# Note: no machinefile is needed on SGI platform!
 #
 os=`uname -s`
-if [ "$os" = Linux ]; then
-   ncore=`grep -ic ^processor /proc/cpuinfo`
-   if [ $ncore -le 8 ]; then
-      nmf=1
-   fi
-fi
 os=`echo $os | tr "[a-z]" "[A-Z]" | awk '{print substr($0,1,4)}'`
 if [ "$os" = IRIX ]; then
-   nmf=1
+   sgi=1
 fi
-if [ $npmpi -gt 1 -a ! -z "$mpi" -a -z "$nmf" ]; then
+if [ $npmpi -gt 1 -a ! -z "$mpi" -a -z "$sgi" ]; then
    if [ ! -f machinefile -a ! -h machinefile ]; then
       echo
       echo "***ERROR: no machinefile is present in current directory!"
@@ -104,7 +98,7 @@ if [ -r $input.swn ]; then
          ln -s `which swan.exe` swan.exe
          orig=y
       fi
-      if [ -z "$nmf" ]; then
+      if [ -z "$sgi" ]; then
          if [ $npmpi -gt 1 ]; then
             mpirun -np $npmpi -machinefile machinefile swan.exe
          else
