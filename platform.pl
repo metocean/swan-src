@@ -41,11 +41,12 @@ if ($os =~ /IRIX64/i) {
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
   print OUTFILE "LIBS_MPI = -lmpi\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -sgi -cdate12\n";
+  print OUTFILE "swch = -unix -f95 -timg -sgi\n";
 }
 elsif ($os =~ /AIX/i) {
   print OUTFILE "##############################################################################\n";
@@ -67,11 +68,12 @@ elsif ($os =~ /AIX/i) {
   print OUTFILE "LIBS_SER = -lessl -lmass\n";
   print OUTFILE "LIBS_OMP = -lessl -lmass\n";
   print OUTFILE "LIBS_MPI = -lessl -lmass\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+  print OUTFILE "swch = -unix -f95 -timg\n";
 }
 elsif ($os =~ /OSF1/i) {
   print OUTFILE "##############################################################################\n";
@@ -92,11 +94,12 @@ elsif ($os =~ /OSF1/i) {
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
   print OUTFILE "LIBS_MPI = -lfmpi -lmpi -lelan\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -timg -cdate12\n";
+  print OUTFILE "swch = -unix -timg\n";
 }
 elsif ($os =~ /SunOS/i) {
   print OUTFILE "##############################################################################\n";
@@ -117,11 +120,12 @@ elsif ($os =~ /SunOS/i) {
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
   print OUTFILE "LIBS_MPI = -lmpi\n";
+  print OUTFILE "O_DIR = ../work/odir4/\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -timg -cdate12\n";
+  print OUTFILE "swch = -unix -timg\n";
 }
 elsif ($os =~ /HP-UX/i) {
   print OUTFILE "##############################################################################\n";
@@ -142,11 +146,12 @@ elsif ($os =~ /HP-UX/i) {
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
   print OUTFILE "LIBS_MPI =\n";
+  print OUTFILE "O_DIR =\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+  print OUTFILE "swch = -unix -f95 -timg\n";
 }
 elsif ($os =~ /Linux/i) {
   system 'sh ./getcmpl';
@@ -154,7 +159,7 @@ elsif ($os =~ /Linux/i) {
   {
     system 'rm ifort';
     print OUTFILE "##############################################################################\n";
-    print OUTFILE "# IA32_Intel/x86-64_Intel:	Intel Pentium with Linux using Intel compiler 9.1.\n";
+    print OUTFILE "# IA32_Intel/x86-64_Intel:	Intel Pentium with Linux using Intel compiler 11.\n";
     print OUTFILE "##############################################################################\n";
     print OUTFILE "F90_SER = ifort\n";
     print OUTFILE "F90_OMP = ifort\n";
@@ -168,7 +173,8 @@ elsif ($os =~ /Linux/i) {
 #    else {
       print OUTFILE "FLAGS_OPT = -O2\n";
 #    }
-    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback\n";
+#    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback -diag-disable remark\n";
+    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback -diag-disable 8291 -diag-disable 8293\n";
     print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
     print OUTFILE "FLAGS_SER =\n";
     print OUTFILE "FLAGS_OMP = -openmp\n";
@@ -179,11 +185,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -impi -cdate12\n";
+    print OUTFILE "swch = -unix -impi\n";
   }
   elsif ( -f "ifc" )
   {
@@ -207,11 +214,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+    print OUTFILE "swch = -unix -f95 -timg\n";
   }
   elsif ( -f "efc" )
   {
@@ -235,11 +243,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -f95 -timg -cdate12\n";
+    print OUTFILE "swch = -unix -f95 -timg\n";
   }
   elsif ( -f "pgf90" )
   {
@@ -262,11 +271,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -impi -cdate12\n";
+    print OUTFILE "swch = -unix -impi\n";
   }
   elsif ( -f "lf95" )
   {
@@ -289,11 +299,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR =\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "swch = -unix\n";
   }
   elsif ( -f "gfortran" )
   {
@@ -316,11 +327,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP = -static-libgcc\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "swch = -unix\n";
   }
   elsif ( -f "g95" )
   {
@@ -343,11 +355,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "swch = -unix\n";
   }
   elsif ( -f "xlf90" )
   {
@@ -370,11 +383,12 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "LIBS_SER =\n";
     print OUTFILE "LIBS_OMP =\n";
     print OUTFILE "LIBS_MPI =\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
     print OUTFILE "OUT = -o \n";
     print OUTFILE "EXTO = o\n";
     print OUTFILE "MAKE = make\n";
     print OUTFILE "RM = rm -f\n";
-    print OUTFILE "swch = -unix -cdate12\n";
+    print OUTFILE "swch = -unix -matl4\n";
   }
   else
   {
@@ -389,22 +403,24 @@ elsif ($os =~ /WindowsNT/i || $os =~ /MSWin32/i) {
   print OUTFILE "F90_OMP = ifort\n";
   print OUTFILE "F90_MPI = ifort\n";
   print OUTFILE "FLAGS_OPT = /optimize:2\n";
-  print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo\n";
+#  print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo /Qdiag-disable:remark\n";
+  print OUTFILE "FLAGS_MSC = /assume:byterecl /traceback /nowarn /nologo /Qdiag-disable:8291 /Qdiag-disable:8293\n";
   print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
   print OUTFILE "FLAGS_SER =\n";
   print OUTFILE "FLAGS_OMP = /Qopenmp /Qopenmp-link:static\n";
   print OUTFILE "FLAGS_MPI =\n";
   print OUTFILE "INCS_SER =\n";
   print OUTFILE "INCS_OMP =\n";
-  print OUTFILE "INCS_MPI = /include:\"c:\\\progra~1\\\MPICH\\\SDK\\\include\"\n";
+  print OUTFILE "INCS_MPI = /include:\"C:\\\PROGRA~1\\\MPICH2\\\include\"\n";
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
-  print OUTFILE "LIBS_MPI = c:\\\progra~1\\\MPICH\\\SDK\\\llib\\\mpe.lib c:\\\progra~1\\\MPICH\\\SDK\\\llib\\\mpich.lib\n";
+  print OUTFILE "LIBS_MPI = C:\\\PROGRA~1\\\MPICH2\\\llib\\\lfmpich2.lib\n";
+  print OUTFILE "O_DIR =\n";
   print OUTFILE "OUT = /exe:\n";
   print OUTFILE "EXTO = obj\n";
   print OUTFILE "MAKE = nmake\n";
   print OUTFILE "RM = del\n";
-  print OUTFILE "swch = -dos -impi -cvis -cdate12\n";
+  print OUTFILE "swch = -dos -impi -cvis\n";
 }
 elsif ($os =~ /Darwin/i) {
   print OUTFILE "##############################################################################\n";
@@ -425,11 +441,12 @@ elsif ($os =~ /Darwin/i) {
   print OUTFILE "LIBS_SER =\n";
   print OUTFILE "LIBS_OMP =\n";
   print OUTFILE "LIBS_MPI =\n";
+  print OUTFILE "O_DIR =\n";
   print OUTFILE "OUT = -o \n";
   print OUTFILE "EXTO = o\n";
   print OUTFILE "MAKE = make\n";
   print OUTFILE "RM = rm -f\n";
-  print OUTFILE "swch = -unix -cdate12\n";
+  print OUTFILE "swch = -unix\n";
 }
 else
 {
