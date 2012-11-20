@@ -1,3 +1,4 @@
+!
 !     SWAN main program and miscellaneous routines
 !
 !     Contents of this file:
@@ -45,7 +46,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -73,6 +74,7 @@
 !     40.30: Marcel Zijlema
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     40.95: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -165,7 +167,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -203,6 +205,9 @@
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     40.95: Marcel Zijlema
+!     41.20: Casey Dietrich
+!     41.36: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -241,6 +246,9 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Feb. 05: re-design output process in parallel mode
 !     40.80, Jun. 07: extension to unstructured grids
+!     40.95, Jun. 08: parallelization of unSWAN using MESSENGER of ADCIRC
+!     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
+!     41.36, Jun. 12: collecting data for PunSWAN
 !
 !  2. Purpose
 !
@@ -673,13 +681,13 @@
       IF ( PARLL ) THEN                                                   40.30
          ALLOCATE (BLKND(MXC*MYC))                                        40.51 40.41
          BLKND = REAL(INODE)                                              40.41
-         IF ( INODE.EQ.MASTER ) THEN
+         IF ( IAMMASTER ) THEN                                            40.95
             ALLOCATE(BLKNDC(MXCGL*MYCGL))                                 40.51 40.41
             BLKNDC = 0.                                                   40.96
          END IF
          CALL SWCOLLECT ( BLKNDC, BLKND, .TRUE. )                         40.51 40.41
          IF (STPNOW()) RETURN                                             40.41
-         IF ( INODE.EQ.MASTER ) THEN                                      40.30
+         IF ( IAMMASTER ) THEN                                            40.95 40.30
             CALL SWCOLOUT ( OURQT, BLKNDC )                               40.51 40.41 40.30
             DEALLOCATE(BLKNDC)                                            40.41 40.30
          END IF                                                           40.30
@@ -746,7 +754,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -792,6 +800,7 @@
 !     40.61: Marcel Zijlema
 !     40.64: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.13: Nico Booij
 !
 !  1. Updates
 !
@@ -850,6 +859,7 @@
 !     40.64, Apr. 07: output variables Qp and BFI added
 !     40.80, Jun. 07: extension to unstructured grids
 !     41.12, Apr. 10: output quantity NPL added
+!     41.13, Jul. 10: LWDATE introduced in view of nesting in WAM
 !
 !  2. Purpose
 !
@@ -899,9 +909,9 @@
 ! 13. Source text
 !
       VERTXT = BLANK                                                      40.03
-      VERNUM = 40.81
+      VERNUM = 40.91
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-!FIX      CALL BUGFIX ('A')
+!      CALL BUGFIX ('A')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
       IF (INERR.GT.0) RETURN                                              34.01
@@ -914,7 +924,7 @@
      &        /,20X,'         VERSION NUMBER ', A,                        40.03
      &        /,20X,'---------------------------------------',//)
 !
-      IF (SCREEN.NE.PRINTF.AND.INODE.EQ.MASTER) WRITE (SCREEN,6020)       40.30
+      IF (SCREEN.NE.PRINTF.AND.IAMMASTER) WRITE (SCREEN,6020)             40.95 40.30
  6020 FORMAT (/, ' SWAN is preparing computation',/)
 !
 !     ***** initial values for common variables *****
@@ -961,6 +971,7 @@
       NGRBND  = 0                                                         40.00
       NGRBGL  = 0                                                         40.30
       nverts  = 0                                                         40.80
+      nvertsg = 0                                                         40.95
 !     time of computation                                                 40.00
       TIMCO = -1.E10                                                      40.00
       CHTIME = '    '                                                     40.00
@@ -1032,13 +1043,13 @@
       IREFR  = 1                                                          40.02
       ITFRE  = 1
       IWIND  = 0
+      IDRAG  = 1                                                          41.33
       IGEN   = 3                                                          32.06
       IQUAD  = 2                                                          30.72
       IWCAP  = 1                                                          21/MAY
       ISURF  = 1
       IBOT   = 0
       ITRIAD = 0
-!WAM4      iswdis = 0                                                           MSL
       IVEG   = 0                                                          40.55
       VARWI  = .FALSE.
       VARFR  = .FALSE.
@@ -1055,7 +1066,7 @@
       YOFFS  = 0.
       LXOFFS = .FALSE.
       DYNDEP = .FALSE.                                                    40.00
-      NWAMN = 0
+      LWDATE = 0                                                          41.13
       MXOUTAR = 0
 !
       FBS%NBS = -999                                                      40.31
@@ -1220,6 +1231,13 @@
 !
       PNUMS(32) = 0.                                                      41.07
 !
+!     --- parameters for limiting Csigma and Ctheta
+!
+      PNUMS(33) = 0.0                                                     41.35
+      PNUMS(34) = 0.5                                                     41.35
+      PNUMS(35) = 0.0                                                     41.35
+      PNUMS(36) = 0.5                                                     41.35
+!
 !     *** (1) and (2): Komen et al. (1984) formulation ***
 !
       PWCAP(1)  = 2.36E-5
@@ -1243,14 +1261,6 @@
       PWCAP(6) = 0.88
       PWCAP(7) = 1.
       PWCAP(8) = 0.75
-!
-!     *** (13): Flag for activation of nonlinear dispersion (not used)    41.11
-!         (14): Coefficient for enhanced current-induced dissipation      41.11
-!         (15): Exponent for doppler shifting factor (must be =1.)        41.11
-!
-      PWCAP(13) = 0.                                                      41.11
-      PWCAP(14) = 0.                                                      41.11
-      PWCAP(15) = 1.0                                                     41.11
 !
 !     PBOT(1)   = 0.005          modified
       PBOT(1)   = 0.0                                                     20.68
@@ -1335,8 +1345,8 @@
       JHSIBC = 25                                                         40.00
       JHS    = 26                                                         40.13
       JURSEL = 27                                                         40.13
-!WAM4      jutop = 28
-      MCMVAR = 27                                                         40.65 40.61 40.51 40.13
+      JBOTLV = 28                                                         41.38 40.65
+      MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
 !     subarray sequence number 1 is used only for unused subarrays        40.13
       JFRC2 = 1                                                           40.00
       JFRC3 = 1                                                           40.00
@@ -1350,6 +1360,8 @@
 !     added for number of plants per square meter                         40.55
       JNPLA2= 1                                                           40.55
       JNPLA3= 1                                                           40.55
+      JGAMMA = 1                                                          41.38
+      JRESPL = 1                                                          41.38
 !
 !     *** added for wave setup ***                                        32.01
 !
@@ -1359,12 +1371,10 @@
 !     --- added for output purposes                                       40.65
 !
       JPBOT  = 1                                                          40.65 40.51
-      JBOTLV = 1                                                          40.65
       JDSXB  = 1                                                          40.65 40.61
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
       JDSXV  = 1                                                          40.65 40.61
-!WAM4      JDSSW  = 1                                                          MSL
       JGENR  = 1                                                          40.85
       JGSXW  = 1                                                          40.85
       JREDS  = 1                                                          40.85
@@ -1488,7 +1498,7 @@
       IVTYPE = 6
       OVKEYW(IVTYPE) = 'UBOT'                                             40.00
       OVSNAM(IVTYPE) = 'Ubot'
-      OVLNAM(IVTYPE) = 'Orbital velocity at the bottom'
+      OVLNAM(IVTYPE)='RMS of maxima of orbital velocity near the bottom'
       OVUNIT(IVTYPE) = UV
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -1824,7 +1834,7 @@
       IVTYPE = 34                                                         20.67
       OVKEYW(IVTYPE) = 'URMS'                                             40.00
       OVSNAM(IVTYPE) = 'urms'
-      OVLNAM(IVTYPE) = 'RMS of orbital velocity at the bottom'
+      OVLNAM(IVTYPE) = 'RMS of orbital velocity near the bottom'
       OVUNIT(IVTYPE) = UV
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -2018,7 +2028,7 @@
       IVTYPE = 50                                                         40.51
       OVKEYW(IVTYPE) = 'TMBOT'
       OVSNAM(IVTYPE) = 'TmBot'
-      OVLNAM(IVTYPE) = 'Bottom wave period'
+      OVLNAM(IVTYPE) = 'Near bottom wave period'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -2267,6 +2277,18 @@
       OVHEXP(IVTYPE) = 100.
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 71
+      OVKEYW(IVTYPE) = 'LWAVP'                                            41.15
+      OVSNAM(IVTYPE) = 'Lwavp'
+      OVLNAM(IVTYPE) = 'Peak wave length'
+      OVUNIT(IVTYPE) = UL
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 200.
+      OVEXCV(IVTYPE) = -9.
+!
       IVTYPE = 80                                                         MSL
       OVKEYW(IVTYPE) = 'DPM'
       OVSNAM(IVTYPE) = 'dpm'
@@ -2408,7 +2430,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2734,7 +2756,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3117,7 +3139,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3325,7 +3347,7 @@
                 CGFACT = CGMAX / VTOT
                 UU = UU * CGFACT
                 VV = VV * CGFACT
-                IF (ERRPTS.GT.0.AND.INODE.EQ.MASTER) THEN                 40.30
+                IF (ERRPTS.GT.0.AND.IAMMASTER) THEN                       40.95 40.30
                   WRITE (ERRPTS, 211) IX+MXF-1, IY+MYF-1, 1
  211              FORMAT (I4, 1X, I4, 1X, I2)
                 ENDIF
@@ -3540,6 +3562,12 @@
       COMPDA(:,JUBOT) = 0.                                                40.94
       IF (JPBOT.GT.1) COMPDA(:,JPBOT) = 0.                                40.94
 !
+!     --- initialize GAMBR and RESPL                                      41.38
+      IF (ISURF.EQ.6) THEN
+         COMPDA(:,JGAMMA) = PSURF( 2)
+         COMPDA(:,JRESPL) = PSURF(13)*COMPDA(:,JDP2)
+      ENDIF
+!
       RETURN
 ! * end of subroutine SWRBC *
       END
@@ -3567,7 +3595,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3970,7 +3998,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4099,7 +4127,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4228,7 +4256,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4395,7 +4423,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4494,7 +4522,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4849,7 +4877,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5286,7 +5314,7 @@
                   COMPDA(INDX,JVX2) = UU * CGFACT
                   COMPDA(INDX,JVY2) = VV * CGFACT
 !                 write IX,IY to error points file
-                  IF (ERRPTS.GT.0.AND.INODE.EQ.MASTER) THEN               40.30
+                  IF (ERRPTS.GT.0.AND.IAMMASTER) THEN                     40.95 40.30
                     WRITE (ERRPTS, 211) IX+MXF-1, IY+MYF-1, 1
  211                FORMAT (I4, 1X, I4, 1X, I2)
                   ENDIF
@@ -5408,7 +5436,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5437,6 +5465,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.61: Roop Lalbeharry
+!     41.13: Nico Booij
 !
 !  1. Updates
 !
@@ -5454,6 +5483,7 @@
 !     40.31, Nov. 03: removing POOL-mechanism, reconsidering this subroutine
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.61, Nov. 06: variables USNEW, THWNEW no longer written in WAM4.5
+!     41.13, Jul. 10: LWDATE introduced (length of date/time in WAM nest)
 !
 !  2. Purpose
 !
@@ -5521,7 +5551,7 @@
 !     WWDATE, WWTIME       time code in WaveWatch                         40.05
 !
       REAL      TIMF1, TIMF2, UFAC, W1, BDEPTH, DUM_A, RFAC               40.05
-      REAL      XLON, XLAT, XDATE, EMEAN, THQ, FMEAN, USNEW, THWNEW
+      REAL      XLON, XLAT, XDATE, EMEAN, THQ, FMEAN
 !
 !     TIMF1     time of reading old boundary condition
 !     TIMF2     time of reading new boundary condition
@@ -5533,8 +5563,6 @@
 !     EMEAN     coefficient read from WAM file, ignored
 !     THQ       coefficient read from WAM file, ignored
 !     FMEAN     coefficient read from WAM file, ignored
-!     USNEW     coefficient read from WAM file, ignored
-!     THWNEW    coefficient read from WAM file, ignored
 !     DUM_A     dummy local variable (not used in any calculation)
 !     BDEPTH    depth of the boundary points
 !
@@ -5550,9 +5578,7 @@
 !     BTYPE     type of boundary condition
 !     HEDLIN    heading line
 !     TIMSTR    time string
-!CDAT10      CHARACTER (LEN=10) :: CDATE     ! date-time
-      CHARACTER (LEN=12) :: CDATE     ! date-time
-!CDAT14      CHARACTER (LEN=14) :: CDATE     ! date-time
+      CHARACTER (LEN=14) :: CDATE     ! date-time
 !
       REAL, ALLOCATABLE :: SPAUX(:,:)
 !
@@ -5735,7 +5761,8 @@
 !             for the first spectrum (first point), read time from
 !             heading line                                                40.03
                 IF (BTYPE.EQ.'WAMW') THEN                                 40.03
-                  READ(NDSD, END=380, ERR=920) XLON, XLAT, CDATE,
+                  READ(NDSD, END=380, ERR=920) XLON, XLAT,
+     &               CDATE(1:LWDATE),                                     41.13
      &               EMEAN, THQ, FMEAN
                   IF (LEN_TRIM(CDATE) == 10 ) THEN
                      TIMSTR = TRIM(CDATE)
@@ -5748,13 +5775,13 @@
                   CALL DTRETI (TIMSTR, BFILED(6), TIMF2)                  40.03 40.05
                 ELSE IF (BTYPE.EQ.'WAMC') THEN
                   READ(NDSD, END=380, ERR=920) XLON, XLAT, XDATE,
-     &                EMEAN, THQ, FMEAN, USNEW, THWNEW
+     &                EMEAN, THQ, FMEAN
                   WRITE (TIMSTR,'(F11.0,9X)') XDATE
 !                 convert time string to time in seconds
                   CALL DTRETI (TIMSTR, BFILED(6), TIMF2)                  40.03 40.05
                 ELSE IF (BTYPE.EQ.'WAMF') THEN
                   READ(NDSD,*, END=380, ERR=920) XLON, XLAT, DDATE,
-     &              EMEAN, THQ, FMEAN, USNEW, THWNEW
+     &              EMEAN, THQ, FMEAN
                   WRITE (TIMSTR,'(F11.0,9X)') DDATE
 !                 convert time string to time in seconds
                   CALL DTRETI (TIMSTR, BFILED(6), TIMF2)                  40.03 40.05
@@ -5794,7 +5821,7 @@
 !                 read HEDLIN replaced because data are sometimes written 40.13
 !                 on two subsequent lines                                 40.13
                   READ(NDSD,*, END=380, ERR=920) XLON, XLAT, DDATE,       40.13
-     &              EMEAN, THQ, FMEAN, USNEW, THWNEW
+     &              EMEAN, THQ, FMEAN
                 ELSE
                   READ (NDSD, '(A)', END=380, ERR=920) HEDLIN
                   IF (ITEST.GE.100) WRITE (PRINTF, 212) HEDLIN
@@ -5844,11 +5871,11 @@
  222          FORMAT (A)
               CALL LSPLIT (HEDLIN, DATITM, 5)
               CALL DTRETI (DATITM(1), BFILED(6), TIMF2)                   40.03
-              IF (ITEST.GE.60) WRITE (PRTEST, *) ' TPAR boundary ',
-     &              TIMF2, (SPPARM(JJ), JJ=1,4)
               DO II = 1, 4
                 READ (DATITM(II+1), '(G12.0)', END=940) SPPARM(II)
               ENDDO
+              IF (ITEST.GE.60) WRITE (PRTEST, *) ' TPAR boundary ',
+     &              TIMF2, (SPPARM(JJ), JJ=1,4)
               BFILED(3) = NINT(TIMF2)
               CALL SSHAPE (BSPECS(1,1,IBSPEC,2), SPCSIG, SPCDIR,
      &                 FSHAPE, DSHAPE)
@@ -6012,7 +6039,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6435,7 +6462,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6464,6 +6491,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.20: Casey Dietrich
 !
 !  1. Updates
 !
@@ -6480,6 +6508,7 @@
 !     40.31, Nov. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Sep. 07: extension to unstructured grids
+!     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
 !
 !  2. PURPOSE
 !
@@ -6764,7 +6793,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6885,7 +6914,7 @@
         TLEN  = LENDEG * (COSYG*XCLEN + YCLEN)/2.
       ENDIF
       TDXY  = FLOAT(MXCGL + MYCGL)/2.                                     40.31
-      IF ( nverts.NE.0 ) TDXY = FLOAT(nverts)                             40.80
+      IF ( nvertsg.NE.0 ) TDXY = FLOAT(nvertsg)                           40.95 40.80
 !
       FETCH = TLEN/TDXY
       SY0   = 3.3                                                         30.70
@@ -6976,8 +7005,8 @@
 !     --- unstructured grid
 !
       DO INX = 1, nverts                                                  40.80
-!        internal vertices only
-         IF ( vmark(INX) == 0 ) THEN
+!        internal vertices and ghost vertices only
+         IF ( vmark(INX) == 0 .or. vmark(INX) == 999 ) THEN               40.95
             TESTFL = .FALSE.
             DO IPTST = 1, NPTST
               IF (INX.EQ.XYTST(IPTST)) TESTFL = .TRUE.
@@ -7060,7 +7089,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2010  Delft University of Technology
+!     Copyright (C) 1993-2012  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7135,6 +7164,7 @@
 !
       IF (ALLOCATED(xcugrd))   DEALLOCATE(xcugrd)
       IF (ALLOCATED(ycugrd))   DEALLOCATE(ycugrd)
+      IF (ALLOCATED(ivertg))   DEALLOCATE(ivertg)
       IF (ALLOCATED( vmark))   DEALLOCATE( vmark)
       IF (ALLOCATED( vlist))   DEALLOCATE( vlist)
       IF (ALLOCATED( blist))   DEALLOCATE( blist)
