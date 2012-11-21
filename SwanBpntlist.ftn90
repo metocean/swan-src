@@ -223,7 +223,8 @@ subroutine SwanBpntlist
                 endif
              enddo
              !
-             if ( vn == 0 .or. vert(vn)%atti(VMARKER) /= 1 ) goto 10
+             if ( vn == 0 ) goto 10
+             if ( vert(vn)%atti(VMARKER) /= 1 ) goto 10
              !
              ! prevent algorithm from skipping sections of boundary by identifying where a bridge element is encountered  41.39
              !

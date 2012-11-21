@@ -72,10 +72,10 @@
 !
 !  6. Parameter variables
 !
-!     LINELN [ 120]  max length of input lines (in command file)
+!     LINELN [ 180]  max length of input lines (in command file)
 !
       INTEGER LINELN
-      PARAMETER  (LINELN=150)
+      PARAMETER  (LINELN=180)
 !
 !  7. Local variables
 !
@@ -230,15 +230,16 @@
 !
 !  6. Parameter variables
 !
-!     LENFNM [  80]  length of file names
+!     LENFNM [ 140]  length of file names (including path)
 !
       INTEGER LENFNM
-      PARAMETER (LENFNM=80)
+      PARAMETER (LENFNM=140)
 !
 !  7. Local variables
 !
 !     *** names and other character strings ***
 !
+! WRKDIR [.     ] name of working directory (appended to front of file names
 ! DIRCH1 [\     ] directory separation character as appears in input file
 ! DIRCH2 [\     ] directory separation character replacing DIRCH1
 ! FILEA  [      ] not used
@@ -259,6 +260,7 @@
 ! PTITLE [      ] not used
 ! VERTXT [calcul] program version, character representation
 !
+      CHARACTER (LEN=LENFNM) :: WRKDIR
       CHARACTER (LEN=1)      :: DIRCH1, DIRCH2
       CHARACTER (LEN=LENFNM) :: FILEA , FILEB , FILENM
       CHARACTER (LEN=40)     :: INST
@@ -576,7 +578,6 @@
 !     40.51: Marcel Zijlema
 !     40.61: Marcel Zijlema
 !     40.64: Marcel Zijlema
-!     41.12: Nico Booij
 !
 !  1. Updates
 !
@@ -591,11 +592,9 @@
 !     40.51, Feb. 06: NMOVAR increased by 1 (quantity TPS added)
 !     40.61, Sep. 06: NMOVAR increased by 3 (quantities DISBOT,
 !                     DISSRF and DISWCP added)
-!     40.61, Sep. 06: NMOVAR increased by 1 (quantity DISVEG added)
 !     40.64, Apr. 07: NMOVAR increased by 2 (quantities QP and BFI added)
 !     40.85, Aug. 08: NMOVAR increased by 10 (quantities GENE, GENW, REDI, REDQ, REDT,
 !                                             PROPA, PROPX, PROPT, PROPS and RADS added)
-!     41.12, Apr. 10: NMOVAR increased by 1 (quantity NPL added)
 !     41.15, Mar. 11: NMOVAR increased by 1 (quantity LWAVP added)
 !
 !  2. Purpose
@@ -682,7 +681,6 @@
 !  (54) [  'DISB']
 !  (55) [ 'DISSU']
 !  (56) [  'DISW']
-!  (57) [  'DISV']
 !  (58) [    'QP']
 !  (59) [   'BFI']
 !  (60) [  'GENE']
@@ -695,7 +693,7 @@
 !  (67) [ 'PROPT']
 !  (68) [ 'PROPS']
 !  (69) [  'RADS']
-!  (70) [   'NPL']
+!  (70) [  'WAGE']
 !  (71) [ 'LWAVP']
 !  (80) [   'DPM']
 !  (81) ['DPMSEA']
@@ -755,7 +753,6 @@
 !  (54) [ 'Sfric']
 !  (55) [ 'Ssurf']
 !  (56) [ 'Swcap']
-!  (57) [  'Sveg']
 !  (58) [    'Qp']
 !  (59) [   'BFI']
 !  (60) ['Genera']
@@ -768,7 +765,7 @@
 !  (67) ['Propth']
 !  (68) ['Propsi']
 !  (69) ['Radstr']
-!  (70) ['Nplant']
+!  (70) [  'WAge']
 !  (71) [ 'Lwavp']
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
@@ -822,7 +819,6 @@
 !  (54) [              'Bottom friction dissipation']
 !  (55) [                'Surf breaking dissipation']
 !  (56) [                 'Whitecapping dissipation']
-!  (57) [                   'Vegetation dissipation']
 !  (58) [                               'Peakedness']
 !  (59) [                      'Benjamin-Feir index']
 !  (60) [                        'Energy generation']
@@ -835,7 +831,7 @@
 !  (67) [                        'theta-propagation']
 !  (68) [                        'sigma-propagation']
 !  (69) [                         'Radiation stress']
-!  (70) [                            'Plants per m2']
+!  (70) [                                 'Wave Age']
 !  (71) [                         'Peak wave length']
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
@@ -892,7 +888,6 @@
 !  (54) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (55) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (56) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
-!  (57) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (58) [     ' ']
 !  (59) [     ' ']
 !  (60) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
@@ -905,7 +900,7 @@
 !  (67) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (68) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (69) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
-!  (70) [  '1/m2']
+!  (70) [    's ']
 !  (71) [CALCULAT] =UL
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
@@ -1004,7 +999,6 @@
 !  (54)  [  1]   Sfric
 !  (55)  [  1]   Ssurf
 !  (56)  [  1]   Swcap
-!  (57)  [  1]   Sveg
 !  (58)  [  1]   Qp
 !  (59)  [  1]   BFI
 !  (60)  [  1]   Genera
@@ -1017,7 +1011,6 @@
 !  (67)  [  1]   Propth
 !  (68)  [  1]   Propsi
 !  (69)  [  1]   Radstr
-!  (70)  [  1]   Nplant
 !  (71)  [  1]   Lwavp
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1069,7 +1062,6 @@
 !  (54)  [    -9.] Sfric
 !  (55)  [    -9.] Ssurf
 !  (56)  [    -9.] Swcap
-!  (57)  [    -9.] Sveg
 !  (58)  [    -9.] Qp
 !  (59)  [    -9.] BFI
 !  (60)  [    -9.] Genera
@@ -1082,7 +1074,6 @@
 !  (67)  [    -9.] Propth
 !  (68)  [    -9.] Propsi
 !  (69)  [    -9.] Radstr
-!  (70)  [    -9.] Nplant
 !  (71)  [    -9.] Lwavp
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1134,7 +1125,6 @@
 !  (54)  [     0.] Sfric
 !  (55)  [     0.] Ssurf
 !  (56)  [     0.] Swcap
-!  (57)  [     0.] Sveg
 !  (58)  [     0.] Qp
 !  (59)  [     0.] BFI
 !  (60)  [     0.] Genera
@@ -1147,7 +1137,6 @@
 !  (67)  [     0.] Propth
 !  (68)  [     0.] Propsi
 !  (69)  [     0.] Radstr
-!  (70)  [     0.] Nplant
 !  (71)  [     0.] Lwavp
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1199,7 +1188,6 @@
 !  (54)  [     0.] Sfric
 !  (55)  [     0.] Ssurf
 !  (56)  [     0.] Swcap
-!  (57)  [     0.] Sveg
 !  (58)  [     0.] Qp
 !  (59)  [     0.] BFI
 !  (60)  [     0.] Genera
@@ -1212,7 +1200,6 @@
 !  (67)  [     0.] Propth
 !  (68)  [     0.] Propsi
 !  (69)  [     0.] Radstr
-!  (70)  [     0.] Nplant
 !  (71)  [     0.] Lwavp
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
@@ -1264,7 +1251,6 @@
 !  (54)  [    0.1] Sfric
 !  (55)  [    0.1] Ssurf
 !  (56)  [    0.1] Swcap
-!  (57)  [    0.1] Sveg
 !  (58)  [     1.] Qp
 !  (59)  [  1000.] BFI
 !  (60)  [    0.1] Genera
@@ -1277,7 +1263,6 @@
 !  (67)  [    0.1] Propth
 !  (68)  [    0.1] Propsi
 !  (69)  [    0.1] Radstr
-!  (70)  [   100.] Nplant
 !  (71)  [   200.] Lwavp
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
@@ -1329,7 +1314,6 @@
 !  (54)  [  1000.] Sfric
 !  (55)  [  1000.] Ssurf
 !  (56)  [  1000.] Swcap
-!  (57)  [  1000.] Sveg
 !  (58)  [     1.] Qp
 !  (59)  [  1000.] BFI
 !  (60)  [  1000.] Genera
@@ -1342,7 +1326,6 @@
 !  (67)  [  1000.] Propth
 !  (68)  [  1000.] Propsi
 !  (69)  [  1000.] Radstr
-!  (70)  [  1000.] Nplant
 !  (71)  [  1000.] Lwavp
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
@@ -1450,10 +1433,10 @@
 !
 !  6. Parameter variables
 !
-!     NUMGRD [  11]  maximum number of grids
+!     NUMGRD [  10]  maximum number of grids
 !
       INTEGER NUMGRD
-      PARAMETER (NUMGRD = 11)
+      PARAMETER (NUMGRD = 10)
 !
 !  7. Local variables
 !
@@ -1470,7 +1453,6 @@
 ! grid(8): y-coordinate
 ! grid(9): x-coordinate
 ! grid(10): air-sea temperature difference
-! grid(11): number of plants per square meter
 !
 ! ALPG(NUMGRD)  [    0.] direction of the x-axis w.r.t. user coordinates
 ! COSPG(NUMGRD) [    1.] cos of ALPG
@@ -1517,7 +1499,6 @@
 ! STAGY(NUMGRD) [    0.] staggering of curv.lin. inp. grid w.r.t. comp. grid in Y
 ! VARAST        [   FAL] air-sea temp. diff. is/is not variable over space
 ! VARFR         [   FAL] friction coefficient is/is not variable over space
-! VARNPL        [   FAL] number of plants / m2 is/is not variable over space
 ! VARWI         [   FAL] wind velocity is/is not variable over space
 ! VARWLV        [   FAL] water level is/is not variable over space
 ! XPG(NUMGRD)   [    0.] x of origin
@@ -1540,8 +1521,7 @@
       REAL    XPG(NUMGRD), YOFFS,       YPG(NUMGRD)
       LOGICAL CVLEFT,      LXOFFS,      VARFR
       LOGICAL VARWI,       VARWLV,      DYNDEP
-      LOGICAL VARAST
-      LOGICAL VARNPL
+      LOGICAL VARAST,      VARNPL
 !
 !     *** variables for input files ***
 !
@@ -1566,6 +1546,7 @@
      &             IFLTIM(NUMGRD)
       REAL         IFLFAC(NUMGRD)
       CHARACTER*40 IFLFRM(NUMGRD)
+!
 !
 !  8. Subroutines and functions used
 !
@@ -1653,7 +1634,7 @@
 !
 !     MBOT   [  10] dimension of array PBOT
 !     MDIFFR [  10] dimension of array PDIFFR                             40.21
-!     MDISP  [   5] dimension for dissipation arrays                      40.67
+!     MDISP  [   4] dimension for dissipation arrays                      40.67
 !     MGENR  [   1] dimension for generation arrays                       40.85
 !     MICMAX [  10] max. number of points in comput. stencil
 !     MNUMS  [  40] dimension of array PNUMS
@@ -1723,8 +1704,6 @@
 !              set by command TABLE/BLOCK
 ! JDSXS  [  1] surf dissipation within array COMPDA
 !              set by command TABLE/BLOCK
-! JDSXV  [  1] vegetation dissipation within array COMPDA
-!              set by command TABLE/BLOCK
 ! JDSXW  [  1] whitecapping dissipation within array COMPDA
 !              set by command TABLE/BLOCK
 ! JDTM   [ 20] wave period correction within array COMPDA
@@ -1752,15 +1731,12 @@
 ! JMATL  [  3] within array SWMATR
 ! JMATR  [  2] within array SWMATR
 ! JMATU  [  4] within array SWMATR
-! JNPLA2 [   ] new number of plants / m2 within array COMPDA
-! JNPLA3 [   ] last read number of plants / m2 within array COMPDA
 ! JP4D   [  7] within array SWTSDA, quadruplet interactions
 ! JP4S   [  6] within array SWTSDA, quadruplet interactions
 ! JPBOT  [  1] bottom wave period within array COMPDA
 !              set by command TABLE/BLOCK
 ! JPBTFR [  4] within array SWTSDA, bottom friction
 ! JPTRI  [  8] within array SWTSDA, triad interactions
-! JPVEGT [  9] within array SWTSDA, vegetation dissipation
 ! JPWBRK [  5] within array SWTSDA, surf breaking
 ! JPWCAP [  3] within array SWTSDA, white capping
 ! JPWNDA [  1] within array SWTSDA, wind source term part A
@@ -1819,7 +1795,6 @@
 !              =MCMVAR+1, for command TABLE/BLOCK DISB (add JDSXB)
 !              =MCMVAR+1, for command TABLE/BLOCK DISSU (add JDSXS)
 !              =MCMVAR+1, for command TABLE/BLOCK DISW (add JDSXW)
-!              =MCMVAR+1, for command TABLE/BLOCK DISV (add JDSXV)
 !              =MCMVAR+1, for command TABLE/BLOCK GENE (add JGENR)
 !              =MCMVAR+1, for command TABLE/BLOCK GENW (add JGSXW)
 !              =MCMVAR+1, for command TABLE/BLOCK REDI (add JREDS)
@@ -1831,8 +1806,8 @@
 !              =MCMVAR+1, for command TABLE/BLOCK PROPS (add JTSXS)
 !              =MCMVAR+1, for command TABLE/BLOCK RADST (add JRADS)
 ! MLSWMAT [  2] within array LSWMAT
-! MSWMATR [ 14] within array SWMATR
-! MTSVAR [  9] within array TESTDA
+! MSWMATR [ 13] within array SWMATR
+! MTSVAR [  8] within array TESTDA
 !
       INTEGER             JABIN,       JABLK,       JAOLD
       INTEGER             JASTD2,      JASTD3,      JGAMMA,      JRESPL
@@ -1845,7 +1820,6 @@
       INTEGER             JDSXB
       INTEGER             JDSXS
       INTEGER             JDSXW
-      INTEGER             JDSXV
       integer             jdssw
       INTEGER             JGSXW,       JGENR
       INTEGER             JRSXQ,       JRSXT,       JREDS,       JRADS
@@ -1864,7 +1838,6 @@
       INTEGER             JWY2,        JWY3,        JZEL  ,      JPBOT
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
       INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
-      INTEGER             jutop                                                              MSL
 !
 !     *** location and dimensions of computational grid ***
 !
@@ -1885,7 +1858,6 @@
 !                  (mesh in frequency space runs from sigma/FRINTH to sigma*FRINTH)
 ! FULCIR [  TRUE]  spectral directions cover the full/part of circle
 ! ICOMP  [     1]  unused
-! ILMAX  [CALCUL]  maximum number of layers to be used in vegetation model
 ! IXCGRD [      ]  IX of points of computational stencil
 ! IYCGRD [      ]  IY of points of computational stencil
 ! KCGRD  [      ]  grid address of points of computational stencil
@@ -1927,7 +1899,6 @@
       INTEGER             MSC,         MSC4MA,      MSC4MI,      MTC
       INTEGER             MXC,         MYC,         NX,          NY
       INTEGER             NGRBND
-      INTEGER             ILMAX
       REAL                ALCP,        ALPC,        COSPC,       DDIR
       REAL                DX,          DXRP,        DY,          DYRP
       REAL                FRINTF,      FRINTH,      SHIG,        SINPC
@@ -1942,7 +1913,6 @@
 !     *** physical parameters ***
 !
 ! CASTD  [    0.] (constant) air-sea temperature difference
-! CDCAP  [99999.] maximum drag coefficient
 ! DEGRAD [CALCUL] =PI/180; constant to transform degrees to radians
 ! DNORTH [   90.] direction of the North w.r.t. x-axis of user coordinates
 !                 =nor; set by command SET ... [nor] ...
@@ -1974,7 +1944,7 @@
 ! WLEV   [    0.] water level
 !                 =level; set by command SET [level] ...
 !
-      REAL CASTD,       CDCAP
+      REAL CASTD
       REAL DEGRAD,      DNORTH,      GRAV,        PI
       REAL PI2,         PWTAIL(10),  RHO,         WLEV
 !
@@ -2058,6 +2028,7 @@
 !                 =2; for command BRE VAR ..., surf breaking according to Nelson
 !                 =3; for command BRE RUE ..., surf breaking according to Ruessink
 !                 =4; for command BRE TG ... , surf breaking according to Thornton and Guza
+!                 =5; for command BRE BIP ..., surf breaking according to biphase scaling
 ! ITERMX [      ] maximum number of iterations:
 !                 is set equal to MXITST in case of stationary computations
 !                 is set equal to MXITNS in case of nonstationary computations
@@ -2071,9 +2042,6 @@
 !                 =3; for command TRI [trfac] [cutfr], as in manual
 !                 =3; for command TRI LTA IMP ..., not documented in manual
 !                 =4; for command TRI LTA EXP ..., not documented in manual
-! IVEG   [     0] indicates vegetation dissipation term:
-!                 =0; no dissipation due to vegetation
-!                 =1; dissipation due to vegetation according to Dalrymple (1984)
 ! IWCAP  [     1] indicates whitecapping:
 !                 =0; for command GEN1 ...,
 !                 =0; for command GEN2 ...,
@@ -2108,7 +2076,6 @@
 !                 =5; for command GEN3 YAN ..., if wind is made active,
 !                 =5; for command GROWTH G3 YAN ..., not documented in manual,
 !                 not documented in manual
-! LADDS  [.fals.] indicates whether extra output is requested or not
 ! LSETUP [     0] =0; setup is not calculated
 !                 =1; setup is calculated
 !                 =2; setup is calculated with the boundary conditions from
@@ -2415,7 +2382,6 @@
       INTEGER             MXITST,      MXITNS,                   NCOR
       INTEGER             NSTATC,      NSTATM,      NUMOBS,      NCOMPT   40.41
       INTEGER             IDIFFR                                          40.21
-      INTEGER             IVEG                                            40.55
       INTEGER             IFRSRF                                          41.06
 !CTGA 111003:  Full ice implementation.  Parameter read in swanpre1.ftn
       INTEGER             IICE
@@ -2423,6 +2389,8 @@
       REAL                PSETUP(MSETUP),           PSHAPE(MSHAPE)
       REAL                PSURF(MSURF),             PTRIAD(MTRIAD)
       REAL                PWCAP(MWCAP),             PWIND(MWIND)
+      REAL                a1sds,a2sds,p1sds,p2sds,Cdsv,feswell
+      LOGICAL             UPWARDS,VECTOR_TAU,TRUE_U10
       REAL                SIGMAG
       REAL                SPPARM(MSPPAR),SY0,       U10
       REAL                WDIC,          WDIP,      HSRERR
@@ -2434,7 +2402,6 @@
       LOGICAL             ACUPDA
       LOGICAL             BNDCHK,      BNAUT,       ONED,        BRESCL
       LOGICAL             OFFSRC                                          40.80
-      LOGICAL             LADDS                                           40.85
       LOGICAL             CSETUP
 ! pswdis(mswdis) Parameters for Arduin et al (2008) swell dissipation as per WW3
 ! s1,s2,s3,Re,s5

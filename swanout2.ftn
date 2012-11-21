@@ -232,7 +232,7 @@
         IF (OVSVTY(IVTYPE) .LT. 3) THEN
 !                      scalar quantities
           IF (MATLAB) THEN                                                40.30
-             IF (IL.EQ.1 .OR. IVTYPE.LT.3 .OR. IVTYPE.EQ.52) THEN         40.94 40.41
+             IF (IL.EQ.1 .OR. IVTYPE.LT.3) THEN                           40.94 40.41
                 NAMVAR = OVSNAM(IVTYPE)                                   40.41
              ELSE                                                         40.41
                 NAMVAR = OVSNAM(IVTYPE)(1:LEN_TRIM(OVSNAM(IVTYPE)))//     40.41
@@ -1019,8 +1019,7 @@
         IF (NSTATM.EQ.1) WRITE (NREF, 102) CHTIME, 'date and time'
       ENDIF
       DO 70 IP = 1, MIP
-!NPUN       IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE ) THEN                     40.51
-!PUN       IF ( MNPROC.EQ.1 .OR. IONOD(IP).EQ.MYPROC ) THEN                   41.36
+       IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE ) THEN                     40.51
         LINKAR = 1
         OUTLIN = '    '
         IF (RTYPE.EQ.'TABI') THEN
@@ -1480,14 +1479,12 @@
         ENDIF                                                             40.80
         DEP = VOQ(IP,VOQR(4))
         IF (DEP.LE.0. .OR. EQREAL(DEP,OVEXCV(4))) THEN
-!NPUN          IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE )                       40.51
-!PUN          IF ( MNPROC.EQ.1 .OR. IONOD(IP).EQ.MYPROC )                     41.36
+          IF ( .NOT.PARLL .OR. IONOD(IP).EQ.INODE )                       40.51
      &       WRITE (NREF, 220) 'NODATA'                                   40.00
  220      FORMAT (A6)
           GOTO 290
         ENDIF
-!NPUN        IF ( PARLL .AND. IONOD(IP).NE.INODE ) GOTO 290                    40.51
-!PUN        IF ( MNPROC.GT.1 .AND. IONOD(IP).NE.MYPROC ) GOTO 290             41.36
+        IF ( PARLL .AND. IONOD(IP).NE.INODE ) GOTO 290                    40.51
         IF (ICUR.GT.0) THEN
           UX = VOQ(IP,VOQR(5))
           UY = VOQ(IP,VOQR(5)+1)
@@ -2170,6 +2167,44 @@
 !     |                                                           |
 !     | Programmer: Marcel Zijlema                                |
 !   --|-----------------------------------------------------------|--
+!        The Cray machine C916 at SARA Information Centre does not
+!        support the IEEE standard.
+!
+!     IF    :     first non-character in string
+!     IL    :     last non-character in string
+!     IMAGF :     a 4-byte imaginary flag. Possible values are:
+!                 0: there is only real data
+!                 1: the data has also an imaginary part
+!                 decimal digits encode storage information.
+!                 If the integer is represented as ABCD then:
+!                 "A" indicates the format to write the binary
+!                 data to a file on the machine. Possible values are:
+!                   0: Intel based machines (PC 386/486, Pentium)
+!                   1: Motorola 68000 based machines (Macintosh,
+!                      HP 9000, SPARC, Apollo, SGI)
+!                   2: VAX-D format
+!                   3: VAX-G format
+!                   4: Cray
+!                 "B" is always zero
+!                 "C" indicates which format the data is stored.
+!                  Possible values are:
+!                   0: double precision (64 bit) floating point numbers
+!                   1: single precision (32 bit) floating point numbers
+!                   2: 32-bit signed integers
+!                   3: 16-bit signed integers
+!                   4: 16-bit unsigned integers
+!                   5: 8-bit unsigned integers
+!                 "D" indicates the type of data (matrix).
+!                  Possible values:
+!                   0: numeric matrix
+!                   1: textual matrix
+!                   2: sparse  matrix
+!     INTSTR           Converts integer to string
+!     TXPBLA           Removes leading and trailing blanks in string
+!     SWI2B            Calculates 32-bit representation of an
+!                      integer number
+!     SWR2B            Calculates 32-bit representation of a
+!                      floating-point number
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
@@ -2184,6 +2219,8 @@
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
+!     name of matrix MATNAM
+!
 !
 !     A copy of the GNU General Public License is available at
 !     http://www.gnu.org/copyleft/gpl.html#SEC3

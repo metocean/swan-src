@@ -2501,3 +2501,96 @@
    5  FORMAT (' NOT IGNORED: ', A, 2X, A)
       RETURN
       END
+!****************************************************************
+!                                                               *
+      SUBROUTINE NXTREC                                                   !ESMF
+!                                                               *
+!****************************************************************
+!
+      USE OCPCOMM1                                                        40.41
+      USE OCPCOMM2                                                        40.41
+      USE OCPCOMM3                                                        40.41
+      USE OCPCOMM4                                                        40.41
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2008  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. AUTHORS
+!
+!     !ESMF: Tim Campbell
+!
+!  1. UPDATES
+!
+!     --
+!
+!  2. PURPOSE
+!
+!     Jumps to processing of the next input record.
+!
+!  3. METHOD
+!
+!  4. ARGUMENT VARIABLES
+!
+!  5. PARAMETER VARIABLES
+!
+!  6. LOCAL VARIABLES
+!
+!     IENT   : Number of entries into this subroutine
+!
+      INTEGER   IENT
+!
+!  8. SUBROUTINE USED
+!
+!  9. SUBROUTINES CALLING
+!
+! 10. ERROR MESSAGES
+!
+! 11. REMARKS
+!
+! 12. STRUCTURE
+!
+! 13. SOURCE TEXT
+!
+      SAVE IENT
+      DATA  IENT/0/
+      CALL STRACE (IENT,'NXTREC')
+      DO WHILE (SCAN(KAART,'&').NE.0)
+        IF (ITEST.GE.10) WRITE (PRINTF,910) TRIM(KAART)
+        CALL RDINIT
+        CALL NWLINE
+      ENDDO
+      IF (ITEST.GE.10) WRITE (PRINTF,910) TRIM(KAART)
+      CALL RDINIT
+      CALL NWLINE
+ 910  FORMAT (' SKIPLINE: ',A)
+      RETURN
+      END

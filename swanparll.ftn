@@ -28,7 +28,7 @@
 !
 !****************************************************************
 !
-      SUBROUTINE SWINITMPI
+      SUBROUTINE SWINITMPI ( COMM )
 !
 !****************************************************************
 !
@@ -88,7 +88,9 @@
 !
 !  4. Argument variables
 !
-!     ---
+!     COMM        optional input mpi communicator
+!
+      INTEGER, INTENT(IN), OPTIONAL :: COMM
 !
 !  5. Parameter variables
 !
@@ -137,7 +139,20 @@
 
 !MPI!     --- enroll in MPI
 !MPI
-!MPI      CALL MPI_INIT ( IERR )
+!MPI      IF ( PRESENT(COMM) ) THEN
+!MPI         CALL MPI_COMM_DUP(COMM, MPI_COMM_SWAN, IERR)
+!MPI      ELSE
+!MPI         CALL MPI_INIT ( IERR )
+!MPI         IF ( IERR.NE.MPI_SUCCESS ) THEN
+!MPI            CHARS(1) = INTSTR(IERR)
+!MPI            CALL TXPBLA(CHARS(1),IF1,IL1)
+!MPI            MSGSTR = 'MPI produces some internal error - '//
+!MPI     &               'return code is '//CHARS(1)(IF1:IL1)
+!MPI            CALL MSGERR ( 4, MSGSTR )
+!MPI            RETURN
+!MPI         END IF
+!MPI         CALL MPI_COMM_DUP(MPI_COMM_WORLD, MPI_COMM_SWAN, IERR)
+!MPI      END IF
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS(1) = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS(1),IF1,IL1)
@@ -154,7 +169,7 @@
 
 !MPI!     --- get node number INODE
 !MPI
-!MPI      CALL MPI_COMM_RANK ( MPI_COMM_WORLD, INODE, IERR )
+!MPI      CALL MPI_COMM_RANK ( MPI_COMM_SWAN, INODE, IERR )
       INODE = INODE + 1
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS(1) = INTSTR(IERR)
@@ -170,7 +185,7 @@
 !MPI
 !MPI!     --- determine total number of processes
 !MPI
-!MPI      CALL MPI_COMM_SIZE ( MPI_COMM_WORLD, NPROC, IERR )
+!MPI      CALL MPI_COMM_SIZE ( MPI_COMM_SWAN, NPROC, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS(1) = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS(1),IF1,IL1)
@@ -207,12 +222,13 @@
       END
 !****************************************************************
 !
-      SUBROUTINE SWEXITMPI
+      SUBROUTINE SWEXITMPI ( NOFINAL )
 !
 !****************************************************************
 !
 !MPI      USE MPI
       USE OCPCOMM4                                                        40.41
+      USE M_PARALL
 !
       IMPLICIT NONE
 !
@@ -266,8 +282,10 @@
 !
 !  4. Argument variables
 !
-!     ---
+!     NOFINAL     optional input flag to turn off calling MPI_FINALIZE
 !
+      LOGICAL, INTENT(IN), OPTIONAL :: NOFINAL
+
 !  6. Local variables
 !
 !     IERR    :   error value of MPI call
@@ -305,19 +323,23 @@
 !MPI      CALL MPI_INITIALIZED ( PARALMPI, IERR )
 !MPI      IF ( PARALMPI ) THEN
 !MPI
-!MPI         CALL MPI_BARRIER ( MPI_COMM_WORLD, IERR )
+!MPI         CALL MPI_BARRIER ( MPI_COMM_SWAN, IERR )
 !MPI
 !MPI         IF ( LEVERR.GE.4 ) THEN
 !MPI
 !MPI!        --- in case of a severe error abort all MPI processes
 !MPI
-!MPI            CALL MPI_ABORT ( MPI_COMM_WORLD, LEVERR, IERR )
+!MPI            CALL MPI_ABORT ( MPI_COMM_SWAN, LEVERR, IERR )
 !MPI
 !MPI         ELSE
 !MPI
 !MPI!        --- otherwise stop MPI operations on this computer
 !MPI
-!MPI            CALL MPI_FINALIZE ( IERR )
+!MPI            IF ( PRESENT(NOFINAL) ) THEN
+!MPI               IF ( .NOT. NOFINAL ) CALL MPI_FINALIZE ( IERR )
+!MPI            ELSE
+!MPI               CALL MPI_FINALIZE ( IERR )
+!MPI            END IF
 !MPI
 !MPI         END IF
 !MPI
@@ -436,7 +458,7 @@
       IF (LTRACE) CALL STRACE (IENT,'SWSYNC')
 !MPI!     --- blocks until all nodes have called this routine
 !MPI
-!MPI      CALL MPI_BARRIER ( MPI_COMM_WORLD, IERR )
+!MPI      CALL MPI_BARRIER ( MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS(1) = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS(1),IF1,IL1)
@@ -571,7 +593,7 @@
       IF (.NOT.PARLL) RETURN
 
 !MPI      CALL MPI_SEND ( IPTR, ILEN, ITYPE, IDEST-1,
-!MPI     &                ITAG, MPI_COMM_WORLD, IERR )
+!MPI     &                ITAG, MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS(1) = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS(1),IF1,IL1)
@@ -712,7 +734,7 @@
       IF (.NOT.PARLL) RETURN
 
 !MPI      CALL MPI_RECV ( IPTR, ILEN, ITYPE, ISOURCE-1, ITAG,
-!MPI     &                MPI_COMM_WORLD, ISTAT, IERR )
+!MPI     &                MPI_COMM_SWAN, ISTAT, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS(1) = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS(1),IF1,IL1)
@@ -848,7 +870,7 @@
 
 !TIMG      CALL SWTSTA(201)
 !MPI      CALL MPI_BCAST ( IPTR, ILEN, ITYPE, MASTER-1,
-!MPI     &                 MPI_COMM_WORLD, IERR )
+!MPI     &                 MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS,IF,IL)
@@ -1004,7 +1026,7 @@
 !MPI!     --- gather the array sizes to the master
 !MPI
 !MPI      CALL MPI_GATHER( IILEN, 1, SWINT, ICOUNT, 1, SWINT,
-!MPI     &                 MASTER-1, MPI_COMM_WORLD, IERR )
+!MPI     &                 MASTER-1, MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS,IF,IL)
@@ -1039,7 +1061,7 @@
 !MPI!         to the master
 !MPI
 !MPI      CALL MPI_GATHERV( IIPTR, IILEN, ITYPE, IOPTR, ICOUNT, IDSPLC,
-!MPI     &                  ITYPE, MASTER-1, MPI_COMM_WORLD, IERR )
+!MPI     &                  ITYPE, MASTER-1, MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS,IF,IL)
@@ -1291,7 +1313,7 @@
 
 !TIMG      CALL SWTSTA(202)
 !MPI      CALL MPI_ALLREDUCE ( IARR, ITEMP, ILEN, SWINT,
-!MPI     &                     ITYPRD, MPI_COMM_WORLD, IERR )
+!MPI     &                     ITYPRD, MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS,IF,IL)
@@ -1429,7 +1451,7 @@
 
 !TIMG      CALL SWTSTA(202)
 !MPI      CALL MPI_ALLREDUCE ( ARR, TEMP, ILEN, SWREAL,
-!MPI     &                     ITYPRD, MPI_COMM_WORLD, IERR )
+!MPI     &                     ITYPRD, MPI_COMM_SWAN, IERR )
 !MPI      IF ( IERR.NE.MPI_SUCCESS ) THEN
 !MPI         CHARS = INTSTR(IERR)
 !MPI         CALL TXPBLA(CHARS,IF,IL)
@@ -1859,12 +1881,14 @@
 !
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
+!     !ESMF: Tim Campbell
 !
 !  1. Updates
 !
 !     40.30, Feb. 03: New subroutine
 !     40.41, Jul. 04: determine global bounds in subdomains
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     !ESMF, Sep. 08: add setup for full-halo width block administration
 !
 !  2. Purpose
 !
@@ -1927,8 +1951,8 @@
      &             IX, IXOFF, IY, IYOFF, JOFFS(2,4), MXSIZ, MYSIZ,
      &             NNEIGH, NOVLU
       INTEGER      IWORK(3,NPROC),
-     &             ICRECV(NPROC,MAX(MXC,MYC)),
-     &             ICSEND(NPROC,MAX(MXC,MYC))
+     &             ICRECV(NPROC,MAX(MXC*IHALOX,MYC*IHALOY)),
+     &             ICSEND(NPROC,MAX(MXC*IHALOX,MYC*IHALOY))
       CHARACTER*20 INTSTR, CHARS
       CHARACTER*80 MSGSTR
 !
@@ -1953,7 +1977,6 @@
 !
 ! 12. Structure
 !
-!     intialize offsets to be used in searching for interfaces
 !     determine enclosing box of present subdomain
 !     if subdomain appears to be empty
 !        give warning and set empty bounding box
@@ -1961,8 +1984,10 @@
 !        extend enclosing box to include halo area
 !     localize global bounds in present subdomain
 !     determine size of enclosing box
-!     determine interface sizes:
+!     determine interface sizes
+!     (once for single-halo width and once for full-halo width):
 !
+!        intialize offsets to be used in searching for interfaces
 !        loop over global grid
 !           if point belongs to this part
 !              for each of the four sizes
@@ -1971,8 +1996,7 @@
 !                     if not yet in the list, add it
 !                     store position of neighbour
 !                     update number of overlapping unknowns
-!
-!     store block administration
+!        store block administration
 !
 ! 13. Source text
 !
@@ -1982,10 +2006,6 @@
 
 !     --- if not parallel, return
       IF (.NOT.PARLL) RETURN
-
-!     --- intialize offsets to be used in searching for interfaces
-
-      JOFFS = RESHAPE((/0,1,0,-1,1,0,-1,0/), (/2,4/))
 
 !     --- determine enclosing box of present subdomain
 
@@ -2059,9 +2079,15 @@
       MXSIZ = MXL - MXF + 1
       MYSIZ = MYL - MYF + 1
 
+!     --- build block administration for single-halo width
+
       IWORK  = 0
       ICRECV = 0
       ICSEND = 0
+
+!     --- intialize offsets to be used in searching for interfaces
+
+      JOFFS = RESHAPE((/0,1,0,-1,1,0,-1,0/), (/2,4/))
 
 !     --- determine interface sizes
 
@@ -2149,6 +2175,107 @@
          DO I = 1, NOVLU
             IBLKAD(ISTART      +I) = ICSEND(INB,I)
             IBLKAD(ISTART+NOVLU+I) = ICRECV(INB,I)
+         END DO
+         ISTART = ISTART + 2*NOVLU+1
+      END DO
+
+!     --- build block administration for full-halo width
+
+      IWORK  = 0
+      ICRECV = 0
+      ICSEND = 0
+
+!     --- intialize offsets to be used in searching for interfaces
+
+      JOFFS = RESHAPE( (/0,IHALOY,0,-IHALOY,IHALOX,0,-IHALOX,0/),
+     &                 (/2,4/) )
+
+!     --- determine interface sizes
+
+      DO IX = 1, MXC
+         DO IY = 1, MYC
+
+!           --- if point belongs to this part
+
+            IF ( IPOWN(IX,IY).EQ.INODE ) THEN
+
+!              --- for each of the four sizes
+
+               DO I = 1, 4
+
+                  IXOFF = JOFFS(1,I)
+                  IYOFF = JOFFS(2,I)
+
+!                 --- if a neighbouring subdomain is found there
+
+                  IF ( (IX+IXOFF).GT.0.AND.(IX+IXOFF).LE.MXC.AND.
+     &                 (IY+IYOFF).GT.0.AND.(IY+IYOFF).LE.MYC ) THEN
+
+                     IF ( IPOWN(IX+IXOFF,IY+IYOFF).NE.0.AND.
+     &                    IPOWN(IX+IXOFF,IY+IYOFF).NE.INODE ) THEN
+
+                        IC    = (IY      -MYF)*MXSIZ + (IX      -MXF+1)
+                        ICOFF = (IY+IYOFF-MYF)*MXSIZ + (IX+IXOFF-MXF+1)
+
+!                       --- find it in the list of neighbours
+
+                        IDOM = IPOWN(IX+IXOFF,IY+IYOFF)
+
+                        INB = 1
+  200                   IF ( INB.LE.NPROC .AND.
+     &                       IWORK(1,INB).NE.IDOM .AND.
+     &                       IWORK(1,INB).NE.0 )  THEN
+                           INB = INB + 1
+                           GOTO 200
+                        END IF
+
+                        IF ( INB.GT.NPROC ) THEN
+                          CALL MSGERR (4,'Found more neighbours than '//
+     &                            'subdomains in the full-partitioning')
+                          RETURN
+                        END IF
+
+!                       --- if not yet in the list, add it
+
+                        IF ( IWORK(1,INB).EQ.0 ) IWORK(1,INB) = IDOM
+
+!                       --- store position of neighbour with respect to
+!                           present subdomain
+
+                        IWORK(2,INB) = I
+
+!                       --- update number of overlapping unknowns
+
+                        IWORK(3,INB) = IWORK(3,INB) + 1
+
+                        ICSEND(INB,IWORK(3,INB)) = IC
+                        ICRECV(INB,IWORK(3,INB)) = ICOFF
+
+                     END IF
+
+                  END IF
+
+               END DO
+
+            END IF
+
+         END DO
+      END DO
+
+!     --- store block administration
+
+      NNEIGH    = COUNT(IWORK(1,:)>0)
+      FBLKAD(1) = NNEIGH
+      ISTART    = 3*NNEIGH+2
+      DO INB = 1, NNEIGH
+         FBLKAD(3*INB-1) = IWORK(1,INB)
+         FBLKAD(3*INB  ) = IWORK(2,INB)
+         FBLKAD(3*INB+1) = ISTART
+         NOVLU           = IWORK(3,INB)
+         FBLKAD(ISTART)  = NOVLU
+         DO I = 1, NOVLU
+            FBLKAD(ISTART      +I) = ICSEND(INB,I)
+            FBLKAD(ISTART+NOVLU+I) = ICRECV(INB,I)
          END DO
          ISTART = ISTART + 2*NOVLU+1
       END DO
@@ -2274,6 +2401,8 @@
 
       IF (.NOT.ALLOCATED(IBLKAD)) ALLOCATE(IBLKAD(41+20*MAX(MXC,MYC)))
       IBLKAD = 0
+      IF (.NOT.ALLOCATED(FBLKAD)) ALLOCATE(FBLKAD(41+20*MAX(MXC,MYC)))
+      FBLKAD = 0
 
 !     --- store the original values of MXC, MYC and MCGRD of
 !         global computational grid
@@ -2504,6 +2633,194 @@
 
          DO K = 1, NOVLU
             FIELD(KGRPNT(IBLKAD(ISTART+NOVLU+K))) = WORK(K)
+         END DO
+
+      END DO
+
+!TIMG      CALL SWTSTO(203)
+
+      RETURN
+      END
+!****************************************************************
+!
+      SUBROUTINE SWEXCHF ( FIELD, KGRPNT )
+!
+!****************************************************************
+!
+      USE OCPCOMM4                                                        40.41
+      USE SWCOMM3                                                         40.41
+      USE M_PARALL                                                        40.31
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmer: Marcel Zijlema                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 2008  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     !ESMF: Tim Campbell
+!
+!  1. Updates
+!
+!     !ESMF, Sep. 08: New subroutine (based on SWEXCHG)
+!
+!  2. Purpose
+!
+!     Updates geographical field array through exchanging
+!     values between neighbouring subdomains (for full-halo width)
+!
+!  3. Method
+!
+!     Made use of MPI by means of SWSENDNB and SWRECVNB
+!     and also block administration (stored in FBLKAD)
+!
+!  4. Argument variables
+!
+!     FIELD       geographical field array for which 'halo' values must
+!                 be copied from neighbouring subdomains
+!     KGRPNT      indirect addressing for grid points
+!
+      INTEGER KGRPNT(MXC*MYC)
+      REAL    FIELD(MCGRD)
+!
+!  6. Local variables
+!
+!     IDOM  :     subdomain number
+!     IENT  :     number of entries
+!     INB   :     neighbour counter
+!     ISTART:     pointer in array IBLKAD
+!     ITAG  :     message tag for sending and receiving
+!     K     :     loop counter
+!     NNEIGH:     number of neighbouring subdomains
+!     NOVLU :     number of overlapping unknowns
+!     WORK  :     work array to store data to be sent to or
+!                 received from neighbour
+!
+      INTEGER IDOM, IENT, INB, ISTART, ITAG, K, NNEIGH, NOVLU
+      REAL    WORK(MAX(MXC*IHALOX,MYC*IHALOY))
+!
+!  8. Subroutines used
+!
+!     STPNOW           Logical indicating whether program must
+!                      terminated or not
+!     STRACE           Tracing routine for debugging
+!     SWRECVNB         Data is received from a neighbour
+!     SWSENDNB         Data is sent to a neighbour
+!TIMG!     SWTSTA           Start timing for a section of code
+!TIMG!     SWTSTO           Stop timing for a section of code
+!
+      LOGICAL STPNOW
+!
+!  9. Subroutines calling
+!
+!     ---
+!
+! 10. Error messages
+!
+!     ---
+!
+! 11. Remarks
+!
+!     ---
+!
+! 12. Structure
+!
+!     if not parallel, return
+!
+!     for all neighbouring subdomains do
+!        get subdomain number, pointer and size
+!        store data to be sent in array WORK
+!        send array WORK
+!
+!     for all neighbouring subdomains do
+!        get subdomain number, pointer and size
+!        receive next array and store in WORK
+!        store the received data
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'SWEXCHF')
+
+!     --- if not parallel, return
+      IF (.NOT.PARLL) RETURN
+
+!TIMG      CALL SWTSTA(203)
+
+      NNEIGH = FBLKAD(1)
+
+!     --- for all neighbouring subdomains do
+
+      DO INB = 1, NNEIGH
+
+!        --- get subdomain number, pointer and size
+
+         IDOM   = FBLKAD(3*INB-1)
+         ISTART = FBLKAD(3*INB+1)
+         NOVLU  = FBLKAD(ISTART)
+
+!        --- store data to be sent in array WORK
+
+         DO K = 1, NOVLU
+            WORK(K) = FIELD(KGRPNT(FBLKAD(ISTART+K)))
+         END DO
+
+!        --- send array WORK
+
+         ITAG = 2
+         CALL SWSENDNB ( WORK, NOVLU, SWREAL, IDOM, ITAG )
+         IF (STPNOW()) RETURN
+
+      END DO
+
+!     --- for all neighbouring subdomains do
+
+      DO INB = 1, NNEIGH
+
+!        --- get subdomain number, pointer and size
+
+         IDOM   = FBLKAD(3*INB-1)
+         ISTART = FBLKAD(3*INB+1)
+         NOVLU  = FBLKAD(ISTART)
+
+!        --- receive next array and store in WORK
+
+         ITAG  = 2
+         CALL SWRECVNB ( WORK, NOVLU, SWREAL, IDOM, ITAG )
+         IF (STPNOW()) RETURN
+
+!        --- store the received data
+
+         DO K = 1, NOVLU
+            FIELD(KGRPNT(FBLKAD(ISTART+NOVLU+K))) = WORK(K)
          END DO
 
       END DO
@@ -3352,7 +3669,7 @@
                IF ( ABS(DIF).LT.0.5*DT .AND. CORQ%OQR(2).LT.0. ) THEN
                   CORQ%OQR(1) = TIMCO
                ELSE IF ( CORQ%OQR(2).GT.0. .AND. TIMCO.GE.TNEXT ) THEN
-                  CORQ%OQR(1) = TNEXT + CORQ%OQR(2)
+                  CORQ%OQR(1) = TIMCO + CORQ%OQR(2)
                ELSE
                   GOTO 50
                END IF
@@ -3436,46 +3753,6 @@
                XCLMAX = RTMP2
                YCLMIN = RTMP3
                YCLMAX = RTMP4
-!PUN
-!PUN!              --- find global vertex index for output locations
-!PUN!                  stored in array XC
-!PUN
-!PUN               IF ( .NOT.LCOMPGRD ) THEN
-!PUN                  XC = -1.
-!PUN                  YC =  0.
-!PUN                  FILENM = TRIM(LOCALDIR)//DIRCH2//'output.set'
-!PUN                  ILPOS  = LEN(TRIM(LOCALDIR))
-!PUN                  DO IPROC = 1, NPROC
-!PUN                     WRITE(FILENM(ILPOS-3:ILPOS),'(I4.4)') IPROC-1
-!PUN                     IUNIT = HIOPEN+NREOQ*(NPROC+1)+IPROC
-!PUN                     INQUIRE ( FILE=FILENM, EXIST=EXIST, OPENED=OPENED )
-!PUN                     IF ( .NOT.OPENED ) THEN
-!PUN                        IF (EXIST) THEN
-!PUN                           OPEN ( UNIT=IUNIT, FILE=FILENM )
-!PUN                        ELSE
-!PUN                           CALL MSGERR( 4,
-!PUN     &                                'file output.set does not exist' )
-!PUN                           RETURN
-!PUN                        ENDIF
-!PUN                     ENDIF
-!PUN                     READ(IUNIT,'(2I8)') ITMP1, ITMP2
-!PUN                     IF (ITMP1.EQ.IRQ) THEN
-!PUN                        DO IP = 1, ITMP2
-!PUN                           READ (IUNIT,'(2I8)') ITMP3, ITMP4
-!PUN                           XC(ITMP3) = REAL(ITMP4) - 1.
-!PUN                        ENDDO
-!PUN                     ELSE
-!PUN                        CALL MSGERR( 4,
-!PUN     &        'inconsistency found in SWCOLOUT: wrong request number ' )
-!PUN                        RETURN
-!PUN                     ENDIF
-!PUN                  ENDDO
-!PUN               ELSE
-!PUN                  DO IP = 1, MIP
-!PUN                     XC(IP) = REAL(IP) - 1.
-!PUN                     YC(IP) = 0.
-!PUN                  ENDDO
-!PUN               ENDIF
 
 !              --- correct problem coordinates with offset values
 
@@ -4405,8 +4682,6 @@
          ILPOS  = INDEX(FILENM, '-0')
          FILENM = FILENM(1:ILPOS-1)
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
-         MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                       40.41
-     &            INDEX (FILENM, '.mat' ).NE.0                            40.41
 
 !        --- if it is not open or already open thru another request
 
@@ -4422,7 +4697,9 @@
             END IF
             OQI(1) = NREF
 
-            IF (MATLAB .AND. .NOT.OPENED) THEN
+            MATLAB = INDEX( FILENM, '.MAT' ).NE.0 .OR.                    40.41
+     &               INDEX (FILENM, '.mat' ).NE.0                         40.41
+            IF (MATLAB) THEN
                CLOSE(NREF)
                OPEN(UNIT=NREF, FILE=FILENM, FORM='UNFORMATTED',
      &              STATUS='REPLACE',
@@ -4558,7 +4835,7 @@
 
          IF (OVSVTY(IVTYPE) .LT. 3) THEN
             IF (MATLAB) THEN
-               IF (IL.EQ.1 .OR. IVTYPE.LT.3 .OR. IVTYPE.EQ.52) THEN       40.94 40.41
+               IF (IL.EQ.1) THEN                                          40.41
                   NAMVAR = OVSNAM(IVTYPE)                                 40.41
                ELSE                                                       40.41
                   NAMVAR = OVSNAM(IVTYPE)(1:LEN_TRIM(OVSNAM(IVTYPE)))//   40.41

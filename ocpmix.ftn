@@ -507,7 +507,7 @@
 !
 !  5. PARAMETER VARIABLES
 !
-!  6. LOCAL VARIABLES
+!  6. LOCAL VARIABLESC
 !
       INTEGER    ITIME(6)
 !
@@ -525,7 +525,7 @@
 ! 12. STRUCTURE
 !
 ! 13. SOURCE TEXT
-!                                                                         30.00
+!                                              30.00
       CALL DTINTI (TIMESC, ITIME)
       CALL DTTIST (IOPT, TSTRNG, ITIME)
       DTTIWR = TSTRNG(1:18)                                               40.02
@@ -675,6 +675,7 @@
       CALL INKEYW ('STA', '   ')
       IF (KEYWIS('SERI')) THEN
         CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
+        FILENM = TRIM(WRKDIR)//DIRCH1//TRIM(FILENM)
 !       open namelist file and read first datafile name
         CALL FOR (NDSL, FILENM, 'OF', IOSTAT)                             40.00
         IF (STPNOW()) RETURN                                              34.01
@@ -683,6 +684,15 @@
         CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')                         40.00
       ENDIF
 !PUN      IF (LOCAL) FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)            40.95
+
+!-      FILENM = TRIM(WRKDIR)//DIRCH1//TRIM(FILENM)
+!+      FILENM = TRIM(FILENM)
+!ER: Removed WRKDIR and DIRCH1 because it was making it impossible for me 
+!ER:    to input a filename such as /net/tarawa/export/data/rogers/realtime/GMEX/DBDB2.grd 
+!ER:    (it would change it to ./net/tarawa/export/data/rogers/realtime/GMEX/DBDB2.grd)
+!ER: This edit should not be used in ESMF branch of code!
+
+      FILENM = TRIM(FILENM)
 !
       IF (FILENM.NE.OLDFIL) THEN
         BNEW = .TRUE.
@@ -1052,6 +1062,7 @@
       IF (NUMFIL .GE. 2) GO TO 911
       IF (NDSL.GT.0) THEN
         READ (NDSL, '(A)', END=930) FILENM                                40.13
+        FILENM = TRIM(WRKDIR)//DIRCH1//TRIM(FILENM)
         IF (IDFM.NE.-1) THEN
           IOERR = 0
           CALL FOR (NDSD, FILENM, 'OF', IOERR)                            40.02
@@ -1258,7 +1269,6 @@
       USE OCPCOMM3                                                        40.41
       USE OCPCOMM4                                                        40.41
       USE M_PARALL                                                        40.31
-!PUN      USE SIZES                                                           40.95
 !
       IMPLICIT NONE
 !
@@ -1387,8 +1397,6 @@
   13         FORMAT('-',I3.3)                                             40.30
           END IF                                                          40.30
 !
-!PUN          ERRFNM = TRIM(LOCALDIR)//DIRCH2//TRIM(ERRFNM)                   40.95
-!PUN!
           IERRF = 17                                                      40.13
           OPEN (UNIT=IERRF, FILE=ERRFNM, FORM='FORMATTED')                40.13
         ENDIF
@@ -1472,8 +1480,6 @@
 !
 !  8. SUBROUTINE USED
 !
-!$    LOGICAL,EXTERNAL :: OMP_IN_PARALLEL
-!
 !  9. SUBROUTINES CALLING
 !
 ! 10. ERROR MESSAGES
@@ -1494,7 +1500,6 @@
         STPNOW = .FALSE.
       END IF
       IF (MAXERR.EQ.-1) STPNOW = .FALSE.
-!$    IF (OMP_IN_PARALLEL()) STPNOW = .FALSE.
 !
       RETURN
       END
@@ -1850,7 +1855,6 @@
                CALL MSGERR (4,
      &         'File cannot be opened/does not exist: '//DDNAME_L)        40.03
                IOSTAT = IEEXST
-               RETURN
             END IF
             IF (OPENED) THEN
                IF (IOSTAT.GT.-1)
@@ -1859,18 +1863,12 @@
                IUNIT = IUTTM
                RETURN
             ENDIF
-!ADC  60        CONTINUE                                                      41.20
 !           Assign free unit number
             IF (IFUN.EQ.0) THEN
                IFUN = FUNLO
             ELSE
                IFUN = IFUN + 1
             ENDIF
-!ADC!           the following unit numbers are reserved for ADCIRC            41.20
-!ADC            IF ( IFUN.EQ.13 ) GOTO 60                                     41.20
-!ADC            IF ( IFUN.EQ.14 ) GOTO 60                                     41.20
-!ADC            IF ( IFUN.EQ.15 ) GOTO 60                                     41.20
-!ADC            IF ( IFUN.EQ.22 ) GOTO 60                                     41.20
             IUNIT = IFUN
             IF (IUNIT .GT. FUNHI) THEN
                IF (IOSTAT.GT.-2) CALL MSGERR (3, 'All free units used')
@@ -2195,8 +2193,6 @@
 !
       LENLIN = LEN(RELINE)
       LCHSTR = .FALSE.
-      RITM   = 1
-      ICR1   = 1
       DO IITM = 1, NUMITM
         DATITM(IITM) = '    '
       ENDDO

@@ -316,10 +316,12 @@
 !  0. Authors
 !
 !     40.17: IJsbrand Haagsma
+!     40.41: Marcel Zijlema
 !
 !  1. Updates
 !
 !     Feb. 01: New Module
+!     Aug. 04: added linked list for RIAM
 !
 !  2. Purpose
 !
@@ -358,6 +360,15 @@
       REAL, PUBLIC, SAVE, ALLOCATABLE :: CNL4_1(:)
       REAL, PUBLIC, SAVE, ALLOCATABLE :: CNL4_2(:)
       REAL, PUBLIC, SAVE, ALLOCATABLE :: LAMBDA(:)
+
+      TYPE RIAMDAT
+         INTEGER                :: II(3), JJ(3)
+         REAL                   :: SSS, DI(3), DJ(3)
+         TYPE(RIAMDAT), POINTER :: NEXTRIAM
+      END TYPE RIAMDAT
+
+      TYPE(RIAMDAT), SAVE, TARGET  :: FRIAM
+      TYPE(RIAMDAT), SAVE, POINTER :: CURRIAM
 
 !  8. Subroutines and functions used
 !
@@ -859,6 +870,7 @@
 !     IAMMASTER: indicate whether this CPU is master or not
 !     INODE   : rank of present node
 !     NPROC   : number of nodes
+!     MPI_COMM_SWAN : MPI communicator for SWAN
 !     PARLL   : flag to denote run as parallel (.TRUE.) or not (.FALSE.)
 !     SWINT   : MPI datatype for integers
 !     SWMAX   : MPI collective maximum operation
@@ -867,6 +879,7 @@
 !     SWSUM   : MPI collective summation
 !
       INTEGER INODE, NPROC
+      INTEGER MPI_COMM_SWAN
       INTEGER SWINT, SWREAL
       INTEGER SWMAX, SWMIN, SWSUM
       LOGICAL IAMMASTER, PARLL
@@ -888,6 +901,8 @@
 !                                          to be sent to neighbour
 !               pos. 3*m+3+n ... 3*m+2*n+2 position of unknown in array
 !                                          to be received from neighbour
+!     FBLKAD  : administration array for subdomain interfaces (full-halo
+!               width version)
 !     IWEIG   : weights to determine load per part
 !     KGRBGL  : array containing all boundary points in global domain
 !               (+ 2 extra zeros as area separator for all separated areas)
@@ -931,7 +946,7 @@
 
       LOGICAL LMXF, LMXL, LMYF, LMYL
 
-      INTEGER, SAVE, ALLOCATABLE :: IBLKAD(:)
+      INTEGER, SAVE, ALLOCATABLE :: IBLKAD(:), FBLKAD(:)
       INTEGER, SAVE, ALLOCATABLE :: IWEIG(:)
       INTEGER, SAVE, ALLOCATABLE :: KGRPGL(:,:), KGRBGL(:)
       REAL   , SAVE, ALLOCATABLE :: XGRDGL(:,:), YGRDGL(:,:)

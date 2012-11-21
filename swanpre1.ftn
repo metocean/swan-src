@@ -109,7 +109,6 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
-!     40.55: Marcel Zijlema
 !     40.80: Marcel Zijlema
 !     40.87: Marcel Zijlema
 !
@@ -216,6 +215,7 @@
 !     40.23, Sep. 02: coefficient urslim must be stored in PTRIAD(5)
 !     40.23, Nov. 02: keyword FLUXLIM added
 !     40.30, Feb. 03: introduction distributed-memory approach using MPI
+!     40.30, Mar. 03: extension to cumulative steepness method
 !     40.08, Mar. 03: warning message added for use of curvilinear
 !                     coordinate system
 !     40.31, Dec. 03: removing POOL-mechanism
@@ -1120,8 +1120,16 @@
       ENDIF
 !
 !     ------------------------------------------------------------------
+!
 !     HOTFile    write current wave field to file for future use as
 !     initial cond.
+!
+! ============================================================================
+!
+!     HOTFile  'FNAME'                                                    40.00
+!
+! ============================================================================
+!
       IF (KEYWIS('REST') .OR. KEYWIS ('BACK') .OR. KEYWIS('HOTF')         40.00
      &    .OR. KEYWIS('SAVE')) THEN                                       40.00
         IF (MXC.LE.0 .AND. OPTG.NE.5) THEN                                40.80
@@ -1419,12 +1427,6 @@
           ALPC = PI2 * (ALTMP - NINT(ALTMP))
           CVLEFT = .TRUE.                                                 40.00
         ENDIF                                                             30.21
-!PUN!
-!PUN        IF (OPTG.NE.5) THEN                                               40.95
-!PUN           CALL MSGERR(4,
-!PUN     &               'Structured grid is not supported in parallel run')  40.95
-!PUN           RETURN                                                         40.95
-!PUN        ENDIF                                                             40.95
 !
         IF (OPTG.EQ.5) GOTO 555                                           40.80
 !
@@ -1734,7 +1736,10 @@
           CALL INREAL ('CDD'    , PNUMS(6) , 'UNC', 0.)
           CALL INREAL ('CDLIM'  , PNUMS(17), 'UNC', 0.)                   30.80
           IF (PNUMS(17).LT.0.) IREFR = 1                                  30.80
-          IF (PNUMS(17).GT.0.) IREFR = -1                                 40.02
+          IF (PNUMS(17).GT.0.)THEN                                        40.58
+!            IREFR = -1                                                   40.02
+             CALL MSGERR(2, 'Refraction limiter de-implemented')          40.58
+          END IF                                                          40.58
           IF (EQREAL(PNUMS(17),0.)) THEN                                  30.80
             IREFR = 0                                                     30.80
             CALL MSGERR(0, 'Refraction deactivated')                      40.02
@@ -2065,13 +2070,14 @@
 !           | -> CONstant [alpha] [gamma]                                      |
 !           |                                                                  |
 !           |    VARiable [alpha] [gammin] [gammax] [gamneg] [coeff1] [coeff2] |
-! BREaking <                                                                    > &
-!           |    RUEssink [alpha] [a] [b]                                      |
+!           |                                                                  |
+! BREaking <     RUEssink [alpha] [a] [b]                                       > &
 !           |
 !           |    NKD [alpha] [gamma0] [alpha0] [beta1] [beta2] [delta1]  &     |
 !           |        [delta2] [n_low] [n_high] [R_low] [R_high] [a]            |
 !           |                                                                  |
 !           |    TG [alpha] [gamma] [pown]                                     |
+!           !    BIPhase  [alpha] [pown] [bref]                                |
 !
 !       ( FREQDep [power] [fmin] [fmax] ) (fmin and fmax not documented)
 !
@@ -2134,21 +2140,27 @@
 !
 !     ------------------------------------------------------------------
 !
-!     WCAP        parameters whitecapping (NOT documented)
+!     WCAP        parameters whitecapping
 !
 ! =============================================================
 !
-!        | -> KOMen   [cds2] [stpm] [powst] [delta] [powk]                34.00
-!        |
-!        |    JANSsen [cds1]  [delta] [pwtail]
-!        |
-!        |    LHIG    [cflhig]
-!        |
-! WCAP  <     BJ      [bjstp] [bjalf]
-!        |
-!        |    KBJ     [bjstp] [bjalf] [kconv]
-!        |                                                                40.30
-!        |    AB      [cds2] [br] [p0] [powst] [powk]                     40.53
+!        | ->KOMen    [cds2] [stpm] [powst] [delta] [powk]                       |             34.00
+!        |                                                                       |
+!        |   JANSsen  [cds1]  [delta] [pwtail]                                   |
+! WCAP  <                                                                        >    (NOT documented)
+!        |   LHIG     [cflhig]                                                   |
+!        |                                                                       |
+!        |   BJ       [bjstp] [bjalf]                                            |
+!        |                                                                       |
+!        |   KBJ      [bjstp] [bjalf] [kconv]                                    |
+!        |                                                                       |             40.30
+!        |   CSM      [cst] [pow]                                                |             40.30
+!        |                                                                       |
+!        |   AB       [cds2] [br] [p0] [powst] [powk]                            |             40.53
+!        |                                                             | UP   |    |
+!        |   BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [Cdsv] [feswell] <       | >  |
+!        |                                                             | DOWN |    |
+
 !
 ! =============================================================
 !
@@ -2156,16 +2168,23 @@
         CALL INKEYW ('STA','KOM')                                         970220
         IF (KEYWIS ('KOM')) THEN
 !         *** whitecapping according to Komen et al. (1984) ***
+
+! error checking in case user has already selected Babanin physics
+          IF(IWCAP.EQ.8)THEN
+             CALL MSGERR(4,'You cannot select both Komen and Babanin phy
+     &sics.')
+          END IF
+
           IWCAP = 1
-          CALL INREAL ('CDS2',  PWCAP(1),  'UNC', 0.)                     20.73
-          CALL INREAL ('STPM',  PWCAP(2),  'UNC', 0.)                     20.73
-          CALL INREAL ('POWST', PWCAP(9),  'UNC', 0.)                     34.00
+          CALL INREAL ('CDS2', PWCAP(1), 'UNC', 0.)                       20.73
+          CALL INREAL ('STPM',  PWCAP(2), 'UNC', 0.)                      20.73
+          CALL INREAL ('POWST', PWCAP(9), 'UNC', 0.)                      34.00
           CALL INREAL ('DELTA', PWCAP(10), 'UNC', 0.)                     34.00
-          CALL INREAL ('POWK',  PWCAP(11), 'UNC', 0.)                     34.00
+          CALL INREAL ('POWK', PWCAP(11), 'UNC', 0.)                      34.00
         ELSE IF ( KEYWIS ('JANS')) THEN
 !         *** whitecapping according to Janssen (1989, 1991) ***
           IWCAP = 2
-          CALL INREAL ('CDS1',  PWCAP(3), 'UNC', 0.)                      20.73
+          CALL INREAL ('CDS1', PWCAP(3), 'UNC', 0.)                       20.73
           CALL INREAL ('DELTA', PWCAP(4), 'UNC', 0.)
 !
 !         Recalculate coefficients that are actually used in the          40.02
@@ -2197,6 +2216,11 @@
           CALL INREAL ('BJSTP' , PWCAP(6), 'UNC', 0.)
           CALL INREAL ('BJALF' , PWCAP(7), 'UNC', 0.)
           CALL INREAL ('KCONV' , PWCAP(8), 'UNC', 0.)
+        ELSE IF ( KEYWIS ('CSM')) THEN                                    40.30
+!         *** whitecapping according to cumulative steepness method  ***  40.30
+          IWCAP = 6                                                       40.30
+          CALL INREAL ('CST', PWCAP(12), 'UNC', 0.)                       40.30
+          CALL INREAL ('POW', PWCAP(13), 'UNC', 0.)                       40.30
         ELSE IF ( KEYWIS ('AB')) THEN                                     40.53
 !         *** whitecapping according to Alves and Banner (2003) ***       40.53
           IWCAP = 7                                                       40.53
@@ -2205,6 +2229,32 @@
           CALL INREAL ('P0',    PWCAP(10), 'STA', 4.)                     40.53
           CALL INREAL ('POWST', PWCAP(9),  'STA', 0.)                     40.53
           CALL INREAL ('POWK',  PWCAP(11), 'STA', 0.)                     40.53
+        ELSE IF ( KEYWIS ('BABANIN')) THEN
+!         *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
+          IWCAP = 8
+          CALL INREAL ('a1sds', a1sds, 'REQ', 0.0)
+          CALL INREAL ('a2sds', a2sds, 'REQ', 0.0)
+          CALL INREAL ('p1sds', p1sds, 'REQ', 0.0)
+          CALL INREAL ('p2sds', p2sds, 'REQ', 0.0)
+          CALL INREAL ('Cdsv', Cdsv, 'REQ', 0.0)
+          CALL INREAL ('feswell', feswell, 'REQ', 0.0)
+          CALL INKEYW ('REQ', ' ')
+          IF (KEYWIS ('UP')) THEN
+             UPWARDS = .TRUE.
+          ELSE IF (KEYWIS ('DOWN')) THEN
+             UPWARDS = .FALSE.
+          ELSE
+             CALL WRNKEY
+          ENDIF
+          CALL INKEYW ('STA', ' ')
+          IF (KEYWIS('VECTAU')) THEN 
+             VECTOR_TAU=.TRUE.
+          ENDIF
+          CALL INKEYW ('STA', ' ')
+          IF (KEYWIS('TRUE10')) THEN 
+             TRUE_U10=.TRUE.
+          ENDIF
+
         ELSE
           CALL WRNKEY
         ENDIF
@@ -2443,13 +2493,18 @@
 !
 ! ======================================================================================
 !
-!       |    JANSsen [cds1] [delta]                        |              40.02
-!       |                                                  |
-!       | -> KOMen   [cds2] [stpm]                         |              34.00
-! GEN3 <                                                    > (AGROW [a])
-!       |    YAN     (NOT documented)                      |
-!       |                                                  |
-!       |    WESTHuysen [cds2] [br] [p0] [powst] [powk]    |              40.53
+!       |   JANSsen [cds1] [delta]                                                             |              40.02
+! GEN3 <                                                                                        >     &
+!       | ->KOMen   [cds2] [stpm] [powst] [delta] [powk]                                       |              34.00
+!       |                                                                                      |
+!       |   YAN     (NOT documented)                                                           |
+!       |                                                                                      |
+!       |   WESTHuysen [cds2] [br] [p0] [powst] [powk]                                         |              40.53
+!       |                                                             | UP   |                   |
+!       |   BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [Cdsv] [feswell] <       | (NOT documented) >|
+!       |                                                             | DOWN |                   |
+!
+!  (QUADrupl [iquad] [limiter] [lambda] [cnl4] [csh1] [csh2] [csh3]) (AGROW [a])
 !
 ! ======================================================================================
 !
@@ -2462,7 +2517,7 @@
           IF (LWINDR .GT. 0) IWIND = LWINDM                               30.1x
 !         *** whitecapping according to Janssen (1989, 1991) ***
           IWCAP = 2
-          CALL INREAL ('CDS1',  PWCAP(3), 'UNC', 0.)                      20.73
+          CALL INREAL ('CDS1', PWCAP(3), 'UNC', 0.)                       20.73
           CALL INREAL ('DELTA', PWCAP(4), 'UNC', 0.)
 !
 !         Recalculate coefficientes that are actually used in the         40.02
@@ -2495,21 +2550,76 @@
           CALL INREAL ('P0',    PWCAP(10), 'STA', 4.)                     40.53
           CALL INREAL ('POWST', PWCAP(9),  'STA', 0.)                     40.53
           CALL INREAL ('POWK',  PWCAP(11), 'STA', 0.)                     40.53
+        ELSE IF (KEYWIS('BABANIN')) THEN
+!         *** wind according to Rogers et al. (2011) based on work of Donelan, Babanin, Tsagareli and others.
+          LWINDM = 8
+          IF (LWINDR .GT. 0) IWIND = LWINDM
+!         *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
+          IWCAP = 8
+          CALL INREAL ('a1sds', a1sds, 'REQ', 0.0)
+          CALL INREAL ('a2sds', a2sds, 'REQ', 0.0)
+          CALL INREAL ('p1sds', p1sds, 'REQ', 0.0)
+          CALL INREAL ('p2sds', p2sds, 'REQ', 0.0)
+          CALL INREAL ('Cdsv', Cdsv, 'REQ', 0.0)
+          CALL INREAL ('feswell', feswell, 'REQ', 0.0)
+          CALL INKEYW ('REQ', ' ')
+          IF (KEYWIS ('UP')) THEN
+             UPWARDS = .TRUE.
+          ELSE IF (KEYWIS ('DOWN')) THEN
+             UPWARDS = .FALSE.
+          ELSE
+             CALL WRNKEY
+          ENDIF
+          CALL INKEYW ('STA', ' ')
+          IF (KEYWIS('VECTAU')) THEN 
+             VECTOR_TAU=.TRUE.
+          ENDIF
+          CALL INKEYW ('STA', ' ')
+          IF (KEYWIS('TRUE10')) THEN 
+             TRUE_U10=.TRUE.
+          ENDIF
+          
         ELSE
           CALL IGNORE ('KOM')                                             970220
-          LWINDM = 3                                                      30.1x
-          IF (LWINDR .GT. 0) IWIND = LWINDM                               30.1x
-!         *** whitecapping according to Komen et al. (1984) ***
-          IWCAP = 1
-          CALL INREAL ('CDS2', PWCAP(1), 'UNC', 0.)                       20.73
-          CALL INREAL ('STPM', PWCAP(2), 'UNC', 0.)                       20.73
+
+          IF((IWCAP.EQ.8).OR.(IWIND.EQ.8))THEN
+
+             CALL MSGERR(1,' * We prefer that you use GEN3 BABANIN. * ')
+             CALL MSGERR(1,' * Example:                             * ')
+             CALL MSGERR(1,'GEN3 BABANIN 5.7E-7 8.0E-6 4.0 4.0 1.2 0.006
+     &0 UP AGROW')
+
+          ELSE
+
+             LWINDM = 3                                                      30.1x
+             IF (LWINDR .GT. 0) IWIND = LWINDM                               30.1x
+!     *** whitecapping according to Komen et al. (1984) ***
+             IWCAP = 1
+             CALL INREAL ('CDS2', PWCAP(1), 'UNC', 0.)                       20.73
+             CALL INREAL ('STPM', PWCAP(2), 'UNC', 0.)                       20.73
+
+          ENDIF
+
+        ENDIF
+!       ***  parameters nonlinear 4 wave interactions ***
+        CALL INKEYW ('STA', ' ')
+        IF (KEYWIS ('QUAD')) THEN
+          CALL ININTG ('IQUAD', IQUAD, 'UNC', 0)
+!         *** if quadruplets are activated then LIMITER = 0.1 ***
+!         *** the standard value, however, is 1.e20           ***
+          CALL INREAL ('LAMBDA', PQUAD(1), 'UNC', 0.0)                    34.00
+          CALL INREAL ('CNL4', PQUAD(2), 'UNC', 0.0)                      34.00
+          CALL INREAL ('CSH1', PQUAD(3), 'UNC', 0.0)                      34.00
+          CALL INREAL ('CSH2', PQUAD(4), 'UNC', 0.0)                      34.00
+          CALL INREAL ('CSH3', PQUAD(5), 'UNC', 0.0)                      34.00
         ENDIF
         CALL INKEYW ('STA', ' ')
         IF (KEYWIS('AGROW')) THEN                                         7/MAR
           CALL INREAL ('A',PWIND(31),'STA',0.0015)
         ELSE                                                              30.60
-          IF (NSTATM.EQ.1 .AND. ICOND.EQ.0) ICOND = 1                     30.70
+          IF (NSTATM.EQ.1 .AND. ICOND.EQ.0) ICOND = 1                          30.70
         ENDIF
+
         GOTO 100
       ENDIF
 !     ----------------------------------------------------------------    40.17
@@ -2584,6 +2694,8 @@
 !         |       | ->KOMen            |                     |
 !         |       |                    |                     |
 !         |       |   YAN              |                     |
+!         |       |                    |                     |
+!         |       |   DONELAN          |                     |
 !
 !
       IF (KEYWIS('GROWTH') .OR. KEYWIS ('PARW')) THEN                     20.67
@@ -2636,6 +2748,9 @@
               PWTAIL(3) = PWTAIL(1) + 1.                                  30.70
             ELSE IF (KEYWIS('YAN')) THEN
               LWINDM = 5                                                  40.13
+            ELSE IF (KEYWIS('Donelan')) THEN
+!     *** wind according to Rogers et al. (2011) based on work of Donelan, Babanin, Tsagareli and others.
+              LWINDM = 8                                                      
             ELSE
               CALL IGNORE ('KOM')
               LWINDM = 3                                                  40.13
@@ -2651,6 +2766,62 @@
           END IF
           IF (LWINDR.GT.0) IWIND = LWINDM                                 40.13
           GOTO 100
+      ENDIF
+!     ------------------------------------------------------------------
+!     ***  parameters for SdsBabanin (NOT documented) ***
+      IF (KEYWIS ('BABANIN')) THEN
+!
+! ===================================================================
+!
+!                                                           | UP   |
+!  BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [Cdsv] [feswell] <       > (NOT documented)
+!                                                           | DOWN |
+!
+! ===================================================================
+!
+
+        CALL MSGERR(1,' * We prefer that you use GEN3 BABANIN.... * ')
+        CALL MSGERR(1,' * But we retain BABANIN command for       * ')
+        CALL MSGERR(1,' * backwards compatibility.                * ')
+
+! Try to catch situation where user has asked for Komen physics and then asks for Babanin physics. 
+! Komen physics are the default, but we can at least catch the case
+!  where a user requests the non-default Komen physics.
+        IF((IWCAP.EQ.1).AND.(PWCAP(10).NE.0.0))THEN
+           CALL MSGERR(4,'You cannot select both Komen and Babanin physi
+     &cs.')
+        ENDIF
+
+!       *** wind according to Rogers et al. (2011) based on work of Donelan, Babanin, Tsagareli and others.
+        LWINDM = 8                                                      
+        IF (LWINDR .GT. 0) IWIND = LWINDM                               
+!       *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
+        IWCAP = 8                                                       
+
+        CALL INREAL ('a1sds', a1sds, 'REQ', 0.0)
+        CALL INREAL ('a2sds', a2sds, 'REQ', 0.0)
+        CALL INREAL ('p1sds', p1sds, 'REQ', 0.0)
+        CALL INREAL ('p2sds', p2sds, 'REQ', 0.0)
+        CALL INREAL ('Cdsv', Cdsv, 'REQ', 0.0)
+        CALL INREAL ('feswell', feswell, 'REQ', 0.0)
+        CALL INKEYW ('REQ', ' ')
+        IF (KEYWIS ('UP')) THEN
+          UPWARDS = .TRUE.
+        ELSE IF (KEYWIS ('DOWN')) THEN
+          UPWARDS = .FALSE.
+        ELSE
+          CALL WRNKEY
+        ENDIF
+        CALL INKEYW ('STA', ' ')
+        IF (KEYWIS('VECTAU')) THEN 
+           VECTOR_TAU=.TRUE.
+        ENDIF
+        CALL INKEYW ('STA', ' ')
+        IF (KEYWIS('TRUE10')) THEN 
+           TRUE_U10=.TRUE.
+        ENDIF
+
+        GOTO 100
       ENDIF
 !     ------------------------------------------------------------------
 !     ***  parameters nonlinear 4 wave interactions ***
@@ -2694,28 +2865,6 @@
         CALL INREAL ('URSLIM', PTRIAD(5), 'STA', 0.01)                    40.41 40.23 40.13
         GOTO 100
       ENDIF
-!
-!     ------------------------------------------------------------------
-!
-!     SWDIS  setting parameters for swell dissipation (Arduin et al 2008)
-!	Defaults Case ACC350 from WW3 manaul
-! ===============================================
-!
-!   SWDISsipation [s1] [s2] [s3] [Re] [s5]
-!
-! ===============================================
-!
-!WAM4      IF (KEYWIS ('SWDIS')) THEN
-!WAM4        ISWDIS = 1
-!WAM4        CALL INREAL ('S1', pswdis(1), 'STA', 0.7)
-!WAM4        CALL INREAL ('S2', pswdis(2), 'STA', -0.018)
-!WAM4        CALL INREAL ('S3', pswdis(3), 'STA', 0.015)
-!WAM4        CALL INREAL ('Re', pswdis(4), 'STA', 1.e5)
-!WAM4        CALL INREAL ('S5', pswdis(5), 'STA', 1.2)
-!WAM4        pswdis(3)=abs(pswdis(3))
-!WAM4        CALL TABU_SWELLFT()
-!WAM4        GOTO 100
-!WAM4      ENDIF
 !
 !     ------------------------------------------------------------------
 !
@@ -3233,14 +3382,6 @@
       USE SWCOMM4                                                         40.41
       USE M_GENARR                                                        40.31
       USE SwanGriddata                                                    40.80
-!ADC      USE Couple2Swan, ONLY: ADCIRC_ETA2 => SWAN_ETA2,                    41.20
-!ADC     &                       ADCIRC_UU2 => SWAN_UU2,                      41.20
-!ADC     &                       ADCIRC_VV2 => SWAN_VV2,                      41.20
-!ADC     &                       ADCIRC_WX2 => SWAN_WX2,                      41.20
-!ADC     &                       ADCIRC_WY2 => SWAN_WY2,                      41.20
-!ADC     &                       COUPCUR, COUPWIND, COUPWLV                   41.20
-!ADC     &                      ,ADCIRC_Z0 => SWAN_Z0,                        41.20
-!ADC     &                       COUPFRIC                                     41.20
 !
 !
 !
@@ -3282,7 +3423,6 @@
 !     40.04: Annette Kieftenburg
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
-!     40.55: Marcel Zijlema
 !     41.20: Casey Dietrich
 !
 !  1. Updates
@@ -3297,8 +3437,6 @@
 !     40.02, Oct. 00: Avoided real/int conflict by introducing RPOOL
 !     40.31, Oct. 03: remove POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
-!     40.55, Dec. 05: introducing vegetation model
-!     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
 !
 !  2. Purpose
 !
@@ -3404,39 +3542,6 @@
         IGR1 = 2
         IGR2 = 3
         ICUR = 1
-!ADC      ELSE IF (KEYWIS ('ADCCUR')) THEN                                    41.20
-!ADC!       added this possibility for coupling to ADCIRC currents
-!ADC        IGR1 = 2
-!ADC        IGR2 = 3
-!ADC        ICUR = 1
-!ADC        COUPCUR = .TRUE.
-!ADC        IFLFAC(IGR1) = 1.0
-!ADC        IFLNDF(IGR1) = 0
-!ADC        IFLNDS(IGR1) = 22
-!ADC        IFLIDL(IGR1) = 1
-!ADC        IFLIFM(IGR1) = 2
-!ADC        IFLFRM(IGR1) = '(12X,E15.10)'
-!ADC        IFLNHF(IGR1) = 2
-!ADC        IFLDYN(IGR1) = 1
-!ADC        IFLNHD(IGR1) = 1
-!ADC        VECTOR = .TRUE.
-!ADC        NHEDC = 0
-!ADC        IFLFAC(IGR2) = IFLFAC(IGR1)
-!ADC        IFLNDF(IGR2) = IFLNDF(IGR1)
-!ADC        IFLNDS(IGR2) = IFLNDS(IGR1)
-!ADC        IFLIDL(IGR2) = IFLIDL(IGR1)
-!ADC        IFLIFM(IGR2) = IFLIFM(IGR1)
-!ADC        IFLFRM(IGR2) = IFLFRM(IGR1)
-!ADC        IFLNHF(IGR2) = IFLNHF(IGR1)
-!ADC        IFLNHD(IGR2) = NHEDC
-!ADC        IF (.NOT.ALLOCATED(TARR)) THEN
-!ADC           ALLOCATE( TARR(1:nverts) )
-!ADC           TARR = 0.
-!ADC        ENDIF
-!ADC        DO I=1,nverts
-!ADC           TARR(I) = REAL(ADCIRC_UU2(I,1))
-!ADC        ENDDO
-!ADC        GOTO 55
       ELSE IF (KEYWIS ('FR')) THEN
         IGR1   = 4
         VARFR  = .TRUE.
@@ -3444,103 +3549,15 @@
         JFRC2  = MCMVAR - 1                                               40.00
         JFRC3  = MCMVAR                                                   40.00
         ALOCMP = .TRUE.                                                   40.97
-!ADC      ELSE IF (KEYWIS ('ADCFRIC')) THEN                                   41.20
-!ADC!       added this possibility for coupling Madsen friction lengths
-!ADC!       based on ADCIRC Manning's n values
-!ADC        IGR1 = 4
-!ADC        VARFR = .TRUE.
-!ADC        MCMVAR = MCMVAR + 2
-!ADC        JFRC2  = MCMVAR - 1
-!ADC        JFRC3  = MCMVAR
-!ADC        ALOCMP = .TRUE.
-!ADC        COUPFRIC = .TRUE.
-!ADC        IFLFAC(IGR1) = 1.0
-!ADC        IFLNDF(IGR1) = 0
-!ADC        IFLNDS(IGR1) = 23
-!ADC        IFLIDL(IGR1) = 1
-!ADC        IFLIFM(IGR1) = 2
-!ADC        IFLFRM(IGR1) = '(12X,E20.10)'
-!ADC        IFLNHF(IGR1) = 2
-!ADC        IFLDYN(IGR1) = 1
-!ADC        IFLNHD(IGR1) = 1
-!ADC        VECTOR = .FALSE.
-!ADC        NHEDC = 0
-!ADC        IF (.NOT.ALLOCATED(TARR)) THEN
-!ADC           ALLOCATE( TARR(1:nverts) )
-!ADC           TARR = 0.
-!ADC        ENDIF
-!ADC        DO I=1,nverts
-!ADC           TARR(I) = REAL(ADCIRC_Z0(I,1))
-!ADC        ENDDO
-!ADC        GOTO 55
       ELSE IF (KEYWIS ('WI')) THEN
         LWINDR = 2                                                        30.10
         IWIND  = LWINDM                                                   30.10
         IGR1   = 5
         IGR2   = 6
         VARWI  = .TRUE.
-!ADC      ELSE IF (KEYWIS ('ADCWIND')) THEN                                   41.20
-!ADC!       added this possibility for coupling to ADCIRC wind speeds
-!ADC        LWINDR = 2
-!ADC        IWIND  = LWINDM
-!ADC        IGR1 = 5
-!ADC        IGR2 = 6
-!ADC        VARWI = .TRUE.
-!ADC        COUPWIND = .TRUE.
-!ADC        IFLFAC(IGR1) = 1.0
-!ADC        IFLNDF(IGR1) = 0
-!ADC        IFLNDS(IGR1) = 22
-!ADC        IFLIDL(IGR1) = 1
-!ADC        IFLIFM(IGR1) = 2
-!ADC        IFLFRM(IGR1) = '(12X,E15.10)'
-!ADC        IFLNHF(IGR1) = 2
-!ADC        IFLDYN(IGR1) = 1
-!ADC        IFLNHD(IGR1) = 1
-!ADC        VECTOR = .TRUE.
-!ADC        NHEDC = 0
-!ADC        IFLFAC(IGR2) = IFLFAC(IGR1)
-!ADC        IFLNDF(IGR2) = IFLNDF(IGR1)
-!ADC        IFLNDS(IGR2) = IFLNDS(IGR1)
-!ADC        IFLIDL(IGR2) = IFLIDL(IGR1)
-!ADC        IFLIFM(IGR2) = IFLIFM(IGR1)
-!ADC        IFLFRM(IGR2) = IFLFRM(IGR1)
-!ADC        IFLNHF(IGR2) = IFLNHF(IGR1)
-!ADC        IFLNHD(IGR2) = NHEDC
-!ADC        IF (.NOT.ALLOCATED(TARR)) THEN
-!ADC           ALLOCATE( TARR(1:nverts) )
-!ADC           TARR = 0.
-!ADC        ENDIF
-!ADC        DO I=1,nverts
-!ADC           TARR(I) = REAL(ADCIRC_WX2(I,1))
-!ADC        ENDDO
-!ADC        GOTO 55
       ELSE IF (KEYWIS ('WL')) THEN                                        20.38
         IGR1   = 7
         VARWLV = .TRUE.                                                   20.38
-!ADC      ELSE IF (KEYWIS ('ADCWL')) THEN                                     41.20
-!ADC!       added this possibility for coupling to ADCIRC water levels
-!ADC        IGR1 = 7
-!ADC        VARWLV = .TRUE.
-!ADC        COUPWLV = .TRUE.
-!ADC        IFLFAC(IGR1) = 1.0
-!ADC        IFLNDF(IGR1) = 0
-!ADC        IFLNDS(IGR1) = 23
-!ADC        IFLIDL(IGR1) = 1
-!ADC        IFLIFM(IGR1) = 2
-!ADC        IFLFRM(IGR1) = '(12X,E20.10)'
-!ADC        IFLNHF(IGR1) = 2
-!ADC        IFLDYN(IGR1) = 1
-!ADC        IFLNHD(IGR1) = 1
-!ADC        VECTOR = .FALSE.
-!ADC        NHEDC = 0
-!ADC        IF (.NOT.ALLOCATED(TARR)) THEN
-!ADC           ALLOCATE( TARR(1:nverts) )
-!ADC           TARR = 0.
-!ADC        ENDIF
-!ADC        DO I=1,nverts
-!ADC           TARR(I) = REAL(ADCIRC_ETA2(I,1))
-!ADC        ENDDO
-!ADC        GOTO 55
       ELSE IF (KEYWIS ('COOR')) THEN                                      30.21
         IGR1   = 8                                                        30.21
         IGR2   = 9                                                        30.21
@@ -3586,13 +3603,7 @@
         VECTOR = .FALSE.
       ENDIF
 !
-      LOCAL = .FALSE.                                                     40.95
-!PUN      IF ( IGTYPE(IGR1).EQ.3 ) THEN                                       40.95
-!PUN         LOCAL = .TRUE.                                                   40.95
-!PUN      ELSE                                                                40.95
-!PUN         LOCAL = .FALSE.                                                  40.95
-!PUN      ENDIF                                                               40.95
-!
+      LOCAL = .FALSE.
       CALL REPARM (IFLNDF(IGR1), IFLNDS(IGR1), IFLIDL(IGR1),              40.00
      &             IFLIFM(IGR1), IFLFRM(IGR1), IFLNHF(IGR1),              40.00
      &             IFLDYN(IGR1), IFLNHD(IGR1), VECTOR, LOCAL, NHEDC)      40.95 40.00
@@ -3668,21 +3679,11 @@
            ALLOCATE( TARR(MXG(IGR2)*MYG(IGR2)) )                          40.41
            TARR = 0.                                                      40.41
         END IF                                                            40.41
-!ADC        IF ( IGR2.EQ.3 .AND. COUPCUR ) THEN                               41.20
-!ADC           DO I = 1, nverts                                               41.20
-!ADC              TARR(I) = REAL(ADCIRC_VV2(I,1))                             41.20
-!ADC           ENDDO                                                          41.20
-!ADC        ELSE IF ( IGR2.EQ.6 .AND. COUPWIND ) THEN                         41.20
-!ADC           DO I = 1, nverts                                               41.20
-!ADC              TARR(I) = REAL(ADCIRC_WY2(I,1))                             41.20
-!ADC           ENDDO                                                          41.20
-!ADC        ELSE                                                              41.20
         CALL INAR2D( TARR        , MXG(IGR2), MYG(IGR2), IFLNDF(IGR2),    40.31 40.02
      &               IFLNDS(IGR2), IFLIFM(IGR2), IFLFRM(IGR2),
      &               IFLIDL(IGR2), IFLFAC(IGR2),
      &               IFLNHD(IGR2), 0)
         IF (STPNOW()) RETURN                                              34.01
-!ADC        ENDIF                                                             41.20
         IF (IGR2.EQ.3) THEN                                               40.31
            IF (.NOT.ALLOCATED(UYB)) ALLOCATE(UYB(MXG(IGR2)*MYG(IGR2)))    40.31
            CALL SWCOPR( TARR, UYB, MXG(IGR2)*MYG(IGR2) )                  40.31
@@ -4286,8 +4287,16 @@
                   XOFFS  = XCGRID(IX,IY)                                  30.72
                   YOFFS  = YCGRID(IX,IY)                                  30.72
                   LXOFFS = .TRUE.
-                  XCGRID(IX,IY) = 0.
-                  YCGRID(IX,IY) = 0.
+                  IF (EQREAL(EXCFLD(8),0.)) THEN                          40.51
+                     XCGRID(IX,IY) = 1.E-5                                40.51
+                  ELSE
+                     XCGRID(IX,IY) = 0.
+                  END IF
+                  IF (EQREAL(EXCFLD(9),0.)) THEN                          40.51
+                     YCGRID(IX,IY) = 1.E-5                                40.51
+                  ELSE
+                     YCGRID(IX,IY) = 0.
+                  END IF
                 ELSE
                   XCGRID(IX,IY) = REAL(XCGRID(IX,IY) - DBLE(XOFFS))       30.72
                   YCGRID(IX,IY) = REAL(YCGRID(IX,IY) - DBLE(YOFFS))       30.72
@@ -5186,7 +5195,6 @@
       USE TIMECOMM                                                        40.41
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
-!PUN      USE SIZES                                                           40.95
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -5453,7 +5461,6 @@
            WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                        40.31
   33       FORMAT('-',I3.3)                                               40.31
         END IF                                                            40.31
-!PUN        IF (.NOT.SINGLEHOT) FILENM= TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)  40.95
         NREF   = 0
         IOSTAT = 0
         CALL FOR (NREF, FILENM, 'OF', IOSTAT)
@@ -5483,10 +5490,10 @@
             CALL MSGERR (2,
      &      'grid on hotstart file differs from one in CGRID command')    40.00
             WRITE (PRINTF, 123) NPTOT, NUMPTS                             40.80 40.62
- 123        FORMAT (1X, I8, ' points in comp.grid; on file:', I8)         40.03
+ 123        FORMAT (1X, I6, ' points in comp.grid; on file:', I6)         40.03
           ENDIF
           IF (ITEST.GE.50) WRITE (PRTEST, 124) NUMPTS                     40.03
- 124      FORMAT (1X, I8, '  output locations')
+ 124      FORMAT (1X, I6, '  output locations')
           DO IP = 1, NUMPTS
             READ (NREF, *)
           ENDDO
@@ -5732,7 +5739,7 @@
 !
 !  2. Purpose
 !
-!     backup current state of the wave field to a file
+!     backup current state of the wave field to a file (specified in FILENM)
 !
 !  4. Argument variables
 !
@@ -5770,21 +5777,12 @@
 !
 !     ==================================================================
 !
-!NADC      CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
-!ADC      IF ( SwanHotStartUnit.EQ.67 ) THEN                                  41.20
-!ADC         FILENM = "swan.67"
-!ADC         SwanHotStartUnit = 68
-!ADC      ELSE
-!ADC         FILENM = "swan.68"
-!ADC         SwanHotStartUnit = 67
-!ADC      ENDIF
 !     --- append node number to FILENM in case of parallel computing      40.31
       IF ( PARLL ) THEN                                                   40.31
          ILPOS = INDEX ( FILENM, ' ' )-1                                  40.31
          WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                          40.31
   33     FORMAT('-',I3.3)                                                 40.31
       END IF                                                              40.31
-!PUN      FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                       40.95
       NREF   = 0
       IOSTAT = 0
       CALL FOR (NREF, FILENM, 'UF', IOSTAT)

@@ -197,7 +197,23 @@
 !     note: latitude is in degrees
 !
       IF (KSPHER.GT.0) THEN
+
         DO IC = 1, ICMAX
+
+        IF(KCGRD(IC).EQ.1)CYCLE ! point is not valid, so cyle 
+!       The above check was added Dec 6 2011
+
+!       Explanation: For PROPSL=1, we are using BSBT, so we don't need 
+!                    COSLAT(4) or COSLAT(5) and in fact if we try to 
+!                    calculate these variables, we could get index out
+!                    of range. The underlying problem is that ICMAX 
+!                    for PROPSL=1 was changed from 3 to 5, but 4 and 5
+!                    are not necessarily valid points.
+
+!                    Another way to fix this would be to have loop go
+!                    from 1 to 3 instead of 1 to ICMAX in cases of 
+!                    PROPSL=1. (outcome should be the same)
+
           COSLAT(IC) =
      &    COS(DEGRAD*(YCGRID(IXCGRD(IC),IYCGRD(IC))+YOFFS))               33.09
         ENDDO
@@ -1140,19 +1156,17 @@
      &                                                      )
 !
 !****************************************************************
-!
-      USE SWCOMM2                                                         40.41
-      USE SWCOMM3                                                         40.41
-      USE SWCOMM4                                                         40.41
-      USE TIMECOMM                                                        40.41
-      USE OCPCOMM4                                                        40.41
-      USE M_PARALL                                                        40.31
-      USE M_DIFFR                                                         40.21
-!
+
+      USE SWCOMM2               !   40.41
+      USE SWCOMM3               !   40.41
+      USE SWCOMM4               !   40.41
+      USE TIMECOMM              !   40.41
+      USE OCPCOMM4              !   40.41
+      USE M_PARALL              !   40.31
+      USE M_DIFFR               !   40.21
+
       IMPLICIT NONE
-!
-!
-!
+
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
 !     | Faculty of Civil Engineering                              |
@@ -1161,29 +1175,27 @@
 !     |                                                           |
 !     | Programmers: The SWAN team                                |
 !   --|-----------------------------------------------------------|--
-!
-!
+
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
 !     Copyright (C) 1993-2012  Delft University of Technology
-!
+
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
 !     published by the Free Software Foundation; either version 2 of
 !     the License, or (at your option) any later version.
-!
+
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
-!
+
 !     A copy of the GNU General Public License is available at
 !     http://www.gnu.org/copyleft/gpl.html#SEC3
 !     or by writing to the Free Software Foundation, Inc.,
 !     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-!
-!
+
 !  0. Authors
-!
+
 !     30.72: IJsbrand Haagsma
 !     30.80: Nico Booij
 !     40.03: Nico Booij
@@ -1193,11 +1205,10 @@
 !     40.30: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.61: John Warner
-!     41.06: Gerbrant van Vledder
+!     40.58: Erick Rogers
 !     41.35: Casey Dietrich
-!
 !  1. Updates
-!
+
 !     30.72, Feb. 98: Introduced generic names XCGRID, YCGRID and SPCSIG for SWAN
 !     30.80, Nov. 98: Provision for limitation on Ctheta (refraction)
 !     30.80, Aug. 99: SWCOMM3.INC included
@@ -1221,11 +1232,11 @@
 !     41.35, Mar. 12: add option of limitation on csigma and ctheta
 !
 !  2. Purpose
-!
+
 !     computes the propagation velocities of energy in S- and
 !     D-space, i.e., CAS, CAD, in the presence or absence of
 !     currents, for the action balance equation.
-!
+
 !  3. Method
 !
 !     The next equation are solved numerically
@@ -1322,9 +1333,7 @@
 !        MYC     Maximum counter of gridppoints in y-direction
 !        MSC     Maximum counter of relative frequency
 !        MDC     Maximum counter of spectral directions
-!
 !        DYNDEP  if True depths vary with time
-!
 !        DT      Time step
 !        RDTIM   1/DT                                                     30.80
 !        PNUMS   array of numerical coefficients; used here:              30.80
@@ -1475,11 +1484,11 @@
 !   If IREFR=0
 !   Then make values of CAD=0
 !   ------------------------------------------------------------
-!
-!     10. SOURCE
-!
+
+!   10. SOURCE
+
 !************************************************************************
-!
+
       SAVE IENT
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SPROSD')
@@ -1753,13 +1762,13 @@
       ENDDO
 !
 !     *** coefficients for CAS -> function of IX and IY only ***
-!
-      IF ( NSTATC.EQ.0 .OR. .NOT.DYNDEP) THEN                             40.00
+
+      IF ( NSTATC.EQ.0 .OR. .NOT.DYNDEP) THEN !        40.00
 !       *** stationary calculation ***
-        CAST2 = 0.
+         CAST2 = 0.
       ELSE
 !       nonstationary depth, CAST2 is @D/@t
-        CAST2 = ( DLOC1 - DEP1(KCG1) ) * RDTIM
+         CAST2 = ( DLOC1 - DEP1(KCG1) ) * RDTIM
       END IF
 !
       DO 70 IS = 1, MSC
@@ -1848,25 +1857,25 @@
 !     *** for IREFR is set 0 (no refraction) or ITFRE = 0 (no     ***
 !     *** frequency shift) we have put the IF statement outside   ***
 !     *** the internal loop above                                 ***
-!
+
  10   IF (ITFRE .EQ. 0) THEN
-        DO IS = 1, MSC
-          DO ID = 1, MDC
-            CAS(ID,IS,1) = 0.0
-          ENDDO
-        ENDDO
+         DO IS = 1, MSC
+            DO ID = 1, MDC
+               CAS(ID,IS,1) = 0.0
+            ENDDO
+         ENDDO
       ENDIF
-!
+
       IF (IREFR .EQ. 0) THEN
-        DO IS = 1, MSC
-          DO ID = 1, MDC
-            CAD(ID,IS,1) = 0.0
-          ENDDO
-        ENDDO
+         DO IS = 1, MSC
+            DO ID = 1, MDC
+               CAD(ID,IS,1) = 0.0
+            ENDDO
+         ENDDO
       ENDIF
-!
+
 !     --- limit Ctheta in some frequency range if requested
-!
+
       IF ( INT(PNUMS(29)).EQ.1 ) THEN
          FRLIM = PI2*PNUMS(26)
          PP    =     PNUMS(27)
@@ -1954,7 +1963,10 @@
 !
 !     end of the subroutine SPROSD
  900  RETURN
-      END
+      END subroutine SPROSD
+!**********************************************************************
+
+
 !****************************************************************
 !
       SUBROUTINE DSPHER (CAD, CAX, CAY, ANYBIN, YCGRID, ECOS, ESIN)       40.41 33.09 NB!
@@ -2385,8 +2397,9 @@
             ENDIF
             IMATRA(ID,IS) = IMATRA(ID,IS) + FXY2 + ACOLD*RDTIM            33.09
             IMATDA(ID,IS) = IMATDA(ID,IS) + FXY1 + RDTIM                  33.09
-            TRAC0(ID,IS,1) = TRAC0(ID,IS,1) - FXY2 - ACOLD*RDTIM          40.85
-            TRAC1(ID,IS,1) = TRAC1(ID,IS,1) + FXY1 + RDTIM                40.85
+!WER Apr30 2012: Removing d/dt from advection estimate for output, since this part is not advection (it is time rate of change)
+            TRAC0(ID,IS,1) = TRAC0(ID,IS,1) - FXY2 ! - ACOLD*RDTIM          40.85
+            TRAC1(ID,IS,1) = TRAC1(ID,IS,1) + FXY1 ! + RDTIM                40.85
           ELSE
             IMATRA(ID,IS) = IMATRA(ID,IS) + FXY2
             IMATDA(ID,IS) = IMATDA(ID,IS) + FXY1
@@ -2485,6 +2498,7 @@
 !        33.09: Nico Booij (changes related to spherical coordinates)
 !        40.08: Erick Rogers
 !        40.41: Marcel Zijlema
+!        40.58: W. Erick Rogers
 !        40.85: Marcel Zijlema
 !        40.98: Marcel Zijlema
 !
@@ -2500,6 +2514,8 @@
 !                          Remove option for controllable 1st order diffusion ("XYMU",
 !                          "THETAK", etc.)
 !        40.41, Oct. 04: common blocks replaced by modules, include files removed
+!        40.58, Aug. 07: stencil modification : OLD 4 ==> NEW 6 
+!                                               OLD 5 ==> NEW 7
 !        40.85, Aug. 08: store xy-propagation for output purposes
 !        40.98, Feb. 09: SORDUP scheme is made consistent
 !
@@ -2526,8 +2542,8 @@
 !        KCGRD(1) :   IX  ,IY
 !        KCGRD(2) :   IX-1,IY
 !        KCGRD(3) :   IX  ,IY-1
-!        KCGRD(4) :   IX-2,IY
-!        KCGRD(5) :   IX  ,IY-2
+!        KCGRD(6) :   IX-2,IY                                             40.58
+!        KCGRD(7) :   IX  ,IY-2                                           40.58
 !
 !        The scheme is:
 !
@@ -2536,20 +2552,20 @@
 !            @x
 !
 !        [1.5*CAX(ID,IS,1)*AC2(ID,IS,KCGRD(1))-2.0*CAX(ID,IS,2)*AC2(ID,IS,KCGRD(2))
-!        +0.5*CAX(ID,IS,4)*AC2(ID,IS,KCGRD(4))]/DX
+!        +0.5*CAX(ID,IS,6)*AC2(ID,IS,KCGRD(6))]/DX                        40.58
 !
 !        @[CAY AC2]
 !        --------- =
 !            @y
 !
 !        [1.5*CAY(ID,IS,1)*AC2(ID,IS,KCGRD(1))-2.0*CAY(ID,IS,3)*AC2(ID,IS,KCGRD(3))
-!        +0.5*CAY(ID,IS,5)*AC2(ID,IS,KCGRD(5))]/DY
+!        +0.5*CAY(ID,IS,7)*AC2(ID,IS,KCGRD(7))]/DY                        40.58
 !
 !        ADD TO DIAGONAL:
 !        +1.5*CAX(ID,IS,1)/DX+1.5*CAY(ID,IS,1)/DY
 !        ADD TO RHS:
-!        +[2.0*CAX(ID,IS,2)*AC2(ID,IS,KCGRD(2)-0.5*CAX(ID,IS,4)*AC2(ID,IS,KCGRD(4)]/DX
-!        +[2.0*CAY(ID,IS,3)*AC2(ID,IS,KCGRD(3)-0.5*CAY(ID,IS,5)*AC2(ID,IS,KCGRD(5)]/DY
+!        +[2.0*CAX(ID,IS,2)*AC2(ID,IS,KCGRD(2)-0.5*CAX(ID,IS,6)*AC2(ID,IS,KCGRD(6)]/DX      40.58
+!        +[2.0*CAY(ID,IS,3)*AC2(ID,IS,KCGRD(3)-0.5*CAY(ID,IS,7)*AC2(ID,IS,KCGRD(7)]/DY      40.58
 !
 !     4. PARAMETERLIST
 !
@@ -2599,7 +2615,7 @@
 !   ------------------------------------------------------------
 !
       INTEGER  IS,ID,IDDUM,ISSTOP                                         33.10
-     &         ,IND2,IND3,IND4,IND5                                       33.10
+     &         ,IND2,IND3,IND6,IND7                                       33.10 40.58
 !
       REAL  :: FXY1 ,FXY2
 !
@@ -2608,7 +2624,7 @@
       REAL  :: CAX(MDC,MSC,MICMAX) ,CAY(MDC,MSC,MICMAX)                   40.22
       REAL  :: IMATRA(MDC,MSC)    ,IMATDA(MDC,MSC)            ,
      &         RDX(10)            ,RDY(10)                    ,           40.08
-     &         XMU(5)             ,YMU(5)                                 40.08 33.10
+     &         XMU(7)             ,YMU(7)                                 40.08 33.10 40.58
       REAL  :: TRAC0(MDC,MSC,MTRNP)                                       40.85
       REAL  :: TRAC1(MDC,MSC,MTRNP)                                       40.85
 
@@ -2620,7 +2636,7 @@
       IF (LTRACE) CALL STRACE (IENT,'SORDUP')
 !
       IF(NSTATC.EQ.1)THEN                                                 33.10
-         CALL MSGERR (3, 'SORDUP scheme is for stationary mode only.')    33.10
+         CALL MSGERR (4, 'SORDUP scheme is for stationary mode only.')    33.10
       END IF                                                              33.10
       IF (TESTFL .AND. ITEST .GE. 120) THEN
         WRITE(PRINTF,*) ' Initial matrix coefficients at SORDUP : '
@@ -2638,14 +2654,14 @@
       DO 200 IS = 1, ISSTOP
         IND2 = KCGRD(2)
         IND3 = KCGRD(3)
-        IND4 = KCGRD(4)                                                   33.10
-        IND5 = KCGRD(5)                                                   33.10
+        IND6 = KCGRD(6)                                                   33.10 40.58
+        IND7 = KCGRD(7)                                                   33.10 40.58
         DO 100 IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
 !         find Courant number values: XMU, YMU                            40.08
 !         depending on relative size of XMU and YMU, XNUM is true or      40.08
 !         false because of RDX and RDY, XMU and YMU are always positive   40.08
-          DO IXY=1,5                                                      40.08
+          DO IXY=1,7                                                      40.08 40.58
              XMU(IXY) = RDX(1)*CAX(ID,IS,IXY) + RDY(1)*CAY(ID,IS,IXY)     40.08
              YMU(IXY) = RDX(2)*CAX(ID,IS,IXY) + RDY(2)*CAY(ID,IS,IXY)     40.08
           END DO                                                          40.08
@@ -2669,9 +2685,9 @@
 
 !             the known, rhs part FXY2                                    33.08
               FXY2 = AC2(ID,IS,IND2) * 2.0*XMU(2)                         40.08 33.10
-     &              -AC2(ID,IS,IND4) * 0.5*XMU(4)                         40.08 33.10
+     &              -AC2(ID,IS,IND6) * 0.5*XMU(6)                         40.08 33.10 40.58
      &              +AC2(ID,IS,IND3) * 2.0*YMU(3)                         40.08 33.10
-     &              -AC2(ID,IS,IND5) * 0.5*YMU(5)                         40.08 33.10
+     &              -AC2(ID,IS,IND7) * 0.5*YMU(7)                         40.08 33.10 40.58
 
             ELSE                                                          33.10
 !             Spherical coordinates
@@ -2680,17 +2696,17 @@
 
               FXY2 =
      &        AC2(ID,IS,IND2) * CAX(ID,IS,2) * RDX(1) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAX(ID,IS,4) * RDX(1) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAX(ID,IS,6) * RDX(1) * 0.5               40.98 40.08 33.10 40.58
      &       +AC2(ID,IS,IND3) * CAX(ID,IS,3) * RDX(2) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAX(ID,IS,5) * RDX(2) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAX(ID,IS,7) * RDX(2) * 0.5               40.98 40.08 33.10 40.58
      &      +(AC2(ID,IS,IND2) * CAY(ID,IS,2) * RDY(1) * COSLAT(2) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAY(ID,IS,4) * RDY(1) * COSLAT(4) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAY(ID,IS,6) * RDY(1) * COSLAT(6) * 0.5   40.98 40.08 33.10 40.58
      &       +AC2(ID,IS,IND3) * CAY(ID,IS,3) * RDY(2) * COSLAT(3) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAY(ID,IS,5) * RDY(2) * COSLAT(5) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAY(ID,IS,7) * RDY(2) * COSLAT(7) * 0.5   40.98 40.08 33.10 40.58
      &        ) / COSLAT(1) !33.10
             ENDIF
 
-          ELSE      ! switch 2<==>3, 4<==>5 and YMU<==>XMU                33.10
+          ELSE      ! switch 2<==>3, 6<==>7 and YMU<==>XMU                33.10
 
 ! The diag part FXY1
             FXY1 = 1.5*YMU(1)+ 1.5*XMU(1)                                 40.98 40.08 33.10
@@ -2700,9 +2716,9 @@
 
 !             the known, rhs part  FXY2                                   33.08
               FXY2 = AC2(ID,IS,IND3) * 2.0*YMU(3)                         40.08 33.10
-     &              -AC2(ID,IS,IND5) * 0.5*YMU(5)                         40.08 33.10
+     &              -AC2(ID,IS,IND7) * 0.5*YMU(7)                         40.08 33.10 40.58
      &              +AC2(ID,IS,IND2) * 2.0*XMU(2)                         40.08 33.10
-     &              -AC2(ID,IS,IND4) * 0.5*XMU(4)                         40.08 33.10
+     &              -AC2(ID,IS,IND6) * 0.5*XMU(6)                         40.08 33.10 40.58
 
             ELSE
 !             Spherical coordinates
@@ -2710,13 +2726,13 @@
 !             the known, rhs part  FXY2                                   33.08
               FXY2 =
      &        AC2(ID,IS,IND2) * CAX(ID,IS,2) * RDX(1) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAX(ID,IS,4) * RDX(1) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAX(ID,IS,6) * RDX(1) * 0.5               40.98 40.08 33.10 40.58
      &       +AC2(ID,IS,IND3) * CAX(ID,IS,3) * RDX(2) * 2.0               40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAX(ID,IS,5) * RDX(2) * 0.5               40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAX(ID,IS,7) * RDX(2) * 0.5               40.98 40.08 33.10 40.58
      &      +(AC2(ID,IS,IND2) * CAY(ID,IS,2) * RDY(1) * COSLAT(2) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND4) * CAY(ID,IS,4) * RDY(1) * COSLAT(4) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND6) * CAY(ID,IS,6) * RDY(1) * COSLAT(6) * 0.5   40.98 40.08 33.10 40.58
      &       +AC2(ID,IS,IND3) * CAY(ID,IS,3) * RDY(2) * COSLAT(3) * 2.0   40.08 33.10
-     &       -AC2(ID,IS,IND5) * CAY(ID,IS,5) * RDY(2) * COSLAT(5) * 0.5   40.98 40.08 33.10
+     &       -AC2(ID,IS,IND7) * CAY(ID,IS,7) * RDY(2) * COSLAT(7) * 0.5   40.98 40.08 33.10 40.58
      &        )/ COSLAT(1)
             ENDIF
           END IF
@@ -3188,8 +3204,9 @@
           ENDIF                                                           40.08
           IMATRA(ID,IS) = IMATRA(ID,IS) + FXY2 + ACOLD*RDTIM              33.08
           IMATDA(ID,IS) = IMATDA(ID,IS) + FXY1 + RDTIM                    33.08
-          TRAC0(ID,IS,1) = TRAC0(ID,IS,1) - FXY2 - ACOLD*RDTIM            40.85
-          TRAC1(ID,IS,1) = TRAC1(ID,IS,1) + FXY1 + RDTIM                  40.85
+!WER Apr30 2012: Removing d/dt from advection estimate for output, since this part is not advection (it is time rate of change)
+          TRAC0(ID,IS,1) = TRAC0(ID,IS,1) - FXY2 ! - ACOLD*RDTIM            40.85
+          TRAC1(ID,IS,1) = TRAC1(ID,IS,1) + FXY1 ! + RDTIM                  40.85
 !
 !         *** test output ***
 !
@@ -4621,6 +4638,10 @@
       IF (LTRACE) CALL STRACE (IENT,'SWAPAR')
 !
       DO IC = 1, ICMAX                                                    40.13
+
+! notes: KCGRD(IC)=1 indicates an invalid point
+!        What is DEP2(1) ? Is it intentional to calculate depth there?
+
         INDX  = KCGRD(IC)
         DEPLOC = DEP2(INDX)
         IF ( DEPLOC .LE. DEPMIN) THEN
@@ -4664,7 +4685,6 @@
      &                   DSXSRF     ,                                     40.67 40.61
      &                   DSXWCP     ,                                     40.67 40.61
      &                   DSXVEG     ,                                     40.67 40.61
-!WAM4     &                   dsxsw       ,                                     MSL
      &                   GSXWND     ,GENRXY     ,                         40.85
      &                   RSXQUA     ,RSXTRI     ,                         40.85
      &                   REDSXY     ,                                     40.85
@@ -4787,7 +4807,6 @@
      &         DSXSRF(MCGRD)      ,                                       40.67 40.61
      &         DSXWCP(MCGRD)      ,                                       40.67 40.61
      &         DSXVEG(MCGRD)      ,                                       40.67 40.61
-!WAM4     &         dsxsw(mcgrd)       ,                                       MSL
      &         GSXWND(MCGRD)      ,                                       40.85
      &         RSXQUA(MCGRD)      ,                                       40.85
      &         RSXTRI(MCGRD)      ,                                       40.85
@@ -4910,7 +4929,6 @@
       DSXSRF(KCGRD(1)) = DSXSRF(KCGRD(1)) + ADISSIP(2)     ! surf break           40.67
       DSXBOT(KCGRD(1)) = DSXBOT(KCGRD(1)) + ADISSIP(3)     ! bottom fric          40.67
       DSXVEG(KCGRD(1)) = DSXVEG(KCGRD(1)) + ADISSIP(5)     ! vegetation           40.67
-!WAM4      dsxsw(kcgrd(1))  = dsxsw(kcgrd(1))  + adissip(6)     ! swelldissip          MSL
       DISSXY(KCGRD(1)) = DISSXY(KCGRD(1)) + SUM(ADISSIP)   ! total dissip         40.67
 !
       GSXWND(KCGRD(1)) = GSXWND(KCGRD(1)) + AGENERT(1)     ! wind input           40.85

@@ -410,8 +410,7 @@
 !
 !       ***** block output *****
         IF (RTYPE(1:3) .EQ. 'BLK') THEN
-!NPUN          IF (PARLL) THEN                                                 40.31
-!PUN          IF (MNPROC>1) THEN                                              41.36
+         IF (PARLL) THEN
              CALL SWBLKP ( CORQ%OQI, CORQ%IVTYP, MXK, MYK, VOQR,          40.31
      &                     VOQ(1), IONOD )                                40.51 40.31
           ELSE                                                            40.31
@@ -627,7 +626,7 @@
           OUTR(1) = TIMCO
           LOGACT = .TRUE.
         ELSE IF (OUTR(2).GT.0. .AND. TIMCO.GE.TNEXT) THEN                 40.00
-          OUTR(1) = TNEXT + OUTR(2)                                       40.00
+          OUTR(1) = TIMCO + OUTR(2)                                       40.00
           LOGACT = .TRUE.
         ELSE
           LOGACT = .FALSE.
@@ -779,7 +778,6 @@
       USE SWCOMM1                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
-      USE OUTP_DATA
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -1009,12 +1007,6 @@
         ALPCN = 0.                                                        40.80
       ELSE
         WRITE (PRTEST,'(A)') ' error SWODDC: no PSTYPE defined'           40.31
-      ENDIF
-!
-      IF (PSNAME.EQ.'COMPGRID') THEN
-         LCOMPGRD=.TRUE.
-      ELSE
-         LCOMPGRD=.FALSE.
       ENDIF
 !
       IF (ITEST.GE.100 .OR. IOUTES .GE. 30) THEN
@@ -1371,7 +1363,6 @@
       USE TIMECOMM                                                        40.41
       USE M_PARALL                                                        40.31
       USE M_DIFFR                                                         40.21
-      USE OUTP_DATA
       USE SwanGriddata                                                    40.80
       USE SwanGridobjects                                                 40.91
 !PUN      USE SIZES
@@ -1418,7 +1409,6 @@
 !     40.61: Marcel Zijlema
 !     40.80: Marcel Zijlema
 !     40.86: Nico Booij
-!     41.12: Nico Booij
 !
 !  1. Updates
 !
@@ -1442,7 +1432,6 @@
 !     40.86, Feb. 08: interpolation near obstacles modified,
 !                     points on the other side of the obstacle not taken into account
 !                     calls of SWIPOL changed
-!     41.12, Apr. 10: output quantity NPL (type nr 70) added
 !
 !  2. Purpose
 !
@@ -1559,7 +1548,7 @@
 !
 !     current velocity
 !
- 130  IF (OQPROC(5)) THEN
+ 130  IF (OQPROC(5).OR.(OQPROC(70).AND.JUSTAR.LE.1)) THEN
         JVQX = VOQR(5)
         JVQY = JVQX+1
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 5,
@@ -1750,60 +1739,6 @@
           END DO
         ENDIF
       ENDIF
-!
-!     vegetation dissipation
-!
-      IF (OQPROC(57)) THEN                                                40.61
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 57,
-     &  VOQR(57), JDSXV
-        IF (JDSXV.GT.1) THEN                                              40.65
-           IF (OPTG.NE.5) THEN                                            40.80
-              CALL SWIPOL(COMPDA(1,JDSXV),OVEXCV(57),XC, YC, MIP, CROSS,  40.86
-     &                    VOQ(1,VOQR(57)) ,KGRPNT, COMPDA(1,JDP2))
-           ELSE                                                           40.80
-              CALL SwanInterpolateOutput ( VOQ(1,VOQR(57)), VOQ(1,1),     40.80
-     &                                     VOQ(1,2), COMPDA(1,JDSXV),     40.80
-     &                                     MIP, KVERT, OVEXCV(57) )       40.80
-           ENDIF                                                          40.80
-        ELSE
-           DO IP = 1, MIP                                                 40.65
-             VOQ(IP,VOQR(57)) = OVEXCV(57)                                40.65
-           ENDDO                                                          40.65
-        ENDIF
-        IF (INRHOG.EQ.1) THEN
-          DO IP = 1, MIP
-            F1 = VOQ(IP,VOQR(57))
-            IF (.NOT.EQREAL(F1,OVEXCV(57))) VOQ(IP,VOQR(57))=F1*RHO*GRAV
-          END DO
-        ENDIF
-      ENDIF
-!
-!     swell dissipation
-!
-!WAM4      IF (OQPROC(86)) THEN                                              MSL
-!WAM4        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 86,       
-!WAM4     &  VOQR(86), JDSSW
-!WAM4        IF (JDSSW.GT.1) THEN                                            MSL
-!WAM4           IF (OPTG.NE.5) THEN                                          MSL
-!WAM4              CALL SWIPOL(COMPDA(1,JDSSW),OVEXCV(86),XC, YC, MIP, CROSS,           MSL
-!WAM4     &                    VOQ(1,VOQR(86)) ,KGRPNT, COMPDA(1,JDP2))
-!WAM4           ELSE                                                         MSL
-!WAM4              CALL SwanInterpolateOutput ( VOQ(1,VOQR(86)), VOQ(1,1),              MSL
-!WAM4     &                                     VOQ(1,2), COMPDA(1,JDSSW),   MSL
-!WAM4     &                                     MIP, KVERT, OVEXCV(86) )     MSL
-!WAM4           ENDIF                                                        MSL
-!WAM4        ELSE
-!WAM4           DO IP = 1, MIP                                               MSL
-!WAM4             VOQ(IP,VOQR(86)) = OVEXCV(86)                              MSL
-!WAM4           ENDDO                                                        MSL
-!WAM4        ENDIF
-!WAM4        IF (INRHOG.EQ.1) THEN
-!WAM4          DO IP = 1, MIP
-!WAM4            F1 = VOQ(IP,VOQR(86))
-!WAM4            IF (.NOT.EQREAL(F1,OVEXCV(86))) VOQ(IP,VOQR(86))=F1*RHO*GRAV
-!WAM4          END DO
-!WAM4        ENDIF
-!WAM4      ENDIF
 !
 !     energy generation
 !
@@ -2075,27 +2010,6 @@
         ENDIF
       ENDIF
 !
-!     number of plants per square meter
-!
-      IF (OQPROC(70)) THEN                                              ! 41.12
-        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 70,
-     &  VOQR(70), JNPLA2
-        IF (JNPLA2.GT.1) THEN
-           IF (OPTG.NE.5) THEN
-              CALL SWIPOL(COMPDA(1,JNPLA2),OVEXCV(70),XC,YC, MIP, CROSS,
-     &                    VOQ(1,VOQR(70)) ,KGRPNT, COMPDA(1,JDP2))
-           ELSE
-              CALL SwanInterpolateOutput ( VOQ(1,VOQR(70)), VOQ(1,1),
-     &                                     VOQ(1,2), COMPDA(1,JNPLA2),
-     &                                     MIP, KVERT, OVEXCV(70) )
-           ENDIF
-        ELSE
-           DO IP = 1, MIP
-             VOQ(IP,VOQR(70)) = OVEXCV(70)
-           ENDDO
-        ENDIF
-      ENDIF
-!
 !     Qb
 !
       IF (OQPROC(8)) THEN
@@ -2113,7 +2027,7 @@
 !
 !     wind velocity                                                       10.07
 !
-      IF (OQPROC(26)) THEN
+      IF (OQPROC(26).OR.(OQPROC(70).AND.JUSTAR.LE.1)) THEN
         JVQX = VOQR(26)
         JVQY = JVQX+1
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 26,
@@ -2199,7 +2113,7 @@
 !
 !     Ufric
 !
-      IF (OQPROC(35)) THEN
+      IF (OQPROC(35).OR.OQPROC(70)) THEN
         IF (ITEST.GE.50 .OR. IOUTES .GE. 20) WRITE (PRTEST, 121) 35,
      &  VOQR(35), JUSTAR
         IF (JUSTAR.GT.1) THEN
@@ -2505,33 +2419,6 @@
      &           IY.GE.IYB .AND. IY.LE.IYE ) IONOD(IP) = INODE            40.31
          END DO                                                           40.31
       END IF                                                              40.31
-!ADC!
-!ADC      IF (IRQ.EQ.-999) GOTO 900
-!PUN!
-!PUN      IF (MNPROC.EQ.1) GOTO 900
-!PUN!
-!PUN      NOWNV = 0
-!PUN      DO IP = 1, MIP
-!PUN         IVERTP = ivertg(KVERT(IP))
-!PUN         IF ( KVERT(IP).GT.0 .AND. IVERTP.GT.0 ) THEN
-!PUN            NOWNV = NOWNV + 1
-!PUN            IONOD(IP) = MYPROC
-!PUN         ENDIF
-!PUN      ENDDO
-!PUN!
-!PUN      IF (.NOT.LCOMPGRD) THEN
-!PUN         NREF   =  0
-!PUN         IOSTAT = -1
-!PUN         FILENM = TRIM(LOCALDIR)//DIRCH2//'output.set'
-!PUN         CALL FOR (NREF, FILENM, 'UF', IOSTAT)
-!PUN         IF (STPNOW()) RETURN
-!PUN         WRITE(NREF,'(2I8)') IRQ, NOWNV
-!PUN         DO IP = 1, MIP
-!PUN            IVERTP = ivertg(KVERT(IP))
-!PUN            IF ( IONOD(IP).EQ.MYPROC ) WRITE(NREF,'(2I8)') IP, IVERTP
-!PUN         ENDDO
-!PUN         IF (IRQ.EQ.NREOQ) CLOSE(NREF)
-!PUN      ENDIF
 !
  900  IF (ALLOCATED(KVERT)) DEALLOCATE(KVERT)                             41.07
 !
@@ -2810,7 +2697,6 @@
       USE SWCOMM2                                                         40.80
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
-      USE OUTP_DATA
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -2954,12 +2840,13 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=26)                                               40.51 40.41 40.00
+      PARAMETER  (NVOTP=27)                                               40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
      &           CG(*)          ,ACLOC(MDC,MSC),
      &           NE(*)          ,NED(*)        ,DEPXY(MCGRD), ECS(MDC)
+      REAL       UFRIC, WIND10, RWX, RWY
       LOGICAL    CROSS(4,MIP)                                             40.86
 !
       INTEGER    VOQR(*)        ,BKC           ,IVOTP(NVOTP)      ,
@@ -3933,7 +3820,7 @@
                  ENDDO
  480             CONTINUE
               ENDIF
-              IF (EKTOT.GT.0.) THEN
+              IF (ETOT.GT.0.) THEN
                  WLMEAN = PI2 * (ETOT / EKTOT) ** (1./OUTPAR(3))          40.00
                  VOQ(IP,VOQR(IVTYPE)) = WLMEAN
               ELSE
@@ -3994,7 +3881,7 @@
                  ENDDO
  481             CONTINUE
               ENDIF
-              IF (EKTOT.GT.0.) THEN
+              IF (ETOT.GT.0.) THEN
                  WLMEAN = PI2 * (ETOT / EKTOT) ** (1./OUTPAR(3))          40.00
                  VOQ(IP,VOQR(IVTYPE)) = 4.* SQRT(ETOT*DDIR) / WLMEAN
               ELSE
@@ -4429,6 +4316,54 @@
            ELSE
              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
+        ENDIF
+!
+!       wave age = C_peak / U_star = sigma_peak / (k_peak * U_star)
+!
+        IVTYPE=70
+        IF (OQPROC(IVTYPE)) THEN
+!         identify peak relative frequency
+          EMAX = 0.
+          ISIGM = -1
+          DO IS = 1, MSC
+            ETD = 0.
+            DO ID = 1, MDC
+              ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)*DDIR
+            ENDDO
+            IF (ETD.GT.EMAX) THEN
+              EMAX  = ETD
+              ISIGM = IS
+            ENDIF
+          ENDDO
+!         compute wave age
+          IF (ISIGM.GT.0) THEN
+            IF (JUSTAR.GT.1) THEN !u_star computed in SWOEXD
+              UFRIC = VOQ(IP,VOQR(35))
+            ELSE !compute u_star here
+              RWX = VOQ(IP,VOQR(26)); RWY = VOQ(IP,VOQR(26)+1);
+              IF (ICUR.NE.0) THEN
+                RWX = RWX-VOQ(IP,VOQR(5)); RWY = RWY-VOQ(IP,VOQR(5)+1);
+              ENDIF
+              WIND10 = SQRT(RWX**2+RWY**2)
+              UFRIC = 0.
+              IF ( WIND10 .LT. PWIND(12) ) WIND10 = PWIND(12)
+              IF ( WIND10 .GT. 0 ) THEN
+! limit the drag to 2.5e-3 for wind speed > 26 m/s (CBLAS)
+                UFRIC = WIND10*SQRT(1.0e-4*(-0.0160*WIND10**2 + 
+     &                  0.967*WIND10 + 8.058))
+                IF(WIND10 > 50.33)THEN ! METHOD 2
+                   UFRIC=2.02558
+                ENDIF
+!               UFRIC = WIND10*MIN(0.002,SQRT((0.8+0.065*WIND10)*0.001))
+              ELSE
+                UFRIC = SQRT(0.0012873)*WIND10
+              ENDIF
+              UFRIC = MAX(1.E-6,UFRIC)
+            ENDIF
+            VOQ(IP,VOQR(IVTYPE)) = CG(ISIGM) / ( NE(ISIGM) * UFRIC )
+          ELSE
+            VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+          ENDIF
         ENDIF
 !
         GOTO 800

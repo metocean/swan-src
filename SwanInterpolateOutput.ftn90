@@ -55,6 +55,7 @@ subroutine SwanInterpolateOutput ( foutp, x, y, finp, mip, excval )
     use ocpcomm4
     use swcomm2
     use swcomm3
+    use outp_data
     use m_obsta
     use SwanGriddata
     use SwanGridobjects
