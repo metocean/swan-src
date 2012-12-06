@@ -139,7 +139,7 @@
 
 !MPI!     --- enroll in MPI
 !MPI
-!MPI      IF ( PRESENT(COMM) ) THEN
+!MPI      IF ( COMM.gt.0 ) THEN
 !MPI         CALL MPI_COMM_DUP(COMM, MPI_COMM_SWAN, IERR)
 !MPI      ELSE
 !MPI         CALL MPI_INIT ( IERR )

@@ -2362,18 +2362,6 @@
       OVHEXP(IVTYPE) = 1.
       OVEXCV(IVTYPE) = -9
 !
-!WAM4      IVTYPE = 86                                                       MSL
-!WAM4      OVKEYW(IVTYPE) = 'DISSW'
-!WAM4      OVSNAM(IVTYPE) = 'Ssw'
-!WAM4      OVLNAM(IVTYPE) = 'Swell dissipation'
-!WAM4      OVUNIT(IVTYPE) = 'm2/s'
-!WAM4      OVSVTY(IVTYPE) = 1
-!WAM4      OVLLIM(IVTYPE) = 0.
-!WAM4      OVULIM(IVTYPE) = 1000.
-!WAM4      OVLEXP(IVTYPE) = 0.
-!WAM4      OVHEXP(IVTYPE) = 0.1
-!WAM4      OVEXCV(IVTYPE) = -9.
-
 !
 !     various parameters for computation of output quantities             40.00
 !

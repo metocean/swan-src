@@ -226,7 +226,7 @@
 !UNIX        DIRCH1 =  CHAR(92)                                                40.41 40.30
 !UNIX        DIRCH2 =  CHAR(47)                                                40.30
 !       INST = name of institute, max. 40 characters
-        INST = 'Delft University of Technology'
+        INST = 'MSL'
         ITMOPT = 1
 !
       ENDIF
@@ -277,23 +277,24 @@
 !       write initialisation file
 !
         IF ( IAMMASTER ) THEN
-           OPEN  (12, FILE=INIFIL, STATUS='UNKNOWN', FORM='FORMATTED',    40.00
-     &                ERR=950)
-           WRITE (12, 210) INIVER, 'version of initialisation file'       10.16
-           WRITE (12, 220) INST,   'name of institute'
-           WRITE (12, 210) INPUTF, 'command file ref. number'
-           WRITE (12, 220) INPFO,  'command file name'
-           WRITE (12, 210) PRINTF, 'print file ref. number'
-           WRITE (12, 220) OUTFO,  'print file name'                      40.30
-           WRITE (12, 210) PRTEST, 'test file ref. number'
-           WRITE (12, 220) TSTFO,  'test file name'                       40.30
-           WRITE (12, 210) SCREEN, 'screen ref. number'
-           WRITE (12, 210) IUNMAX, 'highest file ref. number'
-           WRITE (12, 230) COMID,  'comment identifier'
-           WRITE (12, 230) TABC,   'TAB character'
-           WRITE (12, 230) DIRCH1, 'dir sep char in input file'
-           WRITE (12, 230) DIRCH2, 'dir sep char replacing previous one'  40.00
-           WRITE (12, 210) ITMOPT, 'default time coding option'
+           OPEN  (IU, FILE=INIFIL, STATUS='UNKNOWN', FORM='FORMATTED',       40.00
+     &           ERR=950)
+           WRITE (IU, 210) INIVER, 'version of initialisation file'
+           WRITE (IU, 220) INST,   'name of institute'
+           WRITE (IU, 210) IUNMIN, 'lowest file ref. number'
+           WRITE (IU, 210) IUNMAX, 'highest file ref. number'
+           WRITE (IU, 210) INPUTF, 'command file ref. number'
+           WRITE (IU, 220) INPFIL, 'command file name'
+           WRITE (IU, 210) PRINTF, 'print file ref. number'
+           WRITE (IU, 220) OUTFO,  'print file name'
+           WRITE (IU, 210) PRTEST, 'test file ref. number'
+           WRITE (IU, 220) TSTFO,  'test file name'
+           WRITE (IU, 210) SCREEN, 'screen ref. number'
+           WRITE (IU, 230) COMID,  'comment identifier'
+           WRITE (IU, 230) TABC,   'TAB character'
+           WRITE (IU, 230) DIRCH1, 'dir sep char in input file'
+           WRITE (IU, 230) DIRCH2, 'dir sep char replacing previous one'
+           WRITE (IU, 210) ITMOPT, 'default time coding option'
            IF (PARLL) THEN
               DO II = 1, NPROC
                  WRITE (12, 240) IWEIG(II), 'speed of processor ',II
