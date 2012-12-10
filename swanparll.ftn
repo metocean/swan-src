@@ -335,11 +335,11 @@
 !MPI
 !MPI!        --- otherwise stop MPI operations on this computer
 !MPI
-!MPI            IF ( PRESENT(NOFINAL) ) THEN
-!MPI               IF ( .NOT. NOFINAL ) CALL MPI_FINALIZE ( IERR )
-!MPI            ELSE
+!!MPI            IF ( (NOFINAL.GT.0) ) THEN
+!!MPI               IF ( .NOT. NOFINAL ) CALL MPI_FINALIZE ( IERR )
+!!MPI            ELSE
 !MPI               CALL MPI_FINALIZE ( IERR )
-!MPI            END IF
+!!MPI            END IF
 !MPI
 !MPI         END IF
 !MPI
@@ -3999,7 +3999,6 @@
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
 
 !        --- if it is not open or already open thru another request
-
          IF ( .NOT.OPENED .OR. NREF.LE.HIOPEN ) THEN
 
 !           --- open generic output file or reset reference number
@@ -4707,9 +4706,7 @@
 !MatL5     &              ACCESS='DIRECT', RECL=4)                              41.08
                IREC(IRQ) = 1                                              40.51
             END IF
-
 !           --- open individual process output files
-
             FILENM = OUTP_FILES(OQI(2))
             ILPOS  = INDEX ( FILENM, ' ' )-1
             DO IPROC = 1, NPROC

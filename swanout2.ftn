@@ -241,7 +241,6 @@
              CALL SWRMAT( MYK, MXK, NAMVAR,                               40.41
      &                    VOQ(1,VOQR(IVTYPE)), NREF, IREC(IRQ),           40.51
      &                    IDLA, OVEXCV(IVTYPE) )
-          ELSE
              CALL SBLKPT(IPD, NREF, DFAC, PSNAME, OVUNIT(IVTYPE),
      &       MXK, MYK, IDLA, OVLNAM(IVTYPE), VOQ(1,VOQR(IVTYPE)))
           END IF
@@ -635,8 +634,7 @@
          OUTP_FILES(OQI(2)) = FILENM                                      40.41
       END IF
       NVAR = OQI(3)
-
-!NPUN      IPROC = INODE
+      IPROC = INODE
 !PUN      IPROC = MYPROC
 
       DO JVAR = 1, NVAR
@@ -644,7 +642,7 @@
          DO IYK = 1, MYK                                                  40.51
             IP = (IYK-1)*MXK                                              40.51
             DO IXK = 1, MXK                                               40.51
-               IF ( IONOD(IP+IXK).EQ.IPROC )                              40.51
+                IF ( IONOD(IP+IXK).EQ.IPROC )                              40.51
      &            WRITE (NREF, FLT_BLKP) VOQ(IP+IXK,VOQR(IVTYPE))         40.51
             END DO                                                        40.51
          END DO                                                           40.51
