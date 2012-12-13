@@ -1538,6 +1538,7 @@
           DDIR = (SPDIR2-SPDIR1) / REAL(MDC)                              20.56
           MDC = MDC + 1                                                   20.56
         ENDIF
+        nspec=mdc*msc
 !
         IF(.NOT.ALLOCATED(SPCSIG)) ALLOCATE(SPCSIG(MSC))                  40.31
         IF(.NOT.ALLOCATED(SPCDIR)) ALLOCATE(SPCDIR(MDC,6))                40.31

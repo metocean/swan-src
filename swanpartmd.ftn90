@@ -2,7 +2,7 @@
 !/ ------------------------------------------------------------------- /
       MODULE SWANPARTMD
 !
-      integer :: IHMAX=200
+      integer :: IHMAX=100
       real :: HSPMIN=0.05, WSMULT=1.7, WSCUT=0.333333
       logical :: flcomb=.true.
 !
@@ -905,12 +905,12 @@
       SUMF(MSC+1,:) = SUMF(MSC,:) * EFTAIL
 !
       DO IP=0, NPI
-        DO IK=1, MSC
+        DO IK=2, MSC
 	  DS=SPCSIG(IK)-SPCSIG(IK-1)
-          SUME (IP) = SUME (IP) + SUMF (IK,IP) * DS
-          SUMEW(IP) = SUMEW(IP) + SUMFW(IK,IP) * DS
-          SUMEX(IP) = SUMEX(IP) + SUMFX(IK,IP) * DS
-          SUMEY(IP) = SUMEY(IP) + SUMFY(IK,IP) * DS
+          SUME (IP) = SUME (IP) + 0.5*(SUMF(IK,IP)+SUMF(IK-1,IP)) * DS
+          SUMEW(IP) = SUMEW(IP) + 0.5*(SUMFW(IK,IP)+SUMFW(IK-1,IP)) * DS
+          SUMEX(IP) = SUMEX(IP) + 0.5*(SUMFX(IK,IP)+SUMFX(IK-1,IP)) * DS
+          SUMEY(IP) = SUMEY(IP) + 0.5*(SUMFY(IK,IP)+SUMFY(IK-1,IP)) * DS
           IF ( SUMF(IK,IP) .GT. EFPMAX(IP) ) THEN
               IFPMAX(IP) = IK
               EFPMAX(IP) = SUMF(IK,IP)
@@ -958,13 +958,11 @@
 ! Escape locations read errors --------------------------------------- *
 !
  2000 CONTINUE
-      WRITE (*,1000) NPO+1
+	CALL MSGERR (1,'XP array too small for number of partitions') 
       RETURN
 !
 ! Formats
 !
- 1000 FORMAT (/' *** PTMEAN :'/                &
-               '     XP ARRAY TOO SMALL AT PARTITION',I6/)
 !/
 !/ End of PTMEAN ----------------------------------------------------- /
 !/

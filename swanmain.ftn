@@ -1954,7 +1954,7 @@
       OVEXCV(IVTYPE) = -9.
 !
       IVTYPE = 44                                                         40.00
-      OVKEYW(IVTYPE) = 'HSWE'                                             40.00
+      OVKEYW(IVTYPE) = 'HSWELL'                                             40.00
       OVSNAM(IVTYPE) = 'hs_sw'
       OVLNAM(IVTYPE) = 'Wave height of swell part'
       OVUNIT(IVTYPE) = UH
@@ -2302,8 +2302,8 @@
       OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 81                                                         MSL
-      OVKEYW(IVTYPE) = 'DPMSEA'
-      OVSNAM(IVTYPE) = 'dpm_sea'
+      OVKEYW(IVTYPE) = 'DPMSEAS'
+      OVSNAM(IVTYPE) = 'dpm_seas'
       OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
@@ -2326,8 +2326,8 @@
       OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 83
-      OVKEYW(IVTYPE) = 'TPSEA'
-      OVSNAM(IVTYPE) = 'tp_sea'
+      OVKEYW(IVTYPE) = 'TPSEAS'
+      OVSNAM(IVTYPE) = 'tp_seas'
       OVLNAM(IVTYPE) = 'Peak period of sea'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 1
@@ -2348,9 +2348,21 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 100.
       OVEXCV(IVTYPE) = -99.
-
 !
-      IVTYPE = 85                                                         MSL
+!
+      IVTYPE = 85
+      OVKEYW(IVTYPE) = 'HSSEAS'
+      OVSNAM(IVTYPE) = 'hs_seas'
+      OVLNAM(IVTYPE) = 'Wave height of sea part'
+      OVUNIT(IVTYPE) = UH
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 10.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 86                                                         MSL
       OVKEYW(IVTYPE) = 'SWE'
       OVSNAM(IVTYPE) = 'swe'
       OVLNAM(IVTYPE) = 'Spectral bandwidth'
@@ -2362,6 +2374,116 @@
       OVHEXP(IVTYPE) = 1.
       OVEXCV(IVTYPE) = -9
 !
+!
+      IVTYPE = 91
+      OVKEYW(IVTYPE) = 'HSSW1'
+      OVSNAM(IVTYPE) = 'hs_sw1'
+      OVLNAM(IVTYPE) = 'Wave height of primary swell partition'
+      OVUNIT(IVTYPE) = UH
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 10.
+      OVEXCV(IVTYPE) = -9.
+
+      IVTYPE = 92
+      OVKEYW(IVTYPE) = 'HSSW2'
+      OVSNAM(IVTYPE) = 'hs_sw2'
+      OVLNAM(IVTYPE) = 'Wave height of secondary swell partition'
+      OVUNIT(IVTYPE) = UH
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 10.
+      OVEXCV(IVTYPE) = -9.
+
+      IVTYPE = 90
+      OVKEYW(IVTYPE) = 'HSSEA'
+      OVSNAM(IVTYPE) = 'hs_sea'
+      OVLNAM(IVTYPE) = 'Wave height of sea partition'
+      OVUNIT(IVTYPE) = UH
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 10.
+      OVEXCV(IVTYPE) = -9.
+       
+!
+      IVTYPE = 97
+      OVKEYW(IVTYPE) = 'DPMSW1'
+      OVSNAM(IVTYPE) = 'dpm_sw1'
+      OVLNAM(IVTYPE) = 'Mean direction of primary swell spectral peak'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 94
+      OVKEYW(IVTYPE) = 'TPSW1'
+      OVSNAM(IVTYPE) = 'tp_sw1'
+      OVLNAM(IVTYPE) = 'Peak period of primary swell partition'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 98
+      OVKEYW(IVTYPE) = 'DPMSW2'
+      OVSNAM(IVTYPE) = 'dpm_sw2'
+      OVLNAM(IVTYPE) = 'Mean direction of secondary swell spectral peak'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 95
+      OVKEYW(IVTYPE) = 'TPSW2'
+      OVSNAM(IVTYPE) = 'tp_sw2'
+      OVLNAM(IVTYPE) = 'Peak period of secondary swell partition'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 96
+      OVKEYW(IVTYPE) = 'DPMSEA'
+      OVSNAM(IVTYPE) = 'dpm_sea'
+      OVLNAM(IVTYPE) = 'Mean direction of sea partition spectral peak'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 2
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 360.
+      OVEXCV(IVTYPE) = -999.
+!
+      IVTYPE = 93
+      OVKEYW(IVTYPE) = 'TPSEA'
+      OVSNAM(IVTYPE) = 'tp_sea'
+      OVLNAM(IVTYPE) = 'Peak period of sea partition'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 100.
+      OVEXCV(IVTYPE) = -9.
+        
 !
 !     various parameters for computation of output quantities             40.00
 !

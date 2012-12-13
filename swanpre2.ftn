@@ -1241,8 +1241,8 @@
           NULLIFY(FRST%NEXTI)                                             40.31
           CURR => FRST                                                    40.31
   70      CALL SVARTP (IVTYPE)
-          IF (IVTYPE .EQ. 98) GOTO 91                                     30.00
-          IF (IVTYPE .NE. 99) THEN
+          IF (IVTYPE .EQ. 99) GOTO 91                                     30.00
+          IF (IVTYPE .NE. 999) THEN
              CALL INREAL ('UNIT', DFAC, 'STA', -1.)
              IF (OVSVTY(IVTYPE).EQ.5) THEN
                CALL MSGERR (2,
@@ -1282,11 +1282,6 @@
                    JDSXV  = MCMVAR                                        40.65
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF
-!WAM4                 IF (IVTYPE.EQ.86 .AND. JDSSW.LE.1) THEN                
-!WAM4                   MCMVAR = MCMVAR+1                                    
-!WAM4                   JDSSW  = MCMVAR
-!WAM4                   ALOCMP = .TRUE.                                      
-!WAM4                 ENDIF
                 IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
                    MCMVAR = MCMVAR+1                                      40.85
                    JGENR  = MCMVAR                                        40.85
@@ -1355,7 +1350,7 @@
              DEALLOCATE(TMP)                                              40.31
           END IF                                                          40.31
 !
-          IF (IVTYPE .EQ. 98) THEN                                        30.00
+          IF (IVTYPE .EQ. 99) THEN                                        30.00
             IF (NSTATM.EQ.0) CALL MSGERR (3,
      &      'time information not allowed in stationary mode')
             NSTATM = 1
@@ -1441,8 +1436,8 @@
         NULLIFY(FRST%NEXTI)                                               40.31
         CURR => FRST                                                      40.31
    80   CALL SVARTP (IVTYPE)
-        IF (IVTYPE .EQ. 98) GOTO 90                                       30.00
-        IF (IVTYPE .NE. 99) THEN
+        IF (IVTYPE .EQ. 99) GOTO 90                                       30.00
+        IF (IVTYPE .NE. 999) THEN
           IF (OVSVTY(IVTYPE).EQ.5) THEN
             CALL MSGERR (2,
      &      'Type of output not allowed for this quantity')
@@ -1551,7 +1546,7 @@
         END IF                                                            40.31
         ALLOCATE(ORQTMP%FAC(0))                                           40.31
 
-        IF (IVTYPE .EQ. 98) THEN                                          30.00
+        IF (IVTYPE .EQ. 99) THEN                                          30.00
           IF (NSTATM.EQ.0) CALL MSGERR (3,
      &      'time information not allowed in stationary mode')
           NSTATM = 1
@@ -2148,9 +2143,9 @@
       IF (KEYWIS ( 'DTM')) IVTYPE = 31                                    40.00
       IF (KEYWIS ('FWID')) IVTYPE = 33                                    40.00
 !     keyword OUTPUT means that output times will be entered              40.00
-      IF (KEYWIS ('OUT')) IVTYPE = 98                                     40.03
+      IF (KEYWIS ('OUT')) IVTYPE = 99                                     40.03
 !     keyword ZZZZ means end of list of output quantities                 40.00
-      IF (KEYWIS ('ZZZZ')) IVTYPE = 99
+      IF (KEYWIS ('ZZZZ')) IVTYPE = 999
 !
       IF (IVTYPE .EQ. 0) CALL WRNKEY
 !

@@ -33,6 +33,7 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+      USE swanpartmd
 !PUN      USE SIZES, ONLY: MNPROC
 !
 !
@@ -240,7 +241,7 @@
                                          ! grid point                     40.86
 !
       INTEGER, ALLOCATABLE :: IONOD(:)                                    40.51
-      REAL, ALLOCATABLE :: ACLOC(:), AUX1(:), VOQ(:)                      40.31
+      REAL, ALLOCATABLE :: ACLOC(:,:), AUX1(:), VOQ(:)                      40.31
       REAL, ALLOCATABLE :: FORCE(:,:)                                     40.80
       REAL              :: KNUM(MSC), CG(MSC), NE(MSC), NED(MSC)          40.31
       TYPE(OPSDAT), POINTER :: CUOPS                                      40.31
@@ -248,6 +249,10 @@
 !
       LOGICAL   OQPROC(NMOVAR)  , LOGACT                                  30.00
       CHARACTER RTYPE *4, STYPE *1, PNAME *8, PTYPE *1
+      character partop *3
+      real, allocatable :: xpart(:,:,:)
+      real dep,rwx,rwy
+      logical eqreal,excpt
       SAVE IENT
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTP')
@@ -265,6 +270,7 @@
 !
 !     Repeat for all output requests:
 !
+      partop='XXX'
       CORQ => FORQ                                                        40.31
       DO 70 IRQ = 1, NREOQ
 !
@@ -366,7 +372,7 @@
 !
 !         assign memory to array ACLOC (contains spectrum for one output point)
 !
-          ALLOCATE(ACLOC(MDC*MSC))                                        40.31
+          ALLOCATE(ACLOC(MDC,MSC))                                        40.31
 !
 !         call SWOEXA to compute quantities for which spectrum is needed
 !         (except wave-induced force)
@@ -395,6 +401,53 @@
      &                   IONOD                                            40.31
      &                                                             )
 !
+!       Partition spectrum
+       do ipart=90,99
+        if (oqproc(ipart).and.partop.ne.rtype(1:3)) then
+         if (allocated(xpart)) deallocate(xpart)
+         allocate(xpart(mip,5,0:5))
+         xpart(:,1,:)=OVEXCV(90)
+         xpart(:,2,:)=OVEXCV(93)
+         xpart(:,3,:)=OVEXCV(96)
+         xpart(:,4,:)=OVEXCV(90)
+         do ip=1,mip
+            DEP = VOQ(mip*(VOQR(4)-1)+ip)
+            xc=voq(2*mip+ip)
+            yc=voq(3*mip+ip)
+            IF (DEP.LE.0.or.eqreal(DEP,OVEXCV(4)))cycle
+            IF (OPTG.NE.5) THEN
+             IF (KREPTX.EQ.0) THEN
+             IF (xc.LT.-0.01.or.xc.GT.REAL(MXC-1)+0.01)cycle
+             ENDIF
+             IF (yc.LT.-0.01.or.yc.GT.REAL(MYC-1)+0.01)cycle
+             ENDIF
+            IF (OPTG.NE.5) THEN
+             CALL SWOINA(xc,yc,AC2,ACLOC,KGRPNT,COMPDA(1,JDP2),
+     & CROSS(1,IP),EXCPT)
+            ELSE
+             IF (.NOT.LCOMPGRD) THEN
+              IF(.NOT.EQREAL(VOQ(IP),OVEXCV(1)))XP=VOQ(IP)-XOFFS
+              IF(.NOT.EQREAL(VOQ(mip+IP),OVEXCV(2)))YP=VOQ(mip+IP)-YOFFS
+              CALL SwanInterpolateAc ( ACLOC, XP, YP, AC2, EXCPT )
+             ELSE
+              ACLOC(:,:) = AC2(:,:,IP)
+              EXCPT = .FALSE.
+             ENDIF
+            ENDIF
+            IF (EXCPT) cycle
+            rwx = VOQ(mip*(VOQR(26)-1)+ip)
+            rwy = VOQ(mip*VOQR(26)+ip)
+            call SWANPART (ACLOC,RWX,RWY,DEP,KNUM,npart,xpart(ip,:,:),5)
+            partop=rtype(1:3)
+         enddo
+        endif
+        if (oqproc(ipart)) then
+         ip=ipart-90
+         voq(mip*(voqr(ipart)-1)+1:voqr(ipart)*mip)=
+     &         xpart(:,int(ip/3)+1,mod(ip,3)+1)
+        endif
+       enddo
+
           DEALLOCATE(ACLOC)                                               40.31
         ENDIF
 !
@@ -409,7 +462,7 @@
         ENDIF
 !
 !       ***** block output *****
-        IF (RTYPE(1:3) .EQ. 'BLK') THEN
+        IF (RTYPE(1:3) .EQ. 'BLK') THEN 
          IF (PARLL) THEN
              CALL SWBLKP ( CORQ%OQI, CORQ%IVTYP, MXK, MYK, VOQR,          40.31
      &                     VOQ(1), IONOD )                                40.51 40.31
@@ -426,6 +479,7 @@
           CALL SWTABP ( RTYPE, CORQ%OQI, CORQ%IVTYP, SNAME,               40.31
      &                  MIP, VOQR, VOQ(1), IONOD )                        40.51 40.31
           IF (STPNOW()) RETURN                                            34.01
+          partop='XXX'
           GOTO 68                                                         40.00
         ENDIF
 !
@@ -451,6 +505,7 @@
         DEALLOCATE(VOQ,CROSS,IONOD)                                       40.86 40.51 40.31
         CORQ => CORQ%NEXTORQ                                              40.31
   70  CONTINUE
+        if (allocated(xpart))  deallocate(xpart)                        MSL
 !
 !     Termination of output
 !
@@ -711,6 +766,16 @@
            ENDIF
          ENDIF
 !
+!        for partitioning add wind
+!
+         if (ivtype.ge.90) then
+            if (.not.oqproc(26)) then
+                nvoqp=nvoqp+2
+                voqr(26)=nvoqp-1
+                oqproc(26)=.true.
+            endif
+         endif
+!
 !        for some quantities compute action densities
 !
          IF (IVTYPE.EQ.10 .OR. IVTYPE.EQ.11 .OR. IVTYPE.EQ.12 .OR.
@@ -726,7 +791,8 @@
          IF (IVTYPE.EQ.15 .OR. IVTYPE.EQ.17 .OR. IVTYPE.EQ.18 .OR.
      &       IVTYPE.EQ.19 .OR. IVTYPE.EQ.20 .OR. IVTYPE.EQ.28 .OR.        10.10
      &       IVTYPE.EQ.32 .OR. IVTYPE.EQ.33 .OR. IVTYPE.EQ.42 .OR.
-     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59 .OR. IVTYPE.EQ.71      )      41.15 40.64 40.41 40.00
+     &       IVTYPE.EQ.47 .OR. IVTYPE.EQ.59 .OR. IVTYPE.EQ.71 .OR.
+     &       IVTYPE.GE.90     )                                           41.15 40.64 40.41 40.00
      &   BKC = 2
 !
          IF (IVTYPE.EQ.11 .AND. ICUR.GT.0) BKC = 2                        20.36
@@ -2697,6 +2763,7 @@
       USE SWCOMM2                                                         40.80
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
+      use swanpartmd
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -2840,7 +2907,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=27)                                               40.51 40.41 40.00
+      PARAMETER  (NVOTP=28)                                               40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -2859,7 +2926,7 @@
       SAVE IENT, IVOTP
       DATA IENT /0/
       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
-     &            42, 43, 44, 47, 48, 53, 58, 59,71, 80,81,82,83,84/                                 MSL 40.51 40.41 40.00
+     &            42, 43, 44, 47, 48, 53, 58, 59,71, 80,81,82,83,84,85/ 
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     loop over all output points
@@ -2902,10 +2969,12 @@
 !
         EFTAIL = 1. / (PWTAIL(1) - 1.)
 !
+!
 !       significant wave height
 !
         IVTYPE = 10
-        IF (OQPROC(IVTYPE)) THEN
+        IVTYPE2 = 85
+        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2)) THEN
           IF (OUTPAR(6).EQ.0.) THEN                                       40.87
 !            integration over [0,inf]                                     40.87
              ETOT = 0.
@@ -2931,7 +3000,8 @@
              ETOT = SwanIntgratSpc(0. , FMIN, FMAX, SPCSIG, SPCDIR(1,1),  40.87
      &                             WK , ECS , 0.  , 0.    , ACLOC      ,  40.87
      &                             1  )                                   40.87
-          ENDIF                                                           40.87
+          ENDIF
+          if (OQPROC(IVTYPE)) then                                        MSL
           IF (ETOT .GE. 0.) THEN                                          30.00
             VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
           ELSE
@@ -2940,12 +3010,15 @@
           IF (ITEST.GE.100) THEN                                          40.00
             WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
           ENDIF
+          endif
         ENDIF
 !
-!       swell wave height
+!       sea/swell wave height
 !
         IVTYPE = 44
-        IF (OQPROC(IVTYPE)) THEN
+        ivtype2 = 85
+        IF (OQPROC(IVTYPE).or.oqproc(ivtype2)) THEN
+          etot2=etot
           ETOT = 0.
           FSWELL = PI2 * OUTPAR(5)
 !         trapezoidal rule is applied
@@ -2965,6 +3038,7 @@
             ENDDO
             IF (SPCSIG(IS).GT.FSWELL) EXIT
           ENDDO
+          if (oqproc(ivtype))then
           IF (ETOT .GE. 0.) THEN                                          30.00
             VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
           ELSE
@@ -2972,8 +3046,19 @@
           ENDIF
           IF (ITEST.GE.100) THEN                                          40.00
             WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
+          ENDIF
+          endif
+          if (oqproc(ivtype2))then
+          IF (ETOT .GE. 0.) THEN
+            VOQ(IP,VOQR(IVTYPE2)) = 4.*SQRT(etot2-ETOT)
+          ELSE
+            VOQ(IP,VOQR(IVTYPE2)) = 0.
+          ENDIF
+          IF (ITEST.GE.100) THEN
+           WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE2), VOQ(IP,VOQR(IVTYPE2))
  222        FORMAT(' SWOEXA: POINT ', I5, 2X, A, 1X, E12.4)
           ENDIF
+          endif
         ENDIF
 !
 !       average relative period                              modified 10.09
@@ -3576,7 +3661,7 @@
 !
 !       spectral bandwidth
 !
-        IVTYPE = 85
+        IVTYPE = 86
         IF (OQPROC(IVTYPE)) THEN
           ETOT = 0.
           EM2=0.

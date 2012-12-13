@@ -621,7 +621,7 @@
 !     MOUTPA [  50]  number of output parameters                          40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 86, MOUTPA=60)                                   MSL 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 99, MOUTPA=60)                                   MSL 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -1436,7 +1436,7 @@
 !     NUMGRD [  10]  maximum number of grids
 !
       INTEGER NUMGRD
-      PARAMETER (NUMGRD = 10)
+      PARAMETER (NUMGRD = 12)
 !
 !  7. Local variables
 !
@@ -1893,6 +1893,7 @@
 !                  origin of user coordinates w.r.t. computational coordinates
 ! YPC    [    0.]  y coordinate of origin of computational grid
 !
+! NSPEC            number of sepctral bins
       INTEGER             IXCGRD(MICMAX), IYCGRD(MICMAX), KCGRD(MICMAX)
       INTEGER             ICOMP,       MCGRD
       INTEGER             MDC,         MDC4MA,      MDC4MI,      MMCGR
@@ -1907,6 +1908,7 @@
       REAL                YPC
       REAL                XCGMIN,      XCGMAX,      YCGMIN,      YCGMAX
       LOGICAL             FULCIR
+      integer             nspec                                         MSL
       LOGICAL ::          ALOCMP = .FALSE.                                40.97
 !$OMP THREADPRIVATE(IXCGRD,IYCGRD,KCGRD)
 !

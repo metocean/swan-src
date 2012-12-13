@@ -241,6 +241,7 @@
              CALL SWRMAT( MYK, MXK, NAMVAR,                               40.41
      &                    VOQ(1,VOQR(IVTYPE)), NREF, IREC(IRQ),           40.51
      &                    IDLA, OVEXCV(IVTYPE) )
+          ELSE
              CALL SBLKPT(IPD, NREF, DFAC, PSNAME, OVUNIT(IVTYPE),
      &       MXK, MYK, IDLA, OVLNAM(IVTYPE), VOQ(1,VOQR(IVTYPE)))
           END IF
