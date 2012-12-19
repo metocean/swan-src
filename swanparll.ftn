@@ -4680,6 +4680,7 @@
          FILENM = OUTP_FILES(OQI(2))
          ILPOS  = INDEX(FILENM, '-0')
          FILENM = FILENM(1:ILPOS-1)
+        print*,filenm
          INQUIRE ( FILE=FILENM, OPENED=OPENED, NUMBER=IUT )
 
 !        --- if it is not open or already open thru another request

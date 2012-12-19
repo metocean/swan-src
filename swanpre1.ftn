@@ -2233,12 +2233,12 @@
         ELSE IF ( KEYWIS ('BABANIN')) THEN
 !         *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
           IWCAP = 8
-          CALL INREAL ('a1sds', a1sds, 'REQ', 0.0)
-          CALL INREAL ('a2sds', a2sds, 'REQ', 0.0)
-          CALL INREAL ('p1sds', p1sds, 'REQ', 0.0)
-          CALL INREAL ('p2sds', p2sds, 'REQ', 0.0)
-          CALL INREAL ('Cdsv', Cdsv, 'REQ', 0.0)
-          CALL INREAL ('feswell', feswell, 'REQ', 0.0)
+          CALL INREAL ('a1sds', a1sds, 'REQ', 6.24E-7)
+          CALL INREAL ('a2sds', a2sds, 'REQ', 8.74E-6)
+          CALL INREAL ('p1sds', p1sds, 'REQ', 4.0)
+          CALL INREAL ('p2sds', p2sds, 'REQ', 4.0)
+          CALL INREAL ('Cdsv', Cdsv, 'REQ', 1.2)
+          CALL INREAL ('feswell', feswell, 'REQ', 0.006)
           CALL INKEYW ('REQ', ' ')
           IF (KEYWIS ('UP')) THEN
              UPWARDS = .TRUE.
@@ -5778,6 +5778,7 @@
 !
 !     ==================================================================
 !
+      CALL INCSTR ('FNAME', FILENM, 'REQ', ' ')
 !     --- append node number to FILENM in case of parallel computing      40.31
       IF ( PARLL ) THEN                                                   40.31
          ILPOS = INDEX ( FILENM, ' ' )-1                                  40.31

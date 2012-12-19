@@ -2302,8 +2302,8 @@
       OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 81                                                         MSL
-      OVKEYW(IVTYPE) = 'DPMSEAS'
-      OVSNAM(IVTYPE) = 'dpm_seas'
+      OVKEYW(IVTYPE) = 'DPMSEA'
+      OVSNAM(IVTYPE) = 'dpm_sea'
       OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
@@ -2326,8 +2326,8 @@
       OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 83
-      OVKEYW(IVTYPE) = 'TPSEAS'
-      OVSNAM(IVTYPE) = 'tp_seas'
+      OVKEYW(IVTYPE) = 'TPSEA'
+      OVSNAM(IVTYPE) = 'tp_sea'
       OVLNAM(IVTYPE) = 'Peak period of sea'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 1
@@ -2351,8 +2351,8 @@
 !
 !
       IVTYPE = 85
-      OVKEYW(IVTYPE) = 'HSSEAS'
-      OVSNAM(IVTYPE) = 'hs_seas'
+      OVKEYW(IVTYPE) = 'HSSEA'
+      OVSNAM(IVTYPE) = 'hs_sea'
       OVLNAM(IVTYPE) = 'Wave height of sea part'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
@@ -2400,8 +2400,8 @@
       OVEXCV(IVTYPE) = -9.
 
       IVTYPE = 90
-      OVKEYW(IVTYPE) = 'HSSEA'
-      OVSNAM(IVTYPE) = 'hs_sea'
+      OVKEYW(IVTYPE) = 'HSSEAS'
+      OVSNAM(IVTYPE) = 'hs_seas'
       OVLNAM(IVTYPE) = 'Wave height of sea partition'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
@@ -2461,8 +2461,8 @@
       OVEXCV(IVTYPE) = -9.
 !
       IVTYPE = 96
-      OVKEYW(IVTYPE) = 'DPMSEA'
-      OVSNAM(IVTYPE) = 'dpm_sea'
+      OVKEYW(IVTYPE) = 'DPMSEAS'
+      OVSNAM(IVTYPE) = 'dpm_seas'
       OVLNAM(IVTYPE) = 'Mean direction of sea partition spectral peak'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 2
@@ -2473,8 +2473,8 @@
       OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 93
-      OVKEYW(IVTYPE) = 'TPSEA'
-      OVSNAM(IVTYPE) = 'tp_sea'
+      OVKEYW(IVTYPE) = 'TPSEAS'
+      OVSNAM(IVTYPE) = 'tp_seas'
       OVLNAM(IVTYPE) = 'Peak period of sea partition'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 1
@@ -4770,7 +4770,7 @@
 !
 !     *** Check formulation for whitecapping ***
 !
-      IF ( IWCAP.GT.7 ) THEN
+      IF ( IWCAP.GT.8 ) THEN
          WRITE (MSGSTR, '(A,I2,A)')
      &               'Unknown method for whitecapping (IWCAP=',IWCAP,')'
          CALL MSGERR( 1, TRIM(MSGSTR) )
