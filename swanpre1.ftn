@@ -1890,7 +1890,7 @@
          CALL ININTG ('MAXERR', MAXERR, 'UNC', 0)
          CALL INREAL ('GRAV',   GRAV,   'UNC', 0.)
          CALL INREAL ('RHO',    RHO,    'UNC', 0.)
-         CALL INREAL ('CDCAP',  CDCAP,  'UNC', 0.)
+         CALL INREAL ('CDCAP',  CDCAP,  'UNC', 9999.)
          CALL ININTG ('INRHOG', INRHOG, 'UNC', 0)
          IF (INRHOG.EQ.0) THEN                                            30.20
            OVUNIT(7) = 'm2/s'
@@ -1979,7 +1979,7 @@
                QR(7) = -999.                                              40.87
             ENDIF                                                         40.87
             GOTO 70                                                       40.87
-         ELSEIF (IVTYPE.NE.99) THEN                                       40.87
+         ELSEIF (IVTYPE.NE.999) THEN                                      40.87
            CALL MSGERR (2, 'unknown quantity ')                           40.03
          ENDIF                                                            40.87
 !
@@ -2239,6 +2239,7 @@
           CALL INREAL ('p2sds', p2sds, 'REQ', 4.0)
           CALL INREAL ('Cdsv', Cdsv, 'REQ', 1.2)
           CALL INREAL ('feswell', feswell, 'REQ', 0.006)
+          CALL INREAL ('a0sin', a0sin, 'REQ', 0.04)
           CALL INKEYW ('REQ', ' ')
           IF (KEYWIS ('UP')) THEN
              UPWARDS = .TRUE.
@@ -2396,13 +2397,16 @@
 !
         CALL INKEYW ('STA','  ')                                          41.33
         IF ( KEYWIS('DRAG') ) THEN                                        41.33
-          CALL INKEYW ('STA','WU')                                        41.33
+          CALL INKEYW ('STA','HWANG')                                     41.33
           IF (KEYWIS ('WU')) THEN                                         41.33
              IDRAG = 1                                                    41.33
           ELSE IF (KEYWIS ('FIT')) THEN                                   41.33
              IDRAG = 2                                                    41.33
           ELSE IF (KEYWIS ('SWELL')) THEN                                 41.33
              IDRAG = 3                                                    41.33
+          ELSE IF (KEYWIS ('HWANG')) THEN
+             IDRAG = 4
+             CALL INREAL('CD10',cd10,'STA',0.0001)
           ENDIF                                                           41.33
         ENDIF                                                             41.33
 !
@@ -2557,13 +2561,14 @@
           IF (LWINDR .GT. 0) IWIND = LWINDM
 !         *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
           IWCAP = 8
-          CALL INREAL ('a1sds', a1sds, 'REQ', 0.0)
-          CALL INREAL ('a2sds', a2sds, 'REQ', 0.0)
-          CALL INREAL ('p1sds', p1sds, 'REQ', 0.0)
-          CALL INREAL ('p2sds', p2sds, 'REQ', 0.0)
-          CALL INREAL ('Cdsv', Cdsv, 'REQ', 0.0)
-          CALL INREAL ('feswell', feswell, 'REQ', 0.0)
-          CALL INKEYW ('REQ', ' ')
+          CALL INREAL ('a1sds', a1sds, 'STA', 6.24E-7)
+          CALL INREAL ('a2sds', a2sds, 'STA', 8.74E-6)
+          CALL INREAL ('p1sds', p1sds, 'STA', 4.0)
+          CALL INREAL ('p2sds', p2sds, 'STA', 4.0)
+          CALL INREAL ('Cdsv', Cdsv, 'STA', 1.2)
+          CALL INREAL ('feswell', feswell, 'STA', 0.006)
+          CALL INREAL ('a0sin', a0sin, 'STA', 0.04)
+          CALL INKEYW ('STA', 'UP')
           IF (KEYWIS ('UP')) THEN
              UPWARDS = .TRUE.
           ELSE IF (KEYWIS ('DOWN')) THEN
@@ -2572,14 +2577,14 @@
              CALL WRNKEY
           ENDIF
           CALL INKEYW ('STA', ' ')
-          IF (KEYWIS('VECTAU')) THEN 
+          IF (KEYWIS('VECTAU')) THEN
              VECTOR_TAU=.TRUE.
           ENDIF
           CALL INKEYW ('STA', ' ')
-          IF (KEYWIS('TRUE10')) THEN 
+          IF (KEYWIS('TRUE10')) THEN
              TRUE_U10=.TRUE.
           ENDIF
-          
+
         ELSE
           CALL IGNORE ('KOM')                                             970220
 
@@ -2588,7 +2593,7 @@
              CALL MSGERR(1,' * We prefer that you use GEN3 BABANIN. * ')
              CALL MSGERR(1,' * Example:                             * ')
              CALL MSGERR(1,'GEN3 BABANIN 5.7E-7 8.0E-6 4.0 4.0 1.2 0.006
-     &0 UP AGROW')
+     &0.04 UP AGROW')
 
           ELSE
 
@@ -2774,9 +2779,9 @@
 !
 ! ===================================================================
 !
-!                                                           | UP   |
-!  BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [Cdsv] [feswell] <       > (NOT documented)
-!                                                           | DOWN |
+!                                                                    | UP   |
+!  BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [Cdsv] [feswell] [a0sin] <       > (NOT documented)
+!                                                                    | DOWN |
 !
 ! ===================================================================
 !
@@ -2798,27 +2803,27 @@
         IF (LWINDR .GT. 0) IWIND = LWINDM                               
 !       *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
         IWCAP = 8                                                       
-
-        CALL INREAL ('a1sds', a1sds, 'REQ', 0.0)
-        CALL INREAL ('a2sds', a2sds, 'REQ', 0.0)
-        CALL INREAL ('p1sds', p1sds, 'REQ', 0.0)
-        CALL INREAL ('p2sds', p2sds, 'REQ', 0.0)
-        CALL INREAL ('Cdsv', Cdsv, 'REQ', 0.0)
-        CALL INREAL ('feswell', feswell, 'REQ', 0.0)
-        CALL INKEYW ('REQ', ' ')
+        CALL INREAL ('a1sds', a1sds, 'STA', 6.24E-7)
+        CALL INREAL ('a2sds', a2sds, 'STA', 8.74E-6)
+        CALL INREAL ('p1sds', p1sds, 'STA', 4.0)
+        CALL INREAL ('p2sds', p2sds, 'STA', 4.0)
+        CALL INREAL ('Cdsv', Cdsv, 'STA', 1.2)
+        CALL INREAL ('feswell', feswell, 'STA', 0.006)
+        CALL INREAL ('a0sin', a0sin, 'STA', 0.04)
+        CALL INKEYW ('STA', 'UP')
         IF (KEYWIS ('UP')) THEN
-          UPWARDS = .TRUE.
+           UPWARDS = .TRUE.
         ELSE IF (KEYWIS ('DOWN')) THEN
-          UPWARDS = .FALSE.
+           UPWARDS = .FALSE.
         ELSE
-          CALL WRNKEY
+           CALL WRNKEY
         ENDIF
         CALL INKEYW ('STA', ' ')
-        IF (KEYWIS('VECTAU')) THEN 
+        IF (KEYWIS('VECTAU')) THEN
            VECTOR_TAU=.TRUE.
         ENDIF
         CALL INKEYW ('STA', ' ')
-        IF (KEYWIS('TRUE10')) THEN 
+        IF (KEYWIS('TRUE10')) THEN
            TRUE_U10=.TRUE.
         ENDIF
 

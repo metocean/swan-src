@@ -1946,7 +1946,7 @@
 ! WLEV   [    0.] water level
 !                 =level; set by command SET [level] ...
 !
-      REAL CASTD
+      REAL CASTD,       CDCAP
       REAL DEGRAD,      DNORTH,      GRAV,        PI
       REAL PI2,         PWTAIL(10),  RHO,         WLEV
 !
@@ -1991,6 +1991,7 @@
 !                 1=Wu (1982)                                             41.33
 !                 2=2nd order polynomial fit (see CE publication, 2012)   41.33
 !                 3=Cd based on cross swell                               41.33
+!                 4=Hwang(2011)                                           MSL
 ! IFRSRF [     0] indicates frequency dependent surf breaking             41.06
 !                 0=no frequency dependency                               41.06
 !                 1=frequency dependency                                  41.06
@@ -2391,7 +2392,7 @@
       REAL                PSETUP(MSETUP),           PSHAPE(MSHAPE)
       REAL                PSURF(MSURF),             PTRIAD(MTRIAD)
       REAL                PWCAP(MWCAP),             PWIND(MWIND)
-      REAL                a1sds,a2sds,p1sds,p2sds,Cdsv,feswell
+      REAL               a1sds,a2sds,p1sds,p2sds,Cdsv,feswell,cd10,a0sin
       LOGICAL             UPWARDS,VECTOR_TAU,TRUE_U10
       REAL                SIGMAG
       REAL                SPPARM(MSPPAR),SY0,       U10
@@ -2407,10 +2408,6 @@
       LOGICAL             CSETUP
 ! pswdis(mswdis) Parameters for Arduin et al (2008) swell dissipation as per WW3
 ! s1,s2,s3,Re,s5
-!WAM4      integer             iswdis,iswellft
-!WAM4      real                pswdis(mswdis)                                  MSL
-!WAM4      real                swellft(0:200),delab
-!WAM4      Parameter(iswellft=200)
 !
 !$OMP THREADPRIVATE(ICMAX,CSETUP)
 !

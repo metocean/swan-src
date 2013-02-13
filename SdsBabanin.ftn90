@@ -485,57 +485,10 @@ CONTAINS
              ! In Donelan notation, SWINEB is BETA, so I use BETA=GAMMA*sigma*rhoa/rhow (Donelan eq 3)
 
              S_IN(ID,IS)=SWINEB*AC2(ID,IS,KCGRD(1))*SPCSIG(IS) ! actual wind input term Sin=Beta*Edens
-             !           IMATRA(ID,IS) = IMATRA(ID,IS) + S_IN(ID,IS) ! THIS WILL BE MOVED TO ANOTHER LOOP, THAT APPEARS AFTER THE REDUCTION
-
-             !
-             !/T            END IF
-             !
           END IF
        ENDDO
     ENDDO
 
-! Optional, calculate Hm0 to verify that units are what we think they are: 
-!--------- BEGIN TEST CALCULATION-----------------------
-!      ETOT=0.0
-!      DO IS=1,MSC
-!         DO  ID = 1, MDC
-!            EDENS2D=AC2(ID,IS,KCGRD(1))*SPCSIG(IS) 
-    !! EDENS2D is m2 / (rad*rad-Hz)
-    !! AC2 is m2 / (rad*rad-Hz*rad-Hz)
-!            ETOT=ETOT+EDENS2D*DDIR*SPCSIG(IS)*FRINTF
-    !!                             rad  rad-Hz
-!         END DO
-!      END DO
-!      HM0=4.0*SQRT(ETOT)
-!      WRITE(*,*)'HM0 = ',HM0
-!--------- END TEST CALCULATION-----------------------
-    
-! Optional test output (this file can be large)
-!--------- BEGIN TEST OUTPUT-----------------------
-!    IF(TESTFL)THEN ! write spectrum for diagnostics
-!       WRITE(405,*)IT,' % IT'
-!       IF(IT.EQ.1)THEN ! write spectral grid
-!          WRITE(405,*)MSC,' % NF'
-!          WRITE(405,*)'% SIGMAS'
-!          DO  IS=1,MSC
-!             WRITE(405,*)SPCSIG(IS) 
-!          END DO
-!          WRITE(405,*)MDC, ' % ND'
-!          WRITE(405,*)'% DIRECTIONS (RAD)'
-!          DO  ID = 1, MDC
-!             WRITE(405,*)SPCDIR(ID,1)
-!          END DO
-!       ENDIF ! IF (IT.EQ.1)THEN ! write spectral grid
-!       WRITE(405,*)CHTIME,' % CHTIME'
-!       WRITE(405,*)' % EDENS2D m2 / (rad*rad-Hz)'
-!       DO IS=1,MSC
-!          DO  ID = 1, MDC
-!             EDENS2D=AC2(ID,IS,KCGRD(1))*SPCSIG(IS) 
-!             WRITE(405,*)EDENS2D
-!          END DO
-!       END DO
-!    ENDIF   ! IF(TESTFL)THEN ! write spectrum for diagnostics
-!--------- END TEST OUTPUT-----------------------
 
     call calc_Lfactor(Lfactor,S_in,UFRIC,PWIND,DDIR,SPCSIG,FRINTF,CINV,grav,WIND10,TESTFL,SPCDIR,vector_tau,true_u10,CTW,STW)
 
@@ -545,15 +498,40 @@ CONTAINS
           ID = MOD ( IDDUM - 1 + MDC, MDC ) + 1
           IF ( ANYWND(ID) ) THEN
              S_IN(ID,IS)= S_IN(ID,IS) * Lfactor(IS)
+	  endif
+	enddo
+    enddo
 
+    if (a0sin.gt.0) then
+       DO IS = 1, MSC
+       SIGMA = SPCSIG(IS)                                          !       30.72
+       CINV(IS)  = KWAVE(IS,1) / SIGMA
+       UoverC = TEMP2 * CINV(IS)
+       DO ID=1,MDC
+             COSDIF = SPCDIR(ID,2)*CTW + SPCDIR(ID,3)*STW            !       40.41
+             TEMP4=( UoverC * COSDIF - 1.0 )
+	     if (temp4.ge.0.) cycle
+             WPSI=TEMP4**2
+             TEMP5=10.0*SQRTBN(IS)*WPSI-11.0
+             TEMP6=1.0+TANH(TEMP5)
+             GDONEL=2.8-TEMP6
+             GAMMAD=GDONEL*SQRTBN(IS)*WPSI
+             SWINEB =  a0sin * GAMMAD * SIGMA * PWIND(9) ! NEW SWINEB
+             S_IN(ID,IS)=S_IN(ID,IS)-SWINEB*AC2(ID,IS,KCGRD(1))*SPCSIG(IS) ! actual wind input term Sin=Beta*Edens
+       ENDDO
+       ENDDO
+    endif
+	
 ! We want to add B*N to RHS. This is SWINEB*AC2, see SWIND3.
 ! Above, we had S_IN(ID,IS)=SWINEB*AC2(ID,IS,KCGRD(1))*SPCSIG(IS) 
 ! Thus, we just need to divide out SPCSIG(IS) and we are good.
-
+    DO IS = 1, ISSTOP
+       DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+          ID = MOD ( IDDUM - 1 + MDC, MDC ) + 1
+          IF ( ANYWND(ID) ) THEN
              IMATRA(ID,IS) = IMATRA(ID,IS) + S_IN(ID,IS)/SPCSIG(IS) ! THIS was moved from loop above
              IF(AC2(ID,IS,KCGRD(1)).NE.0.0)THEN
                 SWINEB=S_IN(ID,IS)/(AC2(ID,IS,KCGRD(1))*SPCSIG(IS))
-! since S_IN(ID,IS)=SWINEB*(AC2(ID,IS,KCGRD(1))*SPCSIG(IS))=SWINEB*EDENS
              ELSE
                 SWINEB=0.0
              ENDIF
@@ -1140,7 +1118,6 @@ CONTAINS
     aorb=2.0*sqrt(ETOT)
     USIGTOP=URMSTOP*SQRT(2.0)
     Re=4.0*USIGTOP*aorb/nu_air
-
     IF(Re > Re_crit)then
        DO IS=1, ISSTOP
 !      Apparent bug in v54: Urmstop is used where Usigtop should be used...corrected in v55
@@ -1152,15 +1129,6 @@ CONTAINS
           SWDIS(IS) = RHOAW * Cdsv * 2.0 * KWAVE(IS,1)  & ! note that "-1" omitted since LHS
                       * SQRT(2.0 * NU_AIR * SPCSIG(IS)) ! units of radian^1.5/s (radians/sec is conventional)
 
-          ! start error check block (may be omitted)
-          !                myu=2.0*RHOAW*(1.0/GRAV)*(1.0/CGo(IS,1))
-          !     &              *(SPCSIG(IS)**2.5)*sqrt(2.0*NU_AIR) 
-          !                write(*,*)'myu(',IS,') = ',myu
-          !                SWDIS_CHECK=Cdsv*myu*CGo(IS,1)
-          !                write(*,*)'SWDIS(IS),SWDIS_CHECK = ',
-          !     &                    SWDIS(IS),SWDIS_CHECK
-          ! end error check block (may be omitted)
-
        END DO
     endif
 
@@ -1168,7 +1136,7 @@ CONTAINS
        !         Only fill the values for the current sweep
        DO IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD(IDDUM - 1 + MDC, MDC) + 1
-          IMATDA(ID,IS)   = IMATDA(ID,IS)   + SWDIS(IS)
+          IMATDA(ID,IS)   = IMATDA(ID,IS)   + SWDIS(IS)/SPCSIG(IS)
           DISSC1(ID,IS,4) = DISSC1(ID,IS,4) + SWDIS(IS)
        END DO
     END DO
@@ -1176,6 +1144,86 @@ CONTAINS
     RETURN
   END SUBROUTINE SSWELL
 
+!****************************************************************
+  SUBROUTINE BSWELL (A,WN,SPCSIG,IDCMIN,IDCMAX,ISSTOP,DISSC1,IMATDA,GRAV,feswell)
+
+    !****************************************************************
+    use swcomm3, ONLY :DDIR,MDC,MSC
+
+    IMPLICIT NONE
+
+    REAL, INTENT(IN)  :: A(MSC,MDC), WN(MSC)
+
+    INTEGER, INTENT(IN) :: ISSTOP
+    INTEGER, INTENT(IN) :: IDCMIN(:) ! IDCMIN(MSC)
+    INTEGER, INTENT(IN) :: IDCMAX(:) ! IDCMAX(MSC)
+
+    REAL   , INTENT(IN)    :: SPCSIG(:)  ! SPCSIG(MSC)
+
+    REAL   , INTENT(IN)    :: GRAV
+    REAL   , INTENT(IN)    :: feswell
+
+    REAL   , INTENT(INOUT) :: IMATDA(:,:) ! IMATDA(MDC,MSC)
+    REAL   , INTENT(INOUT) :: DISSC1(:,:,:) ! DISSC1(1:MDC,1:MSC,1:MDISP)  
+
+    !   local variables:
+    INTEGER           :: IDDUM,ID
+    REAL              :: SWDIS(ISSTOP) ! this is S_SWELL / E(f,theta)
+    INTEGER           :: IS, ITH
+    REAL              :: ABAND(MSC)         ! action density per freq. bin
+!    REAL              :: U0(MSC),AORB(MSC)  ! orbital velocity (narrow banded)
+    REAL              :: DDIS(MSC)          ! dissipation term of derivative
+    reaL              :: DDEN(msc)
+    real	      :: k(mdc,msc),bn(msc),kmax(msc)
+!/
+!/ ------------------------------------------------------------------- /
+!/
+!                                            ! in form of WN(1:NK) == WN2(IKN).
+      ABAND = SUM(A,1)     ! action density as function of wavenumber
+      DDIS  = 0.
+
+      DDEN=DDIR*SPCSIG
+      DDEN(2:MSC-1)=0.5*DDEN(2:MSC-1)*(SPCSIG(3:MSC)-SPCSIG(1:MSC-2))
+      DDEN(1)=DDEN(1)*(SPCSIG(2)-SPCSIG(1))
+      DDEN(MSC)=DDEN(MSC)*(SPCSIG(MSC)-SPCSIG(MSC-1))
+!
+!/ X) --- Parameterise B1 as a function of wave steepness ------------ /
+!      U0    = SQRT(  2.0 * (ABAND * DDEN)  ) * SPCSIG
+!      AORB       = SQRT( 2.0 * (ABAND * DDEN) )
+
+! Replace with Banner saturation
+        KMAX = MAXVAL(A,1)
+        DO IS = 1,MSC
+           IF (KMAX(IS).LT.1.0E-34) THEN
+              K(1:MDC,IS) = 1.
+           ELSE
+              K(1:MDC,IS) = A(1:MDC,IS)/KMAX(IS)
+           END IF
+        END DO
+        BN   = ( ABAND * SPCSIG(1:MSC) * DDIR ) * WN**3 / (sum(K,1)*ddir)
+!
+!/ 2) --- The total turbulent spectral dissipation of narrow-banded 
+!         swell is SDIS = B1/3/GRAV * U0**3 (in units of m²/s). 
+!         Calculate the derivative term only.------------------------- /
+      DO Is = 1,ISSTOP
+         IF (ABAND(IS) .GT. 1.E-30) THEN
+!	    DDIS(IS) = (2* feswell / 3. / GRAV) * SPCSIG(IS)**3*AORB(IS)
+	    DDIS(IS) = 0.6666666 * feswell * SPCSIG(IS) * BN(IS)
+         END IF
+      END DO
+!
+!
+!/ 3) --- Apply dissipation term of derivative to all directions 
+!         integral of D over all directions.------------------------- /
+      do is=1,isstop
+	DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+	 ID = MOD(IDDUM - 1 + MDC, MDC) + 1
+         IMATDA(ID,IS) = IMATDA(ID,IS)+ddis(is)
+         DISSC1(ID,IS,4) = DISSC1(ID,IS,4)+ddis(is)
+      END DO
+      enddo
+
+   end subroutine bswell
 
   ! -------------------------------------------------------------------------------------------------------------------------------      
   !       ====================================================

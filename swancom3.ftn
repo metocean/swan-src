@@ -1044,7 +1044,7 @@
            CDRAG = CDRAG * 0.001
            CDRAG = MIN ( CDCAP, CDRAG )
         elseif (IDRAG.EQ.4) then
-              CDRAG = 1.0e-4*(-0.0160*WIND10**2 + 0.967*WIND10 + 8.058)
+              CDRAG = CD10*(-0.0160*WIND10**2 + 0.967*WIND10 + 8.058)
         endif
 !
         UFRIC = SQRT ( CDRAG ) * WIND10

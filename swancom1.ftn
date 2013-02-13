@@ -3547,6 +3547,11 @@
       ELSEIF (IWCAP.EQ.8) THEN
          WRITE(PRINTF,6141) a1sds   , a2sds                               40.88
          WRITE(PRINTF,6142) p1sds    , p2sds                              40.88
+         if (Cdsv.lt.0.)then
+           write(printf,*)'Babanin(2011) swell dissip B1=feswell'
+         else
+           write(printf,*)'Ardhuin(2010) swell dissip'
+         endif
          WRITE(PRINTF,6143) Cdsv    , feswell                             40.88
          WRITE(PRINTF,6144) UPWARDS                                       40.88
          WRITE(PRINTF,6145) VECTOR_TAU                                    40.88
@@ -3560,7 +3565,7 @@
  6144    FORMAT(' Babanin Sds:  concave up behavior   : ',  L3 )          40.88
  6145    FORMAT(' DBYB Sin: tau calculated from vector: ',  L3 )          40.88
  6146    FORMAT(' DBYB Sin: true U10 used             : ',  L3 )          40.88
-
+                    
       ELSE
          WRITE (PRINTF, *) 'Whitecapping is off'
       ENDIF
@@ -3569,8 +3574,10 @@
          WRITE (PRINTF, *) 'Snyder/Komen wind input'
       ELSEIF (IWIND.EQ.8) THEN
          WRITE (PRINTF, *) 'DBYB/Tsagareli/Rogers wind input'
+         WRITE (PRINTF, 6147) a0sin
       ENDIF
 
+ 6147    FORMAT(' Negative input fraction : A0 ',E12.4)
 !
       IF (ISURF.EQ.1) THEN
          WRITE(PRINTF,7012) PSURF(1),PSURF(2)
@@ -6566,11 +6573,16 @@
 
 ! For now, we only call SSWELL if Babanin physics are in use
       IF (IWCAP.EQ.8)THEN
-
-        CALL SSWELL (SPCSIG  ,KWAVE   ,IDCMIN  ,IDCMAX
+        if (Cdsv.gt.0) then
+        CALL SSWELL (SPCSIG,KWAVE,IDCMIN,IDCMAX
      &             ,ISSTOP , DISSC1 ,ETOT    ,IMATDA  
      &             ,URMSTOP(KCGRD(1)), GRAV , PWIND(9), MDC
      &             ,CGO,Cdsv,feswell)
+        else if (Cdsv.le.0) then
+        CALL BSWELL (AC2(:,:,KCGRD(1)),KWAVE(:,1)
+     &             ,SPCSIG,IDCMIN,IDCMAX,ISSTOP
+     &             ,DISSC1,IMATDA,GRAV,feswell)
+        endif
 ! note that CGo is for diagnostic purposes only, may be omitted
 ! excluded : SPCDIR AC2 DEP2 IMATRA
       END IF
