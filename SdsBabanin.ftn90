@@ -649,9 +649,9 @@ CONTAINS
     REAL             , ALLOCATABLE  ::  S_in1D_L(:) ! "_L" denotes "long" (freqs out to 10 Hz) (1d version: was used for calculations, but now used only for diagnostic output)
     REAL             , ALLOCATABLE  ::  S_in_L(:,:) ! "_L" denotes "long" (freqs out to 10 Hz) (2d version: added and now used for calculations)
     REAL             , ALLOCATABLE  ::  DF(:)
-    REAL             , ALLOCATABLE  ::  CINV_L(:)
+    REAL             , ALLOCATABLE  ::  CINV_L(:),cinv_Ldf(:),S_in_red(:),UoverC(:)
     REAL             , ALLOCATABLE  ::  SIGMA_L(:)
-    REAL             , ALLOCATABLE  ::  LFACTOR_L(:)
+    REAL             , ALLOCATABLE  ::  LFACTOR(:)
 
     REAL :: DSIGMA
     REAL :: REDUC
@@ -662,9 +662,9 @@ CONTAINS
     REAL :: tau_total_max ! the maximum value for total wind stress that we will allow
     REAL :: tau_total ! the value for the total wind stress computed from tau_wave and tau_visc (i.e. tau_normal and tau_tangential)
     REAL :: DDIR_DEG
-    REAL :: RHOA,RHOW,PI
+    REAL :: RHOA,RHOW,PI,rhowg
     REAL :: freq_tmp
-    REAL :: Cv,tau_visc,tau_visc_x,tau_visc_y
+    REAL :: Cv,tau_visc,tau_visc_x,tau_visc_y,tau_x,Tau_y
 
     INTEGER :: nf_old,nf_new,ndir
     INTEGER :: dir
@@ -702,9 +702,11 @@ CONTAINS
     ALLOCATE(S_in_L(ndir,nf_new))
     ALLOCATE(S_in1d_L(nf_new)) ! for diagnostic output only
     ALLOCATE(DF(nf_new))
-    ALLOCATE(CINV_L(nf_new))
+    ALLOCATE(CINV_L(nf_new),cinv_ldf(nf_new))
     ALLOCATE(SIGMA_L(nf_new))
-    ALLOCATE(LFACTOR_L(nf_new))
+    ALLOCATE(LFACTOR(nf_new))
+    ALLOCATE(UoverC(nf_new))
+    ALLOCATE(S_in_red(nf_new))
 
     ! extend freqs to nf_new
     SIGMA_L(1:nf_old)=SIGMA_S(1:nf_old)
@@ -718,6 +720,8 @@ CONTAINS
           S_in_L(idir,IS)=S_in_L(idir,nf_old)*(SIGMA_L(nf_old)/SIGMA_L(IS))**2
        enddo
     enddo
+    DF=SIGMA_L*FRINTF/(2.0*PI)  ! since DF=FREQ*FRINTF
+    cinv_ldf=cinv_l*df
 
     S_in_L=S_in_L*(2.0*PI) ! was in units of m2/(rad-Hz)/rad, so put in units m2/Hz/rad
 
@@ -733,6 +737,7 @@ CONTAINS
 
     rhoa=pwind(16)
     rhow=pwind(17)
+    rhowg=rhow*grav
 
     tau_total_max=(UFRIC**2)*rhoa
     DDIR_DEG=DDIR_RAD*180.0/PI
@@ -740,6 +745,7 @@ CONTAINS
     Cv=(-5.0e-5)*WIND10+1.1e-3
     Cv=max(Cv,0.0) ! otherwise Cv<0 for U10>22 m/s
     tau_visc=rhoa*Cv*(WIND10**2)
+    
 
 !   Notes, Aug 15 2012: Stefan noticed that at low wind speeds, |Cv| is slightly larger than |Cd|
 !       This probably is not reasonable. To address this, we say "tau_visc cannot be more than 90%
@@ -750,18 +756,31 @@ CONTAINS
 
 !   We will assume that viscous stress is in wind direction
     tau_visc_x=tau_visc*ctheta_wind
-    tau_visc_y=tau_visc*stheta_wind
+    tau_visc_y=tau_visc*stheta_wind  
 
-!   DF is needed by calc_tau_total
-    DO IS=1,NF_new
-       DSIGMA=SIGMA_L(IS)*FRINTF  ! since DF=FREQ*FRINTF
-       DF(IS)=DSIGMA/(2.0*PI)
-    END DO
+    IF(TRUE_U10)THEN
+      UoverC=WIND10 * CINV_L
+    ELSE
+      UoverC=28.0*UFRIC*CINV_L
+    ENDIF
+
 
     ! calculate without reduction
     REDUC=0.0
-    call calc_tau_total(tau_total,Lfactor_L,REDUC,S_in_L,df,CINV_L,WIND10,grav,rhow, &
-                         SPCDIR,ddir_rad,vector_tau,true_u10,UFRIC,tau_visc_x,tau_visc_y)
+
+    Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
+      tau_x=tau_visc_x/rhowg/DDIR_RAD
+      tau_y=tau_visc_y/rhowg/DDIR_RAD
+      do idir=1,ndir
+	S_in_red=S_in_L(idir,:) * Lfactor
+	tau_x=tau_x+SPCDIR(IDIR,2)*sum(S_in_red*CINV_Ldf)
+	tau_y=tau_y+SPCDIR(IDIR,3)*sum(S_in_red*CINV_Ldf)
+      enddo
+      tau_total=DDIR_RAD*rhowg*sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
+    else
+     tau_total=sqrt(tau_visc_x**2+tau_visc_y**2)+rhowg*DDIR_rad*sum(sum(S_in_L,1)*Lfactor*CINV_Ldf) ! should recover old method, based on scalar addition
+    endif
 
     if(TESTFL)then
 206    format('tau_total_max = ',f9.6,' ; tau_total = ',f9.6,' ; tau_visc = ',f9.6)
@@ -776,9 +795,10 @@ CONTAINS
        DEALLOCATE(S_in_L)
        DEALLOCATE(S_in1D_L)
        DEALLOCATE(DF)
-       DEALLOCATE(CINV_L)
+       DEALLOCATE(CINV_L,cinv_ldf)
        DEALLOCATE(SIGMA_L)
-       DEALLOCATE(LFACTOR_L)
+       DEALLOCATE(LFACTOR)
+       deallocate(UoverC,S_in_red)
        RETURN
     else
        if(TESTFL)then
@@ -793,12 +813,25 @@ CONTAINS
        endif
     endif
 
-    ! calculate *with* reduction, start value arbitrary
+! calculate *with* reduction, start value arbitrary
     REDUC=0.05 ! Original
 !   err=tau_total-tau_total_max ! req'd to use Stefan's suggestion
 !   REDUC=ABS(ERR)/tau_total_max/90.0  ! Stefan's suggestion
-    call calc_tau_total(tau_total,Lfactor_L,REDUC,S_in_L,df,CINV_L,WIND10,grav,rhow &
-                         ,SPCDIR,ddir_rad,vector_tau,true_u10,UFRIC,tau_visc_x,tau_visc_y)
+
+    Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+	if(vector_tau)then
+      tau_x=tau_visc_x/rhowg/DDIR_RAD
+      tau_y=tau_visc_y/rhowg/DDIR_RAD
+      do idir=1,ndir
+	S_in_red=S_in_L(idir,:) * Lfactor
+	tau_x=tau_x+SPCDIR(IDIR,2)*sum(S_in_red*CINV_Ldf)
+	tau_y=tau_y+SPCDIR(IDIR,3)*sum(S_in_red*CINV_Ldf)
+      enddo
+      tau_total=DDIR_RAD*rhowg*sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
+    else
+     tau_total=sqrt(tau_visc_x**2+tau_visc_y**2)+rhowg*DDIR_rad*sum(sum(S_in_L,1)*Lfactor*CINV_Ldf) ! should recover old method, based on scalar addition
+    endif
+
     err=tau_total-tau_total_max
     sign_new=sign(1.0,err)
     if(TESTFL)then
@@ -821,8 +854,21 @@ CONTAINS
        else ! then reduce REDUC
           REDUC=REDUC/RCHANGE
        endif
-       call calc_tau_total(tau_total,Lfactor_L,REDUC,S_in_L,df,CINV_L,WIND10,grav,rhow &
-                         ,SPCDIR,ddir_rad,vector_tau,true_u10,UFRIC,tau_visc_x,tau_visc_y)
+
+       Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
+      tau_x=tau_visc_x/rhowg/DDIR_RAD
+      tau_y=tau_visc_y/rhowg/DDIR_RAD
+      do idir=1,ndir
+	S_in_red=S_in_L(idir,:) * Lfactor
+	tau_x=tau_x+SPCDIR(IDIR,2)*sum(S_in_red*CINV_Ldf)
+	tau_y=tau_y+SPCDIR(IDIR,3)*sum(S_in_red*CINV_Ldf)
+      enddo
+      tau_total=DDIR_RAD*rhowg*sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
+    else
+     tau_total=sqrt(tau_visc_x**2+tau_visc_y**2)+rhowg*DDIR_rad*sum(sum(S_in_L,1)*Lfactor*CINV_Ldf) ! should recover old method, based on scalar addition
+    endif
+
        err=tau_total-tau_total_max
        sign_old=sign_new
        sign_new=sign(1.0,err)
@@ -856,7 +902,7 @@ CONTAINS
           exit
        endif
     end do !    do iter=1,50
-   
+
 !!  BEGIN: force stop in case of failure
     if(isol==0)then
        write(*,*)'no solution found'
@@ -865,7 +911,7 @@ CONTAINS
        if((abs(err)/tau_total_max).ge.1.0)then
           open(401,file='debug.dat',form='unformatted')
           write(401)nf_new     ! scalar
-          write(401)Lfactor_L  ! LFACTOR_L(nf_new)
+          write(401)Lfactor  ! LFACTOR(nf_new)
           write(401)S_in_L     ! S_in_L(ndir,nf_new)
           write(401)df         ! DF(nf_new)
           write(401)CINV_L     ! CINV_L(nf_new)
@@ -889,7 +935,7 @@ CONTAINS
 210 format(f9.6,' ',e12.6,' % (freq , Lfactor)')
     if(TESTFL)then
        do IS=1,nf_new
-          write(403,210)(SIGMA_L(IS)/(2.0*pi)),Lfactor_L(IS)
+          write(403,210)(SIGMA_L(IS)/(2.0*pi)),Lfactor(IS)
        end do
     endif
 
@@ -899,7 +945,7 @@ CONTAINS
        write(404,*)CHTIME,' % CHTIME'
        write(404,*)' % (freq , new S_in)'
        do IS=1,nf_new
-          write(404,211)(SIGMA_L(IS)/(2.0*pi)),(S_in1D_L(IS)*Lfactor_L(IS))
+          write(404,211)(SIGMA_L(IS)/(2.0*pi)),(S_in1D_L(IS)*Lfactor(IS))
        end do
     endif
     S_in1D_L=0.0
@@ -907,133 +953,20 @@ CONTAINS
 
 !   calculation of Lfactor_S is the purpose of this subroutine
     DO IS=1,NF_OLD
-       Lfactor_S(IS)=Lfactor_L(IS)
+       Lfactor_S(IS)=Lfactor(IS)
     END DO
 
 ! Deallocate and return
     DEALLOCATE(S_in_L)
     DEALLOCATE(S_in1D_L)
     DEALLOCATE(DF)
-    DEALLOCATE(CINV_L)
+    DEALLOCATE(CINV_L,cinv_ldf)
     DEALLOCATE(SIGMA_L)
-    DEALLOCATE(LFACTOR_L)
-
-  end subroutine calc_Lfactor
-
-  subroutine calc_tau_total(tau_total,Lfactor,REDUC,S_in,df,CINV,WIND10,grav,rhow &
-                            ,SPCDIR,ddir_rad,vector_tau,true_u10,UFRIC,tau_visc_x,tau_visc_y)
-    ! objective : apply exponential reduction.. more reduction at higher U/C with factor smoothly intersecting value=1 at U/C=1.
-    !             It is not applied for U/C<1 since that would produce an increase...so factor 1 for U/C<=1 
-    ! Recent improvement (my email to Stefan Aug 14 2012):
-    !    Old method,
-    !        (reasonable enough if tau_wave, tau_total, and tau_visc are all in the same direction)
-    !        (does not make much sense if tau_wave is opposite to wind direction, which can be the case if we have negative wind input)
-    !        tau_total=(UFRIC**2)*rhoa
-    !        tau_wave_maximum=tau_total-tauv;
-    !        pass Sin(f,theta) and reduction factor to subroutine calc_tau_normal
-    !        subroutine calc_tau_normal integrates Sin with reduction factor and returns tau_normal
-    !        repeat until tau_normal is less than tau_wave_maximum
-    !    New method:
-    !        there is no tau_wave_maximum
-    !        tau_total_maximum=(UFRIC**2)*rhoa (this is a scalar)
-    !        tau_visc is now a vector, in the wind direction
-    !        pass Sin(f,theta), reduction factor, x-component of tauv, y-component of tauv to subroutine calc_tau_total
-    !        subroutine calc_tau_total integrates Sin with reduction factor, plus tau_visc components and returns tau_total (a scalar)
-    !        repeat until tau_total (a scalar) is less than tau_total_maximum (a scalar)
-
-    implicit none
-
-    REAL             , INTENT(OUT) ::  tau_total
-    REAL             , INTENT(OUT) ::  Lfactor(:)
-    REAL             , INTENT(IN)  ::  REDUC
-    REAL             , INTENT(IN)  ::  S_in(:,:)
-    REAL             , INTENT(IN)  ::  df(:)
-    REAL             , INTENT(IN)  ::  CINV(:)
-    REAL             , INTENT(IN)  ::  WIND10,UFRIC
-    REAL             , INTENT(IN)  ::  grav
-    REAL             , INTENT(IN)  ::  rhow
-    REAL             , INTENT(IN)  ::  DDIR_rad
-    REAL             , INTENT(IN)  ::  tau_visc_x,tau_visc_y
-    REAL             , INTENT(IN)  ::  SPCDIR(:,:)
-!   SPCDIR explained:
-!      SPCDIR: (*,1); spectral directions (radians)     
-!      ECOS  : =SPCDIR(*,2); cosine of spectral directions
-!      ESIN  : =SPCDIR(*,3); sine of spectral directions
-    LOGICAL          , INTENT(IN)  ::  vector_tau, TRUE_U10
-
-    REAL             , ALLOCATABLE  :: A(:)
-    REAL             , ALLOCATABLE  :: UoverC(:)
-    REAL             , ALLOCATABLE  :: S_in_red(:,:)
-
-    INTEGER :: nf,ndir,IS,idir
-    LOGICAL :: INAN
-    REAL    :: PI,CTHETA,STHETA,tau_x,tau_y,tau_scalar,TEMP2
-
-    nf=size(df)
-    ndir=size(S_in,1)
-    pi=2.0*acos(0.0)
-
-    ALLOCATE(UoverC(nf))
-    ALLOCATE(A(nf))
-    ALLOCATE(S_in_red(ndir,nf))
-
-    IF(TRUE_U10)THEN 
-       TEMP2 = WIND10
-    ELSE
-       TEMP2 = 28.0 * UFRIC
-    ENDIF
-    UoverC=TEMP2 * CINV ! matrix op
-
-    A=exp((1-UoverC) * REDUC) ! matrix op
-
-!   Lfactor(1:nf)=min(1.0,A(1:nf)) ! would this matrix operation work?
-
-    do IS=1,nf
-       Lfactor(IS)=min(1.0,A(IS))
-       do idir=1,ndir
-          S_in_red(idir,IS)=S_in(idir,IS) * Lfactor(IS) ! possible to do as matrix operation?
-       enddo
-    enddo
-
-!   see notes above about this calculation
-    tau_x=0.0
-    tau_y=0.0
-    tau_scalar=0.0
-    do idir=1,ndir
-       CTHETA=SPCDIR(IDIR,2)
-       STHETA=SPCDIR(IDIR,3)
-       do IS=1,nf
-!old      tau_normal=tau_normal+rhow*grav*S_in1D_red(IS)*CINV(IS) *df(IS)
-          tau_scalar=tau_scalar+rhow*grav*S_in_red(IDIR,IS)*CINV(IS)*df(IS)*DDIR_rad
-          tau_x=tau_x+rhow*grav*S_in_red(IDIR,IS)*CINV(IS)*df(IS)*CTHETA*DDIR_rad !new
-          tau_y=tau_y+rhow*grav*S_in_red(IDIR,IS)*CINV(IS)*df(IS)*STHETA*DDIR_rad !new
-!         write(411,*)idir,is,(rhow*grav*CINV(IS)*df(IS)),S_in_red(IDIR,IS),tau_x,tau_y
-!         write(412,*)idir,is,(rhow*grav*S_in_red(IDIR,IS)*CINV(IS)*df(IS))
-       end do
-    enddo
-    
-!   write(*,*)'vector_tau = ',vector_tau
-    if(vector_tau)then
-       tau_x=tau_x+tau_visc_x
-       tau_y=tau_y+tau_visc_y
-       tau_total=sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
-    else
-       tau_total=tau_scalar+sqrt(tau_visc_x**2+tau_visc_y**2) ! should recover old method, based on scalar addition
-    endif
-
-!   NaN/Inf check
-    INAN = .NOT. ( tau_total .GE. -HUGE(tau_total) .AND. tau_total .LE. HUGE(tau_total) )
-    if(INAN)then
-       write(*,*)'stopping ; tau_total = ',tau_total
-       stop
-    endif
-
-! Deallocate and return
+    DEALLOCATE(LFACTOR)
     DEALLOCATE(UoverC)
-    DEALLOCATE(A)
     DEALLOCATE(S_in_red)
 
-  end subroutine calc_tau_total
+  end subroutine calc_Lfactor
 
   !****************************************************************
   SUBROUTINE SSWELL (SPCSIG  ,KWAVE   ,IDCMIN  ,IDCMAX,ISSTOP , DISSC1 ,ETOT    ,IMATDA,URMSTOP, &
@@ -1136,7 +1069,7 @@ CONTAINS
        !         Only fill the values for the current sweep
        DO IDDUM = IDCMIN(IS), IDCMAX(IS)
           ID = MOD(IDDUM - 1 + MDC, MDC) + 1
-          IMATDA(ID,IS)   = IMATDA(ID,IS)   + SWDIS(IS)/SPCSIG(IS)
+          IMATDA(ID,IS)   = IMATDA(ID,IS)   + SWDIS(IS)
           DISSC1(ID,IS,4) = DISSC1(ID,IS,4) + SWDIS(IS)
        END DO
     END DO
@@ -1152,7 +1085,7 @@ CONTAINS
 
     IMPLICIT NONE
 
-    REAL, INTENT(IN)  :: A(MSC,MDC), WN(MSC)
+    REAL, INTENT(IN)  :: A(MDC,MSC), WN(MSC)
 
     INTEGER, INTENT(IN) :: ISSTOP
     INTEGER, INTENT(IN) :: IDCMIN(:) ! IDCMIN(MSC)
@@ -1182,10 +1115,10 @@ CONTAINS
       ABAND = SUM(A,1)     ! action density as function of wavenumber
       DDIS  = 0.
 
-      DDEN=DDIR*SPCSIG
-      DDEN(2:MSC-1)=0.5*DDEN(2:MSC-1)*(SPCSIG(3:MSC)-SPCSIG(1:MSC-2))
-      DDEN(1)=DDEN(1)*(SPCSIG(2)-SPCSIG(1))
-      DDEN(MSC)=DDEN(MSC)*(SPCSIG(MSC)-SPCSIG(MSC-1))
+!      DDEN=DDIR*SPCSIG
+!      DDEN(2:MSC-1)=0.5*DDEN(2:MSC-1)*(SPCSIG(3:MSC)-SPCSIG(1:MSC-2))
+!      DDEN(1)=DDEN(1)*(SPCSIG(2)-SPCSIG(1))
+!      DDEN(MSC)=DDEN(MSC)*(SPCSIG(MSC)-SPCSIG(MSC-1))
 !
 !/ X) --- Parameterise B1 as a function of wave steepness ------------ /
 !      U0    = SQRT(  2.0 * (ABAND * DDEN)  ) * SPCSIG

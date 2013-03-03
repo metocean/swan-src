@@ -2395,21 +2395,6 @@
            CASTD = 0.
         ENDIF
 !
-        CALL INKEYW ('STA','  ')                                          41.33
-        IF ( KEYWIS('DRAG') ) THEN                                        41.33
-          CALL INKEYW ('STA','HWANG')                                     41.33
-          IF (KEYWIS ('WU')) THEN                                         41.33
-             IDRAG = 1                                                    41.33
-          ELSE IF (KEYWIS ('FIT')) THEN                                   41.33
-             IDRAG = 2                                                    41.33
-          ELSE IF (KEYWIS ('SWELL')) THEN                                 41.33
-             IDRAG = 3                                                    41.33
-          ELSE IF (KEYWIS ('HWANG')) THEN
-             IDRAG = 4
-             CALL INREAL('CD10',cd10,'STA',0.0001)
-          ENDIF                                                           41.33
-        ENDIF                                                             41.33
-!
 !       *** Convert (if necessary) WDIP from nautical degrees ***         32.01
 !       *** to cartesian degrees                              ***         32.01
 !
@@ -2421,6 +2406,35 @@
 !
         GOTO 100
       ENDIF
+!
+!
+!     ------------------------------------------------------------------
+!
+!     DRAG      Wind stress drag
+!
+! ==========================================================
+!
+!   DRAG  WU|FIT|SWELL CD10
+!   41.33 40.03
+!
+! ==========================================================
+!
+      IF (KEYWIS ('DRAG')) THEN
+          CALL INKEYW ('STA','HWANG')
+          IF (KEYWIS ('WU')) THEN
+             IDRAG = 1
+          ELSE IF (KEYWIS ('FIT')) THEN
+             IDRAG = 2
+          ELSE IF (KEYWIS ('SWELL')) THEN
+             IDRAG = 3
+          ELSE IF (KEYWIS ('HWANG')) THEN
+             IDRAG = 4
+             CALL INREAL('CD10',cd10,'STA',0.0001)
+          ENDIF
+        GOTO 100
+      ENDIF
+
+
 !     ------------------------------------------------------------------
 !
 !     GEN1        deep water with 1st generation                          20.86

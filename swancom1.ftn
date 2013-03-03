@@ -3576,8 +3576,23 @@
          WRITE (PRINTF, *) 'DBYB/Tsagareli/Rogers wind input'
          WRITE (PRINTF, 6147) a0sin
       ENDIF
-
  6147    FORMAT(' Negative input fraction : A0 ',E12.4)
+
+
+        IF (IDRAG.EQ.1) THEN
+         WRITE(PRINTF,9335) 
+ 9335    FORMAT(' Wind drag WU')
+        ELSEIF (IDRAG.EQ.2) THEN
+         WRITE(PRINTF,9336) 
+ 9336    FORMAT(' Wind drag FIT')
+        ELSEIF (IDRAG.EQ.3) THEN
+         WRITE(PRINTF,9337) 
+ 9337    FORMAT(' Wind drag SWELL')
+        ELSEIF (IDRAG.EQ.4) THEN
+         WRITE(PRINTF,9338) CD10
+ 9338    FORMAT(' Wind drag HWANG : CD10 ',E12.4)
+        ENDIF
+
 !
       IF (ISURF.EQ.1) THEN
          WRITE(PRINTF,7012) PSURF(1),PSURF(2)
