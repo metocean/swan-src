@@ -977,8 +977,8 @@
         CASE(2)                                                           40.02
           READ (NDSD, *, END=910, ERR=920, IOSTAT=IERR)                   40.02
      &               ((ARR(IX,IY), IX=1,MXA), IY=MYA,1,-1)                40.02
-        CASE(3)                                                           40.02
-          DO IY=1, MYA                                                    40.02
+        CASE(3)
+          DO IY=1, MYA
             READ (NDSD, *, END=910, ERR=920, IOSTAT=IERR)                 40.02
      &               (ARR(IX,IY), IX=1,MXA)                               40.02
           ENDDO                                                           40.02
@@ -1033,7 +1033,7 @@
         CASE(2)                                                           40.02
           READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                      40.02
      &    ((ARR(IX,IY), IX=1,MXA), IY=MYA,1,-1)                           40.02
-        CASE(3)                                                           40.02
+        CASE(3)
           DO IY=1, MYA                                                    40.02
             READ (NDSD, END=910, ERR=920, IOSTAT=IERR)                    40.02
      &      (ARR(IX,IY), IX=1,MXA)                                        40.02
