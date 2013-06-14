@@ -1245,7 +1245,7 @@
 !
 ! Calculate the whitecapping source term WCAP(IS)
 !
-     
+!        print*,p1sds,p2sds,a1sds,a2sds     
       call calc_Sds(MSC,EDENS,FREQ,Wcap,ANAR,
      &              p1sds,p2sds,a1sds,a2sds,TESTFL,UPWARDS,KWAVE,CGO)
 
@@ -1256,7 +1256,7 @@
 !
 ! Fill the diagonal of the matrix and the PLWCAP-array
 !
-
+!        print*,wcap
         DO IS=1, ISSTOP
 !
 !         Only fill the values for the current sweep

@@ -170,14 +170,12 @@ CONTAINS
     ! since stuff below fp is typically not breaking, so it isn't part of the calculation anyway.
 
     xff=0.0
-    do  is=1,nfreq
+    do is=1,nfreq
        ASUM=0.0
-       do ii=1,is
-          xff(ii)=f(ii)
-          ADF(ii)=ANAR(ii)*NDEDENS(ii)**p2sds
-       enddo
+       xff(is)=f(is)
+       ADF(is)=ANAR(is)*NDEDENS(is)**p2sds
        ! The "integrate" routine is based on finite differencing, but we could replace with an operation that uses FRINTF
-       CALL integrate(ASUM,xff,ADF,is) 
+       CALL integrate(ASUM,xff,ADF,is)
        T2(is)=a2*ASUM
     enddo
 
@@ -715,13 +713,13 @@ CONTAINS
     do IS=(nf_old+1),nf_new
        SIGMA_L(IS)=SIGMA_L(IS-1)*frat
        CINV_L(IS)=SIGMA_L(IS)*0.102 ! deep water assumption for hf tail is OK
+       CINV_LDF(IS)=CINV_L(IS)*DF(IS)
        ! For Sin, we use an f-2 approximation...Sin=Beta*E~sigma*(U/C)^2*E=f1*f2*f-5=f-2
        do idir=1,ndir
           S_in_L(idir,IS)=S_in_L(idir,nf_old)*(SIGMA_L(nf_old)/SIGMA_L(IS))**2
        enddo
     enddo
     DF=SIGMA_L*FRINTF/(2.0*PI)  ! since DF=FREQ*FRINTF
-    cinv_ldf=cinv_l*df
 
     S_in_L=S_in_L*(2.0*PI) ! was in units of m2/(rad-Hz)/rad, so put in units m2/Hz/rad
 
@@ -818,8 +816,8 @@ CONTAINS
 !   err=tau_total-tau_total_max ! req'd to use Stefan's suggestion
 !   REDUC=ABS(ERR)/tau_total_max/90.0  ! Stefan's suggestion
 
-    Lfactor=min(1.0,exp((1-UoverC) * REDUC))
-	if(vector_tau)then
+     Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
       tau_x=tau_visc_x/rhowg/DDIR_RAD
       tau_y=tau_visc_y/rhowg/DDIR_RAD
       do idir=1,ndir
@@ -897,7 +895,7 @@ CONTAINS
 !      if(sign_new /= sign_old) RCHANGE=0.5*(1.0+RCHANGE)
 !!    END STEFAN METHOD
 
-       if((abs(err)/tau_total_max) < 1.656e-06)then
+       if((abs(err)/tau_total_max) < 1.54E-4)then
           isol=1
           exit
        endif
