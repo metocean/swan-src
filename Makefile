@@ -126,7 +126,6 @@ omp:
 mpi:
 	@perl switch.pl $(swch) -mpi *.ftn *.ftn90
 	$(MAKE) FOR=$(F90_MPI) FFLAGS="$(FLAGS_OPT) $(FLAGS_MSC) $(FLAGS_MPI)" \
-	        FFLAGS90="$(FLAGS_OPT) $(FLAGS90_MSC) $(FLAGS_MPI)" \
                 INCS="$(INCS_MPI)" LIBS="$(LIBS_MPI)" $(SWAN_EXE)
 	$(MAKE) hcat
 
