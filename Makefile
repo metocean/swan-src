@@ -158,7 +158,7 @@ mpi:
 
 mpi_db:
 	@perl switch.pl $(swch) -mpi *.ftn *.ftn90
-	$(MAKE) FOR=$(F90_DB) FFLAGS="-p -g -traceback -CB $(FLAGS_MSC) $(FLAGS_MPI)" \
+	$(MAKE) FOR=$(F90_DB) FFLAGS=" -g -traceback -check all $(FLAGS_MSC) $(FLAGS_MPI)" \
                 INCS="$(INCS_SER) $(INCS_NC)" LIBS="$(LIBS_MPI) $(LIBS_NC)" $(SWAN_EXE)
 
 

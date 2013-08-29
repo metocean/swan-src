@@ -95,16 +95,15 @@
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,
      &           PLTOPT *4, TIMSTR *24,
      &           INPFO *40, OUTFO *40, TSTFO *40, TXT*120
-      CHARACTER (LEN=LENFNM) SCRFIL
-      INTEGER    PRCTIM(6), INIVER, INIVEF, IU
+      INTEGER    PRCTIM(6), INIVER, INIVEF
       INTEGER    PFROPT                                                   40.31
       REAL       PLPARM(10)                                               40.31
       INTEGER    NUMM(10)                                                 40.41
-      LOGICAL    STPNOW, LOPEN
+      LOGICAL    STPNOW
       DATA PRCTIM /0,0,0,0,0,0/
 !
 !     version of initialisation file                                      10.16
-      INIVER = 5                                                          40.41 40.31
+      INIVER = 4                                                          40.41 40.31
       INIVEF = -1                                                         40.00
       INERR  = 0                                                          34.01
 !
@@ -118,42 +117,27 @@
       INQUIRE (FILE=INIFIL, EXIST=FILEXI)
       IF (FILEXI) THEN
 !
-!       identify a free unit number for initialisation file
-!
-        LOPEN = .TRUE.
-        DO IU=1,99
-          INQUIRE(UNIT=IU,OPENED=LOPEN)
-          IF (.NOT.LOPEN) EXIT
-        END DO
-!
 !       read initialisation file
 !
-        OPEN (IU, FILE=INIFIL, STATUS='OLD',                              40.41
+        OPEN (11, FILE=INIFIL, STATUS='OLD',                              40.41
 !CVIS     &        SHARED,                                                     40.41
      &        ERR=950)                                                    40.41
-        READ (IU, *, ERR=930, END=930) INIVEF                             10.16
+        READ (11, *, ERR=930, END=930) INIVEF                             10.16
         IF (INIVEF.GT.INIVER .OR. INIVEF.LE.0) GOTO 935                   40.00
-        READ (IU, 120, ERR=930, END=930) INST
-        IF (INIVEF.GE.5) THEN
-          READ (IU, *,   ERR=930, END=930) IUNMIN
-          READ (IU, *,   ERR=930, END=930) IUNMAX
-        ENDIF
-        READ (IU, *,   ERR=930, END=930) INPUTF
-        READ (IU, 120, ERR=930, END=930) INPFIL
-        READ (IU, *,   ERR=930, END=930) PRINTF
-        READ (IU, 120, ERR=930, END=930) OUTFIL
-        READ (IU, *,   ERR=930, END=930) PRTEST
-        READ (IU, 120, ERR=930, END=930) TSTFIL
-        READ (IU, *,   ERR=930, END=930) SCREEN
-        IF (INIVEF.LE.4) THEN
-          IUNMIN = 0
-          READ (IU, *,   ERR=930, END=930) IUNMAX
-        ENDIF
-        READ (IU, 130, ERR=930, END=930) COMID
-        READ (IU, 130, ERR=930, END=930) TABC
+        READ (11, 120, ERR=930, END=930) INST
+        READ (11, *,   ERR=930, END=930) INPUTF
+        READ (11, 120, ERR=930, END=930) INPFIL
+        READ (11, *,   ERR=930, END=930) PRINTF
+        READ (11, 120, ERR=930, END=930) OUTFIL
+        READ (11, *,   ERR=930, END=930) PRTEST
+        READ (11, 120, ERR=930, END=930) TSTFIL
+        READ (11, *,   ERR=930, END=930) SCREEN
+        READ (11, *,   ERR=930, END=930) IUNMAX
+        READ (11, 130, ERR=930, END=930) COMID
+        READ (11, 130, ERR=930, END=930) TABC
         IF (INIVEF.GE.2) THEN                                             40.00
-          READ (IU, 130, ERR=930, END=930) DIRCH1
-          READ (IU, 130, ERR=930, END=930) DIRCH2
+          READ (11, 130, ERR=930, END=930) DIRCH1
+          READ (11, 130, ERR=930, END=930) DIRCH2
         ELSE
 !DOS          DIRCH1 = CHAR(47)                                               40.41 40.03
 !DOS          DIRCH2 = CHAR(92)                                               40.03
@@ -165,16 +149,16 @@
 		OUTFIL=trim(INPFIL) // '.log'
 	endif
         IF (INIVEF.LT.3) THEN
-           READ (IU, 140, ERR=930, END=930) PLTOPT
-           READ (IU, *,   ERR=930, END=930) NPLP
-           READ (IU, *,   ERR=930, END=930) (PLPARM(II),II=1,NPLP)
-           READ (IU, *,   ERR=930, END=930) PFROPT
+           READ (11, 140, ERR=930, END=930) PLTOPT
+           READ (11, *,   ERR=930, END=930) NPLP
+           READ (11, *,   ERR=930, END=930) (PLPARM(II),II=1,NPLP)
+           READ (11, *,   ERR=930, END=930) PFROPT
         END IF
-        READ (IU, *,   ERR=930, END=930) ITMOPT
+        READ (11, *,   ERR=930, END=930) ITMOPT
         IF (INIVEF.GT.3) THEN
            IF (PARLL) THEN
               DO JJ = 1, NPROC
-                 READ (IU, 145, ERR=150, END=150) IW, TXT
+                 READ (11, 145, ERR=150, END=150) IW, TXT
                  CALL TXPBLA(TXT,IF,IL)
                  IPOS = 0
                  DO II = IF, IL
@@ -196,14 +180,10 @@
  130    FORMAT (A1)
  140    FORMAT (A4)
  145    FORMAT (I5,A)
- 150    CLOSE (IU)
+ 150    CLOSE (11)
       ELSE
 !
 !       REFERENCE NUMBERS AND NAMES OF STANDARD FILES
-!
-!       min and max unit ref. numbers
-        IUNMIN = 0
-        IUNMAX = 99
 !
         INPUTF = 3
         INPFIL = 'INPUT'
@@ -266,35 +246,26 @@
 
       IF (INIVEF.LT.INIVER) THEN
 !
-!       identify a free unit number for initialisation file
-!
-        LOPEN = .TRUE.
-        DO IU=1,99
-          INQUIRE(UNIT=IU,OPENED=LOPEN)
-          IF (.NOT.LOPEN) EXIT
-        END DO
-!
 !       write initialisation file
 !
         IF ( IAMMASTER ) THEN
-           OPEN  (IU, FILE=INIFIL, STATUS='UNKNOWN', FORM='FORMATTED',       40.00
+           OPEN  (12, FILE=INIFIL, STATUS='UNKNOWN', FORM='FORMATTED',    40.00
      &           ERR=950)
-           WRITE (IU, 210) INIVER, 'version of initialisation file'
-           WRITE (IU, 220) INST,   'name of institute'
-           WRITE (IU, 210) IUNMIN, 'lowest file ref. number'
-           WRITE (IU, 210) IUNMAX, 'highest file ref. number'
-           WRITE (IU, 210) INPUTF, 'command file ref. number'
-           WRITE (IU, 220) INPFIL, 'command file name'
-           WRITE (IU, 210) PRINTF, 'print file ref. number'
-           WRITE (IU, 220) OUTFO,  'print file name'
-           WRITE (IU, 210) PRTEST, 'test file ref. number'
-           WRITE (IU, 220) TSTFO,  'test file name'
-           WRITE (IU, 210) SCREEN, 'screen ref. number'
-           WRITE (IU, 230) COMID,  'comment identifier'
-           WRITE (IU, 230) TABC,   'TAB character'
-           WRITE (IU, 230) DIRCH1, 'dir sep char in input file'
-           WRITE (IU, 230) DIRCH2, 'dir sep char replacing previous one'
-           WRITE (IU, 210) ITMOPT, 'default time coding option'
+           WRITE (12, 210) INIVER, 'version of initialisation file'       10.16
+           WRITE (12, 220) INST,   'name of institute'
+           WRITE (12, 210) INPUTF, 'command file ref. number'
+           WRITE (12, 220) INPFO,  'command file name'
+           WRITE (12, 210) PRINTF, 'print file ref. number'
+           WRITE (12, 220) OUTFO,  'print file name'                      40.30
+           WRITE (12, 210) PRTEST, 'test file ref. number'
+           WRITE (12, 220) TSTFO,  'test file name'                       40.30
+           WRITE (12, 210) SCREEN, 'screen ref. number'
+           WRITE (12, 210) IUNMAX, 'highest file ref. number'
+           WRITE (12, 230) COMID,  'comment identifier'
+           WRITE (12, 230) TABC,   'TAB character'
+           WRITE (12, 230) DIRCH1, 'dir sep char in input file'
+           WRITE (12, 230) DIRCH2, 'dir sep char replacing previous one'  40.00
+           WRITE (12, 210) ITMOPT, 'default time coding option'
            IF (PARLL) THEN
               DO II = 1, NPROC
                  WRITE (12, 240) IWEIG(II), 'speed of processor ',II
@@ -308,7 +279,8 @@
   240   FORMAT (I5, T41, A19, I3)
       ENDIF
 !
-      FUNLO = IUNMIN+21
+      IUNMIN = 0
+      FUNLO = 21
 !/SGI      FUNLO = 103
       FUNHI = IUNMAX
 !
@@ -328,19 +300,13 @@
         WRITE (PRINTF, 12) TIMSTR
    12   FORMAT ('1',//,20X, 'Execution started at ',A, //)
       ENDIF
-      IF (PRTEST.NE.PRINTF) THEN
-        OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
-      ENDIF
-      IF (SCREEN.NE.6) THEN
-        SCRFIL = 'screen'
-        OPEN(UNIT=SCREEN, FILE=SCRFIL, ERR=960)                           34.01
-      ENDIF
+      IF (PRTEST.NE.PRINTF) OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
+      IF (SCREEN.NE.6) OPEN(UNIT=SCREEN, FILE='screen',ERR=960)           34.01
       IF (LREAD) THEN
-        IF (INPFIL.NE.'    ') THEN
-          OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                   40.41
-!CVIS     &          SHARED,                                                   40.41
+        IF (INPFIL.NE.'    ')
+     &  OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                     40.41
+!CVIS     &        SHARED,                                                     40.41
      &        ERR=910)                                                    40.41
-        ENDIF
         CALL RDINIT
       ENDIF
 !
@@ -542,7 +508,8 @@
 !
       INTEGER :: JUMPYEAR = 30     ! Used in interpretation of 2-digit year code
       INTEGER    IOPT, DTTIME(6)
-      CHARACTER  TIMSTR *15, MONC(12) *3, MONCI *3
+      CHARACTER    MONC(12) *3, MONCI *3
+      CHARACTER(*) TIMSTR
       DATA MONC /'JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL',
      &           'AUG', 'SEP', 'OCT', 'NOV', 'DEC'/
 !

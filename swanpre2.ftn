@@ -1281,7 +1281,7 @@
                    MCMVAR = MCMVAR+1                                      40.65
                    JDSXV  = MCMVAR                                        40.65
                    ALOCMP = .TRUE.                                        40.97
-                ENDIF
+                ENDIF                                                     40.65
                 IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
                    MCMVAR = MCMVAR+1                                      40.85
                    JGENR  = MCMVAR                                        40.85
@@ -3725,6 +3725,7 @@
         IF (ITEST.GE.60) WRITE (PRTEST,19) NFRE                           40.00
   19    FORMAT (I6, ' boundary frequencies')
 !       number of spectral directions
+        DORDER=0
         IF (EQCSTR(HEDLIN(2:4),'DIR')) THEN                               40.03
           READ (NDSD, *) NANG
           ALLOCATE(BSPFIL%BSPDIR(NANG))                                   40.31
@@ -4227,6 +4228,7 @@
       ALLOCATE (SPAUX(NANG*NFRE))                                         40.31
 
 !     read geographical locations and determine DXWAM and DYWAM           40.13
+
       IIPT2 = 0                                                           40.03
       DXWAM = 180.
       DYWAM = 180.
@@ -5437,6 +5439,7 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+!PUN      USE SIZES                                                           40.95
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -5704,6 +5707,7 @@
            WRITE(FILENM(ILPOS+1:ILPOS+4),99) INODE                        40.30
   99       FORMAT('-',I3.3)                                               40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         IERR = 0                                                          40.00
         CALL FOR (IFPAR, FILENM, 'UF', IERR)                              40.00
         IF (STPNOW()) RETURN                                              34.01
@@ -5787,6 +5791,7 @@
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),99) INODE                        40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         IERR = 0                                                          40.00
         CALL FOR (IFS1D, FILENM, 'UF', IERR)                              40.00
         IF (STPNOW()) RETURN                                              34.01
@@ -5866,6 +5871,7 @@
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),99) INODE                        40.30
         END IF                                                            40.30
+!PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         IERR = 0                                                          40.00
         CALL FOR (IFS2D, FILENM, 'UF', IERR)                              40.00
         IF (STPNOW()) RETURN                                              34.01

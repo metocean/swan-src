@@ -3018,7 +3018,7 @@
         IVTYPE = 44
         ivtype2 = 85
         IF (OQPROC(IVTYPE).or.oqproc(ivtype2)) THEN
-          etot2=etot
+          if (OQPROC(ivtype2)) etot2=etot
           ETOT = 0.
           FSWELL = PI2 * OUTPAR(5)
 !         trapezoidal rule is applied
@@ -3350,16 +3350,20 @@
 !      
         do IVTYPE = 83,84 
         IF (OQPROC(IVTYPE)) THEN
-           EMAX = 0.
+           E1=0.
+           E2=0.
+           E3=0.
            ETD  = 0.
            isigm=isigp(ivtype-82)
            IF (ISIGM.GT.1.AND.ISIGM.LT.MSC) THEN
              SIG1 = SPCSIG(ISIGM-1)
              SIG2 = SPCSIG(ISIGM+1)
              SIG3 = SPCSIG(ISIGM  )
-             E1   = EMAXD
-             E2   = EMAXU
-             E3   = EMAX
+             do id=1,mdc
+                E1=E1+SIG1*ACLOC(ID,ISIGM-1)
+                E2=E2+SIG2*ACLOC(ID,ISIGM+1)
+                E3=E3+SIG3*ACLOC(ID,ISIGM)
+             enddo
              P    = SIG1+SIG2
              Q    = (E1-E2)/(SIG1-SIG2)
              R    = SIG1+SIG3

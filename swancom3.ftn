@@ -537,7 +537,10 @@
      &                   FPM        ,UFRIC      ,
      &                   WX2        ,WY2        ,
      &                   ANYWND     ,SPCDIR     ,                         40.00
-     &                   UX2        ,UY2        ,SPCSIG     )             30.70
+     &                   UX2        ,UY2        ,
+     &                   SPCSIG     ,AC2                                  30.70 41.33
+!ADC     &                   ,NodeNumber                                      41.20
+     &                  )
 !
 !****************************************************************
 !
@@ -549,6 +552,9 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
+!ADC      USE WIND, ONLY: WindDrag                                            41.20
+!
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -626,7 +632,7 @@
 !     b. For SWIND3 (wind input according to Snyder (1981) ***
 !
 !       - wind friction velocity according to Wu (1982):
-!           *                                                -3
+!          *                                                 -3
 !         U  =  UFRIC = wind10 sqrt( (0.8 + 0.065 wind10 ) 10  )
 !
 !     c. For SWIND4 (wind input according to Janssen 1991)
@@ -639,7 +645,7 @@
 !
 !          else wind friction velocity according to Wu (1982):
 !
-!         *                                                -3
+!          *                                                 -3
 !         U  =  UFRIC = wind10 sqrt( (0.8 + 0.065 wind10 ) 10  )
 !
 !     d.
@@ -896,16 +902,6 @@
 !       *** with second genaration wave model                  ***
 !
         IF ( IDRAG.EQ.1 ) THEN
-! This block of code is used in stationary computations, probably for first guess
-
-!        CDRAG = 1.0e-4*(-0.0160*WIND10**2 + 0.967*WIND10 + 8.058)
-!        UFRIC = SQRT ( CDRAG ) * WIND10
-!        IF(WIND10 > 50.33)THEN ! METHOD 2
-!           UFRIC=2.02558
-!        ENDIF
-
-        IF(TESTFL)WRITE(*,*)'Using Wu'
-
            IF ( WIND10 .GT. 7.5 ) THEN
              CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
              CDRAG = MIN ( CDCAP, CDRAG )
@@ -969,19 +965,10 @@
 !     This formulation is based on Bouws (1986) and described in Delft    32.06
 !     Hydraulics report H3515 (1999)                                      32.06
 !
-
-! This block of code is also used in stationary computations, probably for first guess
-! WER Why change WIND10 if Ustar is being used??
-
-        IF(TESTFL)WRITE(*,*)'Using Bouws'
-
         WIND10 = WIND10 * SQRT(((0.8 + 0.065 * WIND10) * 0.001) /         32.06
      &                         ((0.8 + 0.065 * 15.   ) * 0.001))          32.06
 !
       ELSE IF (IWIND .GE. 3 ) THEN
-
-
-
 !
 !       *** Calculate the wind friction velocity  ***
 ! OLD:     *** according to modified Wu (1982)    ***
@@ -991,6 +978,7 @@
            IF ( WIND10 .GT. 7.5 ) THEN
              CDRAG = ( 0.8 + 0.065 * WIND10 ) * 0.001
              CDRAG = MIN ( CDCAP, CDRAG )
+!ADC             CDRAG = WindDrag(DBLE(WIND10),NodeNumber)
            ELSE
              CDRAG = 0.0012873
            ENDIF
@@ -1967,7 +1955,6 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SWIND3')
 !
-
       CTW   = COS(THETAW)                                                 40.41
       STW   = SIN(THETAW)                                                 40.41
       TEMP1 = 0.25 * PWIND(9)

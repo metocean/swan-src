@@ -96,8 +96,9 @@ subroutine SwanReadADCGrid
     !
     ndsd   = 0
     iostat = 0
-    call for (ndsd, 'fort.14', 'OF', iostat)
+    grdfil = 'fort.14'
 !PUN    grdfil = trim(INPUTDIR)//DIRCH2//trim(grdfil)
+    call for (ndsd, grdfil, 'OF', iostat)
     if (stpnow()) goto 900
     !
     ! skip first line

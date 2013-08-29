@@ -3784,12 +3784,12 @@
 !
 !  0. Authors
 !
-!     40.55: Marcel Zijlema
+!     40.56: Marcel Zijlema
 !     40.85: Marcel Zijlema
 !
 !  1. Updates
 !
-!     40.55, Feb. 06: New subroutine
+!     40.56, Feb. 06: New subroutine
 !     40.85, Aug. 08: store triads for output purposes
 !
 !  2. Purpose

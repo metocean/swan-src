@@ -170,14 +170,12 @@ CONTAINS
     ! since stuff below fp is typically not breaking, so it isn't part of the calculation anyway.
 
     xff=0.0
-    do  is=1,nfreq
+    do is=1,nfreq
        ASUM=0.0
-       do ii=1,is
-          xff(ii)=f(ii)
-          ADF(ii)=ANAR(ii)*NDEDENS(ii)**p2sds
-       enddo
+       xff(is)=f(is)
+       ADF(is)=ANAR(is)*NDEDENS(is)**p2sds
        ! The "integrate" routine is based on finite differencing, but we could replace with an operation that uses FRINTF
-       CALL integrate(ASUM,xff,ADF,is) 
+       CALL integrate(ASUM,xff,ADF,is)
        T2(is)=a2*ASUM
     enddo
 
@@ -187,7 +185,7 @@ CONTAINS
 
     ! (point output write location 2)
     if(TESTFL)then
-       write(401,*)CHTIME,' % CHTIME'
+       write(402,*)CHTIME,' % CHTIME'
        write(402,*)'% f(is),EDENS(is),EDENST(is),T1(is),T2(is)'
        do  is=1,nfreq
           write(402,205)f(is),EDENS(is),EDENST(is),T1(is),T2(is)
@@ -721,7 +719,7 @@ CONTAINS
        enddo
     enddo
     DF=SIGMA_L*FRINTF/(2.0*PI)  ! since DF=FREQ*FRINTF
-    cinv_ldf=cinv_l*df
+    CINV_LDF=CINV_L*DF
 
     S_in_L=S_in_L*(2.0*PI) ! was in units of m2/(rad-Hz)/rad, so put in units m2/Hz/rad
 
@@ -818,8 +816,8 @@ CONTAINS
 !   err=tau_total-tau_total_max ! req'd to use Stefan's suggestion
 !   REDUC=ABS(ERR)/tau_total_max/90.0  ! Stefan's suggestion
 
-    Lfactor=min(1.0,exp((1-UoverC) * REDUC))
-	if(vector_tau)then
+     Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
       tau_x=tau_visc_x/rhowg/DDIR_RAD
       tau_y=tau_visc_y/rhowg/DDIR_RAD
       do idir=1,ndir
@@ -897,7 +895,7 @@ CONTAINS
 !      if(sign_new /= sign_old) RCHANGE=0.5*(1.0+RCHANGE)
 !!    END STEFAN METHOD
 
-       if((abs(err)/tau_total_max) < 1.656e-06)then
+       if((abs(err)/tau_total_max) < 1.54E-4)then
           isol=1
           exit
        endif
@@ -908,20 +906,18 @@ CONTAINS
        write(*,*)'no solution found'
        write(*,*)'  tau_total = ',tau_total,' tau_total_max = ',tau_total_max,' err = ',err, &
                  '(abs(err)/tau_total_max)  = ',(abs(err)/tau_total_max)
-       if((abs(err)/tau_total_max).ge.1.0)then
-          open(401,file='debug.dat',form='unformatted')
-          write(401)nf_new     ! scalar
-          write(401)Lfactor  ! LFACTOR(nf_new)
-          write(401)S_in_L     ! S_in_L(ndir,nf_new)
-          write(401)df         ! DF(nf_new)
-          write(401)CINV_L     ! CINV_L(nf_new)
-          write(401)tau_total_max    ! scalar
-          write(401)tau_total ! scalar
-          write(401)REDUC      ! scalar
-          write(401)WIND10     ! scalar
-          write(401)rhow       ! scalar
-          close(401)
-          write(*,*)'stopping, see unit 401'
+       if((abs(err)/tau_total_max).ge.1.0.or.tau_total.ne.tau_total)then
+          write(*,*)nf_new     ! scalar
+          write(*,*)Lfactor  ! LFACTOR(nf_new)
+          write(*,*)S_in_L     ! S_in_L(ndir,nf_new)
+          write(*,*)df         ! DF(nf_new)
+          write(*,*)CINV_L     ! CINV_L(nf_new)
+          write(*,*)CINV_Ldf     ! CINV_L(nf_new)
+          write(*,*)tau_total_max    ! scalar
+          write(*,*)tau_total ! scalar
+          write(*,*)REDUC      ! scalar
+          write(*,*)WIND10     ! scalar
+          write(*,*)rhow       ! scalar
           stop
        end if
        if(tau_total.ne.tau_total)then ! check for NaN

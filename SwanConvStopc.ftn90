@@ -1,4 +1,4 @@
-subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc, delhs, deltm, xytst, spcsig, ac2 )
+subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc, delhs, deltm, xytst, spcsig, ac2, ivlow, ivup )
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -33,11 +33,13 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
 !
 !   40.80: Marcel Zijlema
 !   40.93: Marcel Zijlema
+!   41.10: Marcel Zijlema
 !
 !   Updates
 !
 !   40.80,   October 2007: New subroutine
 !   40.93, September 2008: extended with curvature of mean period
+!   41.10,    August 2009: parallelization using OpenMP directives
 !
 !   Purpose
 !
@@ -55,6 +57,8 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
 !
 !   Argument variables
 !
+    integer, intent(in)                         :: ivlow  ! lower index in range of vertices in calling thread
+    integer, intent(in)                         :: ivup   ! upper index in range of vertices in calling thread
     integer, dimension(NPTST), intent(in)       :: xytst  ! test points for output purposes
     !
     real, intent(out)                           :: accur  ! percentage of active vertices in which required accuracy has been reached
@@ -102,6 +106,10 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     !
     type(verttype), dimension(:), pointer :: vert     ! datastructure for vertices with their attributes
 !
+!   Common variables
+!
+    common/convstopc/npacc,nwetp
+!
 !   Structure
 !
 !   Description of the pseudo code
@@ -114,8 +122,11 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     !
     vert => gridobject%vert_grid
     !
+    !$omp single
     npacc = 0.
     nwetp = 0.
+    !$omp end single
+    !
     npacct = 0.
     nwetpt = 0.
     !
@@ -126,9 +137,9 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
     !
     ! calculate a set of accuracy parameters based on relative error and curvature for Hs and Tm
     !
-    do ivert = 1, nverts
+    do ivert = ivlow, ivup
        !
-       if ( vert(ivert)%atti(VBC) == 0 .and. vert(ivert)%active ) then
+       if ( vert(ivert)%active ) then
           !
           ! determine whether the present vertex is a test point
           !
@@ -213,7 +224,7 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
           !
           if (tstfl) then
              if (lhead) write(PRINTF,11)
-     write (PRINTF,12) ivert,hsabs,hsabs/hscurr(ivert),hscurv/hscurr(ivert),tmabs,tmabs/tmcurr(ivert),tmcurv/tmcurr(ivert)
+             write (PRINTF,12) ivert, hsabs, hsabs/hscurr(ivert), hscurv/hscurr(ivert), tmabs, tmabs/tmcurr(ivert), tmcurv/tmcurr(ivert)
              lhead = .false.
           endif
           !
@@ -226,6 +237,13 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
        !
     enddo
     !
+    ! global sum to npacc and nwetp
+    !
+    !$omp atomic
+    npacc = npacc + npacct
+    !$omp atomic
+    nwetp = nwetp + nwetpt
+    !
 !PUN    ! perform global reduction in parallel run
 !PUN    !
 !PUN    call SwanSumOverNodes ( nwetp )
@@ -233,9 +251,12 @@ subroutine SwanConvStopc ( accur, hscurr, hsprev, hsdifc, tmcurr, tmprev, tmdifc
 !PUN    !
     ! compute percentage of active vertices where required accuracy has been reached
     !
+    !$omp barrier
+    !$omp single
     accur = npacc*100./nwetp
+    !$omp end single
     !
- 11 format(11x,'dHabs          ','dHrel          ','Curvature H    ','dTabs          ','dTrel          ','Curvature T    ')
- 12 format(1x,ss,'k=',i5,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2)
+ 11 format(13x,'dHabs          ','dHrel          ','Curvature H    ','dTabs          ','dTrel          ','Curvature T    ')
+ 12 format(1x,ss,'k=',i7,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2,'  ',1pe13.6e2)
     !
 end subroutine SwanConvStopc

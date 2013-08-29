@@ -32,10 +32,12 @@ subroutine SwanVertlist
 !   Authors
 !
 !   40.80: Marcel Zijlema
+!   41.07: Casey Dietrich
 !
 !   Updates
 !
 !   40.80, July 2007: New subroutine
+!   41.07, July 2009: small fix (assign ref.point to deepest point in case of no b.c.)
 !
 !   Purpose
 !
@@ -43,11 +45,13 @@ subroutine SwanVertlist
 !
 !   Method
 !
-!   Sorting based on distance and with respect to vertices where boundary condition is given
+!   Sorting based on distance with respect to a reference point
+!   This reference point can be either a vertex with boundary condition or a deepest point
 !
 !   Modules used
 !
     use ocpcomm4
+    use m_genarr, only: DEPTH
     use SwanGriddata
     use SwanGridobjects
     use SwanCompdata
@@ -67,6 +71,7 @@ subroutine SwanVertlist
     !
     real                            :: d1         ! distance of a point to origin
     real                            :: d2         ! distance of another point to origin
+    real                            :: depmax     ! maximum depth found
     real                            :: rtmp       ! temporary stored real for swapping
     real                            :: x0         ! x-coordinate of reference point
     real                            :: y0         ! y-coordinate of reference point
@@ -94,11 +99,34 @@ subroutine SwanVertlist
        return
     endif
     !
-    ! determine reference point nearest to the origin
-    ! this point is one of the vertices where boundary condition is given
+    ! determine reference point
     !
-    kx = minloc(vert(:)%attr(VERTX), vert(:)%atti(VBC)/=0)
-    ky = minloc(vert(:)%attr(VERTY), vert(:)%atti(VBC)/=0)
+    if ( all(mask=vert(:)%atti(VBC)==0) ) then
+       !
+       ! if no boundary condition is given then find the vertex with the maximum depth
+       !
+       depmax = -999.
+       !
+       do j = 1, nverts
+          !
+          if ( DEPTH(j) > depmax ) then
+             !
+             depmax = DEPTH(j)
+             kx(1)  = j
+             ky(1)  = j
+             !
+          endif
+          !
+       enddo
+       !
+    else
+       !
+       ! reference point is one of the vertices nearest to the origin where boundary condition is given
+       !
+       kx = minloc(vert(:)%attr(VERTX), vert(:)%atti(VBC)/=0)
+       ky = minloc(vert(:)%attr(VERTY), vert(:)%atti(VBC)/=0)
+       !
+    endif
     !
     if ( kx(1) == ky(1) ) then
        x0 = vert(kx(1))%attr(VERTX)

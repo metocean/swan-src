@@ -28,10 +28,12 @@
 !                                                                      *
 !SWAN      PROGRAM SWAN
 !NCOM      Subroutine WaveModule()
+!ADC      SUBROUTINE SWAN
 !                                                                      *
 !***********************************************************************
 !
 !NCOM       USE PASS
+!PUN      USE MESSENGER     
       IMPLICIT NONE
 !
 !
@@ -88,6 +90,7 @@
 !     40.31, Dec. 03: removing POOL mechanism and reconsidering
 !                     this main program
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!     40.95, Jun. 08: parallelization of unSWAN using MESSENGER of ADCIRC
 !
 !  2. Purpose
 !
@@ -100,6 +103,13 @@
 !     SWMAIN
 !
       LOGICAL STPNOW                                                      40.30 34.01
+!
+! 11. Remarks
+!
+!     In case of coupling with ADCIRC, this program will not be executed  41.20
+!     Instead, SWAN initialization and run will be done by PADCSWAN_INIT  41.20
+!     and PADCSWAN_RUN, respectively, as they will pass a time step to    41.20
+!     routine SWMAIN. See couple2swan.F                                   41.20
 !
 ! 13. Source Code
 !
@@ -114,13 +124,14 @@
       IF (STPNOW()) GOTO 999                                              40.30
 
 !NCOM      else  
+!PUN      CALL MSG_INIT() 
 
 !     --- start SWAN run
 !NCOM      print*, 'Run SWAN loop ',int((istep-1)/N_Interval_CallWave)
 !NCOM      endif
       CALL SWMAIN                                                         
 !NCOM      print*,'Out of SWAN loop'
-                                                               
+
 
 !NCOM       RETURN
 
@@ -129,13 +140,15 @@
 !     --- stop MPI                                                        40.30
 
       CALL SWEXITMPI                                                      40.30
+!PUN      CALL MSG_FINI()                                                     40.95
 !
 !     --- end of MAIN PROGRAM
 !
       END
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWMAIN                                                   40.31 34.01
+!NADC      SUBROUTINE SWMAIN                                                   40.31 34.01
+!ADC      SUBROUTINE SWMAIN ( ITIME, IT )                                     41.20 40.31 34.01
 !                                                                      *
 !***********************************************************************
 !
@@ -152,6 +165,14 @@
 !NCOM      USE PASS
       USE SwanGriddata                                                    40.80
 !SWAN      USE ncswan
+!PUN      USE MESSENGER                                                       40.95
+!ADC      USE Couple2Adcirc                                                   41.20
+!ADC      USE Couple2Swan, ONLY: ComputeRadiationStresses,                    41.20
+!ADC     &                       CouplingInterval,
+!ADC     &                       SwanOutput
+!ADC     &                      ,WriteSwanHotStart
+!ADC      USE GLOBAL,      ONLY: ADCIRC_DTDP => DTDP,                         41.20
+!ADC     &                       ADCIRC_STATIM => STATIM
 !
       IMPLICIT NONE
 !
@@ -259,6 +280,8 @@
 !     ---
 !
 !  4. Argument variables
+!ADC!
+!ADC      INTEGER IT, ITIME                                                   41.20
 !
 !  6. Local variables
 !
@@ -279,21 +302,25 @@
 !     LOPEN :     indicates whether a file is open                        34.01
 !     MSGSTR:     string to pass message to call MSGERR                   40.41
 !
-      INTEGER   IUNIT                                                     34.01
-      INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
-      INTEGER   INERR                                                     40.31
-      INTEGER   ISTAT, IF1, IL1                                           40.41
-      CHARACTER COMPUT *4, DTTIWR*18                                      40.00
-      CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
-      CHARACTER*80 MSGSTR                                                 40.41
-      LOGICAL   LOPEN                                                     34.01
-
-      INTEGER, ALLOCATABLE :: CROSS(:)                                    40.80 40.31
-      INTEGER, ALLOCATABLE :: BGRIDP(:)                                   40.31
-      REAL   , ALLOCATABLE :: BSPECS(:,:,:,:)                             40.31
-      REAL   , ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)                     40.31
-!
-      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:), OURQT(:)               40.51 40.41
+!NADC      INTEGER   IUNIT                                                     34.01
+!NADC      INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN                             40.30
+!NADC      INTEGER   INERR                                                     40.31
+!NADC      INTEGER   ISTAT, IF1, IL1                                           40.41
+!NADC      CHARACTER COMPUT *4, DTTIWR*18                                      40.00
+!NADC      CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
+!NADC      CHARACTER*80 MSGSTR                                                 40.41
+!NADC      LOGICAL   LOPEN                                                     34.01
+!ADC!     some variables and arrays have been moved to the                    41.20
+!ADC!     Couple2Adcirc module so that they will persist in memory            41.20
+!ADC      CHARACTER DTTIWR*18                                                 41.20
+!ADC      CHARACTER*20 NUMSTR                                                 41.20
+!NADC
+!NADC      INTEGER, ALLOCATABLE :: CROSS(:)                                    40.80 40.31
+!NADC      INTEGER, ALLOCATABLE :: BGRIDP(:)                                   40.31
+!NADC      REAL   , ALLOCATABLE :: BSPECS(:,:,:,:)                             40.31
+!NADC      REAL   , ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)                     40.31
+!NADC!
+!NADC      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:), OURQT(:)               40.51 40.41
 !
 !  7. Common blocks used
 !
@@ -365,6 +392,9 @@
 !     ----------------------------------------------------------------
 !
 ! 13. Source text
+!ADC!
+!ADC!     --- do the initialization for coupled ADCIRC+SWAN model             41.20
+!ADC      IF ( IT.EQ.0 ) THEN
 !
 
 !NCOM       if (Master_Start.eq.1)then
@@ -379,20 +409,25 @@
       MAXERR=1                                                            34.01
       ITRACE=0                                                            40.23
       INERR =0                                                            40.31
+      ISTAT =0
 
 !TIMG      CALL SWTSTA(2)                                                      40.23
       CALL SWINIT (INERR)                                                 40.31 34.01
+!PUN      IF ( MNPROC>1 ) THEN                                                40.95
+!PUN         CALL SwanReadfort18                                              40.95
+!PUN!NADC         CALL MSG_TABLE()                                                 40.95
+!PUN!NADC         CALL MSG_START()                                                 40.95
+!PUN      ENDIF                                                               40.95
 !TIMG      CALL SWTSTO(2)                                                      40.23
       IF (INERR.GT.0) RETURN                                              34.01
       IF (STPNOW()) RETURN                                                34.01
 !
-     
       COMPUT = '    '
 
 !     --- repeat
 
 !NCOM      endif
-!SWAN      DO
+!NADC!SWAN      DO
 
 !       --- read and process user commands
 
@@ -409,6 +444,7 @@
         
 !TIMG        CALL SWTSTO(3)                                                    40.23
         IF (STPNOW()) RETURN                                              34.01
+
 !       --- if last command was STOP then exit from repeat
 
         IF (COMPUT.EQ.'STOP') THEN                                        40.13
@@ -421,6 +457,7 @@
         ENDIF                                                             40.13
 
 !       --- allocate some arrays meant for computation                    40.31
+
         IF (NUMOBS .GT. 0) THEN
            IF (OPTG.NE.5) THEN                                            40.80
 !             structured grid                                             40.80
@@ -438,7 +475,7 @@
 
 !       --- do some preparations before computation                       40.31
 
-!TIMG        CALL SWTSTA(4)
+!TIMG        CALL SWTSTA(4)                                                    40.23
         CALL SWPREP ( BSPECS, BGRIDP, CROSS , XCGRID, YCGRID, KGRPNT,     40.31
      &                KGRBND, SPCDIR, SPCSIG )                            40.31
         IF (OPTG.EQ.5) CALL SwanPrepComp ( CROSS )                        40.80
@@ -543,6 +580,15 @@
           ELSE
             IT0 = 1
           ENDIF
+!ADC
+!ADC!       --- end the LEVERR.GT.MAXERR IF statement                         41.20
+!ADC        ENDIF
+!ADC!
+!ADC!     --- end the initialization for coupled ADCIRC+SWAN                  41.20
+!ADC      ENDIF
+!ADC!
+!ADC!     --- re-open the error IF statement                                  41.20
+!ADC      IF (LEVERR.LE.MAXERR) THEN
 
 !         --- synchronize nodes                                           40.30
 
@@ -551,14 +597,17 @@
 
 !         --- loop over time steps                                        40.00
 !NCOM          call pass_in_swan(COMPDA,KGRPNT,XCGRID,YCGRID)
-          DO 500 IT = IT0, MTC                                            40.00
+!ADC!             time stepping in the coupled model is handled elsewhere     41.20
+
+!NADC          DO 500 IT = IT0, MTC                                            40.00
 !
             IF (LEVERR.GT.MAXERR) THEN                                    30.82
               WRITE (PRINTF, 6030) LEVERR                                 30.82
               IF (LEVERR.LT.4) WRITE (PRINTF, 6011)                       40.30 30.82
  6030         FORMAT(' ** No continuation of computation because ',       30.82
      &               'of error level:',I3)                                30.82
-              EXIT                                                        40.30
+!NADC              EXIT                                                        40.30
+!ADC              RETURN                                                      41.20
             ENDIF                                                         30.82
 
 !           --- synchronize nodes
@@ -626,8 +675,17 @@
 !
             SAVITE = ITEST                                                30.21
             IF (IOUTES .GT. ITEST) ITEST = IOUTES
+!ADC
+!ADC!           --- perform output of SWAN quantities                         41.20
+!ADC            CALL SwanOutput ( ITIME, IT )
+!ADC!           --- write the SWAN hot-start file, if necessary               41.20
+!ADC            IF ( WriteSwanHotStart ) THEN
+!ADC               CALL BACKUP ( AC2,SPCSIG,SPCDIR,KGRPNT,XCGRID,YCGRID )
+!ADC               WriteSwanHotStart = .FALSE.
+!ADC            ENDIF
 
 !           --- synchronize nodes
+
             CALL SWSYNC                                                   40.30
             IF (STPNOW()) RETURN                                          40.30
 
@@ -653,20 +711,27 @@
  222          FORMAT(' Time of computation ->  ',A,' in sec:', F12.0)     40.00
             ENDIF                                                         40.00
 
- 500      CONTINUE
+!NADC 500      CONTINUE
 
           IF (LEVERR.GT.MAXERR) GOTO 900                                  40.30
 
         END IF
 
-!SWAN      END DO
+!NADC      END DO
 !
  900  CONTINUE
 
 !NCOM       call PASS_OUT_SWAN(COMPDA,KGRPNT,XCGRID,YCGRID,AC2,SPCDIR,SPCSIG)
 !NCOM       return
+!ADC!
+!ADC!     --- make sure that radiation stresses are up-to-date                41.20
+!ADC      IF ( IT.NE.MTC ) THEN
+!ADC         CALL ComputeRadiationStresses ( AC2, SPCDIR, SPCSIG )
+!ADC      ENDIF
 !
 !TIMG      CALL SWTSTO(1)                                                      40.23
+!ADC!
+!ADC      IF ( IT.EQ.MTC ) THEN                                               41.20
 !
 !SWAN      DO IUNIT=1,HIOPEN                                                   34.01
 !SWAN        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
@@ -692,6 +757,19 @@
             DEALLOCATE(BLKNDC)                                            40.41 40.30
          END IF                                                           40.30
       END IF                                                              40.30
+!PUN      !
+!PUN      IF ( MNPROC>1 ) THEN                                                41.36
+!PUN         IF ( IAMMASTER ) THEN                                            41.36
+!PUN            ALLOCATE(BLKNDC(nvertsg))                                     41.36
+!PUN            BLKNDC = 0.                                                   41.36
+!PUN         ENDIF                                                            41.36
+!PUN         CALL SwanPunCollect ( BLKNDC )                                   41.36
+!PUN         IF (STPNOW()) RETURN                                             41.36
+!PUN         IF ( IAMMASTER ) THEN                                            41.36
+!PUN            CALL SWCOLOUT ( OURQT, BLKNDC )                               41.36
+!PUN            DEALLOCATE(BLKNDC)                                            41.36
+!PUN         ENDIF                                                            41.36
+!PUN      ENDIF                                                               41.36
 !TIMG      CALL SWTSTO(9)                                                      40.30
 !
 !TIMG      CALL SWPRTI                                                         40.23
@@ -710,6 +788,7 @@
       IF (LOPEN) CLOSE(PRINTF)                                            40.30
 !
 !     --- deallocate all allocated arrays                                 40.31
+
       IF (ALLOCATED(AC1   )) DEALLOCATE(AC1   )                           40.31
       IF (ALLOCATED(BGRIDP)) DEALLOCATE(BGRIDP)                           40.31
       IF (ALLOCATED(BSPECS)) DEALLOCATE(BSPECS)                           40.31
@@ -718,6 +797,8 @@
       IF (ALLOCATED(OURQT )) DEALLOCATE(OURQT )                           40.51 40.30
       IF (ALLOCATED(BLKND )) DEALLOCATE(BLKND )                           40.41
       CALL SWCLME                                                         40.31
+!ADC!
+!ADC      ENDIF                                                               41.20
 !
       RETURN                                                              30.82
 !     end of subroutine SWMAIN
@@ -2267,7 +2348,7 @@
       OVEXCV(IVTYPE) = -9.
 !
       IVTYPE = 70
-      OVKEYW(IVTYPE) = 'NPL'
+      OVKEYW(IVTYPE) = 'NPL'                                            ! 41.12
       OVSNAM(IVTYPE) = 'Nplant'
       OVLNAM(IVTYPE) = 'Plants per m2'
       OVUNIT(IVTYPE) = '1/m2'
@@ -4354,6 +4435,7 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE M_PARALL                                                        40.31
+!PUN      USE SIZES, ONLY: MNPROC
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -4502,6 +4584,14 @@
         SINCMP = .TRUE.                                                   40.80
         CALL SwanFindPoint ( XP, YP, K )                                  40.80
         IF ( K.LT.0 ) SINCMP = .FALSE.                                    40.80
+!
+!PUN!       --- check if output location is in global subdomain               40.95
+!PUN!
+!PUN        IF ( MNPROC.GT.1 .AND. .NOT.SINCMP ) THEN                         40.95
+!PUN           IF ( XP.GE.XCGMIN .AND. XP.LE.XCGMAX .AND.                     40.95
+!PUN     &          YP.GE.YCGMIN .AND. YP.LE.YCGMAX ) SINCMP = .TRUE.         40.95
+!PUN        ENDIF                                                             40.95
+!PUN!
       ENDIF
 !
 !     --- check if output location is in global subdomain                 40.31
@@ -5785,7 +5875,6 @@
           COUNT_IT = COUNT_IT+1                                           40.05
           NDSL = BFILED(4)
           NDSD = BFILED(5)
-
 !
 !     in WW3 case rewind the boundary file
           IF(BTYPE.EQ.'WW3N') REWIND(NDSD)                                40.05
@@ -5822,7 +5911,7 @@
             IF (UNFORM) THEN
               READ (NDSD, END=380, ERR=920)
             ELSEIF ((.NOT.UNFORM).AND.(BTYPE.EQ.'WW3N')) THEN             40.05
-              READ (NDSD,*, END=920)                                               40.05
+              READ (NDSD,*)                                               40.05
             ELSE                                                          40.05
               READ (NDSD, '(A)', END=380, ERR=920) HEDLIN
               IF (ITEST.GE.90) WRITE (PRINTF, 212) HEDLIN
@@ -5908,7 +5997,7 @@
 !                   DUM_A dummy local variable used to read formatted     40.05
 !                   files                                                 40.05
 !                   this variable will be not used in any calculation     40.05
-                    READ (NDSD,901,END=940) PTNME, DUM_A, DUM_A, BDEPTH,          40.05
+                    READ (NDSD,901) PTNME, DUM_A, DUM_A, BDEPTH,          40.05
      &                              DUM_A, DUM_A, DUM_A, DUM_A            40.05
                   ENDIF                                                   40.05
                 ELSE                                                      40.05
@@ -5926,7 +6015,7 @@
 !                 exit is used because the header per spectrum in WW3     40.05
 !                 for IBOUNC>1 is one line                                40.05
 !                 DUM_A is a dummy local parameter used in formatted read 40.05
-                  READ (NDSD,901,END=940) PTNME, DUM_A, DUM_A, BDEPTH,
+                  READ (NDSD,901) PTNME, DUM_A, DUM_A, BDEPTH,
      &                            DUM_A, DUM_A, DUM_A, DUM_A              40.05
                 ELSE IF (BTYPE.EQ.'WAMF') THEN
 !                 read HEDLIN replaced because data are sometimes written 40.13
@@ -5951,7 +6040,7 @@
 !                 skip reading of values
                   CYCLE BP_LOOP                                           40.05
                 ELSE IF (HEDLIN(1:6).EQ.'FACTOR') THEN
-                  READ (NDSD, *, END=940) RFAC
+                  READ (NDSD, *) RFAC
                   UFAC = UFAC * RFAC
 !                 multiply factor read from file by UFAC (factor following from
 !                 type of file)
@@ -5983,7 +6072,7 @@
               CALL LSPLIT (HEDLIN, DATITM, 5)
               CALL DTRETI (DATITM(1), BFILED(6), TIMF2)                   40.03
               DO II = 1, 4
-                READ (DATITM(II+1), '(G12.0)', END=940) SPPARM(II)
+                READ (DATITM(II+1), '(G12.0)') SPPARM(II)
               ENDDO
               IF (ITEST.GE.60) WRITE (PRTEST, *) ' TPAR boundary ',
      &              TIMF2, (SPPARM(JJ), JJ=1,4)
@@ -6417,10 +6506,10 @@
         IF (UNFORM) THEN
 !          unformatted reading
            IF (DORDER.LT.0) THEN
-              READ (NDSD,*,END=930,ERR=920)
+              READ (NDSD,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=NANG,1,-1),IFRE=1,NFRE)
            ELSE
-              READ (NDSD,*,END=930,ERR=920)
+              READ (NDSD,END=930,ERR=920)
      &               ((BAUX1(IANG,IFRE),IANG=1,NANG),IFRE=1,NFRE)
            ENDIF
         ELSEIF ((.NOT.UNFORM).AND.(BTYPE.EQ.'WW3N')) THEN                 40.05
@@ -6558,6 +6647,15 @@
       USE SWCOMM3                                                         40.41
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+!ADC      USE Couple2Swan, ONLY: ADCIRC_ETA2 => SWAN_ETA2,                    41.20
+!ADC     &                       ADCIRC_UU2 => SWAN_UU2,
+!ADC     &                       ADCIRC_VV2 => SWAN_VV2,
+!ADC     &                       ADCIRC_WX2 => SWAN_WX2,
+!ADC     &                       ADCIRC_WY2 => SWAN_WY2,
+!ADC     &                       COUPCUR, COUPWIND, COUPWLV,
+!ADC     &                       InterpoWeight
+!ADC     &                      ,ADCIRC_Z0 => SWAN_Z0,
+!ADC     &                       COUPFRIC
 
       IMPLICIT NONE
 !
@@ -6762,12 +6860,45 @@
       ENDIF
       IF (IFLNDS(IGR1).GT.0) THEN                                         40.03
         IF (INODE.EQ.MASTER) THEN
+!ADC!          --- if we have coupled to the quantities from ADCIRC,          41.20
+!ADC!              then grab them from memory instead of reading them
+!ADC!              from the external file
+!ADC           IF ( (IGR1.EQ.7).AND.COUPWLV ) THEN
+!ADC              DO INDX = 1, nverts
+!ADC                 ARR(INDX) = (1.0 - REAL(InterpoWeight))
+!ADC     &                  * REAL(ADCIRC_ETA2(INDX,1))
+!ADC     &                  + REAL(InterpoWeight)
+!ADC     &                  * REAL(ADCIRC_ETA2(INDX,2))
+!ADC              ENDDO
+!ADC           ELSEIF ( (IGR1.EQ.2).AND.COUPCUR ) THEN
+!ADC              DO INDX = 1, nverts
+!ADC                 ARR(INDX) = (1.0 - REAL(InterpoWeight))
+!ADC     &                  * REAL(ADCIRC_UU2(INDX,1))
+!ADC     &                  + REAL(InterpoWeight)
+!ADC     &                  * REAL(ADCIRC_UU2(INDX,2))
+!ADC              ENDDO
+!ADC           ELSEIF ( (IGR1.EQ.5).AND.COUPWIND ) THEN
+!ADC              DO INDX = 1, nverts
+!ADC                 ARR(INDX) = (1.0 - REAL(InterpoWeight))
+!ADC     &                  * REAL(ADCIRC_WX2(INDX,1))
+!ADC     &                  + REAL(InterpoWeight)
+!ADC     &                  * REAL(ADCIRC_WX2(INDX,2))
+!ADC              ENDDO
+!ADC           ELSEIF ( (IGR1.EQ.4).AND.COUPFRIC ) THEN
+!ADC              DO INDX = 1, nverts
+!ADC                 ARR(INDX) = (1.0 - REAL(InterpoWeight))
+!ADC     &                  * REAL(ADCIRC_Z0(INDX,1))
+!ADC     &                  + REAL(InterpoWeight)
+!ADC     &                  * REAL(ADCIRC_Z0(INDX,2))
+!ADC              ENDDO
+!ADC           ELSE
            CALL INAR2D( ARR, MXG(IGR1), MYG(IGR1),                        40.31 40.02
      &                  IFLNDF(IGR1),
      &                  IFLNDS(IGR1), IFLIFM(IGR1), IFLFRM(IGR1),
      &                  IFLIDL(IGR1), IFLFAC(IGR1),
      &                  IFLNHD(IGR1), IFLNHF(IGR1))
            IF (STPNOW()) RETURN                                           34.01
+!ADC           ENDIF
         END IF
         CALL SWBROADC(IFLIDL(IGR1),1,SWINT)                               40.30
         IF (IFLIDL(IGR1).LT.0) THEN
@@ -6790,11 +6921,28 @@
         IFLTIM(IGR2) = IFLTIM(IGR1)
         IF (IFLNDS(IGR2).GT.0) THEN                                       40.03
           IF (INODE.EQ.MASTER) THEN                                       40.30
+!ADC!            added these lines to grab the y-components from memory       41.20
+!ADC             IF ( (IGR2.EQ.3).AND.COUPCUR ) THEN
+!ADC               DO INDX = 1, nverts
+!ADC                 ARR2(INDX) = (1.0 - REAL(InterpoWeight))
+!ADC     &                   * REAL(ADCIRC_VV2(INDX,1))
+!ADC     &                   + REAL(InterpoWeight)
+!ADC     &                   * REAL(ADCIRC_VV2(INDX,2))
+!ADC               ENDDO
+!ADC             ELSEIF ( (IGR2.EQ.6).AND.COUPWIND ) THEN
+!ADC               DO INDX = 1, nverts
+!ADC                 ARR2(INDX) = (1.0 - REAL(InterpoWeight))
+!ADC     &                   * REAL(ADCIRC_WY2(INDX,1))
+!ADC     &                   + REAL(InterpoWeight)
+!ADC     &                   * REAL(ADCIRC_WY2(INDX,2))
+!ADC               ENDDO
+!ADC             ELSE
              CALL INAR2D( ARR2, MXG(IGR2), MYG(IGR2),                     40.31 40.02
      &                    IFLNDF(IGR2),
      &                    IFLNDS(IGR2), IFLIFM(IGR2), IFLFRM(IGR2),
      &                    IFLIDL(IGR2), IFLFAC(IGR2), IFLNHD(IGR2), 0)
              IF (STPNOW()) RETURN                                         34.01
+!ADC             ENDIF
           END IF
           CALL SWBROADC(ARR2,MXG(IGR2)*MYG(IGR2),SWREAL)                  40.31 40.30
         ENDIF                                                             40.03

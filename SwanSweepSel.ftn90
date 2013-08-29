@@ -309,10 +309,10 @@ subroutine SwanSweepSel ( idcmin, idcmax, anybin, iscmin, iscmax, &
           return
        endif
        !
-       if ( isslow /= 1 ) then
-          call msgerr ( 4, 'inconsistency found in SwanSweepSel: isslow <> 1 ' )
-          return
-       endif
+       !if ( isslow /= 1 ) then
+       !   call msgerr ( 4, 'inconsistency found in SwanSweepSel: isslow <> 1 ' )
+       !   return
+       !endif
        !
        isslow = 1
        !
