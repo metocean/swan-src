@@ -1090,7 +1090,7 @@ CONTAINS
     REAL   , INTENT(IN)    :: SPCSIG(:)  ! SPCSIG(MSC)
 
     REAL   , INTENT(IN)    :: GRAV
-    REAL   , INTENT(IN)    :: feswell
+    REAL   , INTENT(IN)    :: feswell !This is same as B1 in WaveWatch
 
     REAL   , INTENT(INOUT) :: IMATDA(:,:) ! IMATDA(MDC,MSC)
     REAL   , INTENT(INOUT) :: DISSC1(:,:,:) ! DISSC1(1:MDC,1:MSC,1:MDISP)  
@@ -1103,7 +1103,7 @@ CONTAINS
 !    REAL              :: U0(MSC),AORB(MSC)  ! orbital velocity (narrow banded)
     REAL              :: DDIS(MSC)          ! dissipation term of derivative
     reaL              :: DDEN(msc)
-    real	      :: k(mdc,msc),bn(msc),kmax(msc)
+    real	      :: k(mdc,msc),bn(msc),kmax(msc),B1
 !/
 !/ ------------------------------------------------------------------- /
 !/
@@ -1111,10 +1111,10 @@ CONTAINS
       ABAND = SUM(A,1)     ! action density as function of wavenumber
       DDIS  = 0.
 
-!      DDEN=DDIR*SPCSIG
-!      DDEN(2:MSC-1)=0.5*DDEN(2:MSC-1)*(SPCSIG(3:MSC)-SPCSIG(1:MSC-2))
-!      DDEN(1)=DDEN(1)*(SPCSIG(2)-SPCSIG(1))
-!      DDEN(MSC)=DDEN(MSC)*(SPCSIG(MSC)-SPCSIG(MSC-1))
+      DDEN=DDIR*SPCSIG
+      DDEN(2:MSC-1)=0.5*DDEN(2:MSC-1)*(SPCSIG(3:MSC)-SPCSIG(1:MSC-2))
+      DDEN(1)=DDEN(1)*(SPCSIG(2)-SPCSIG(1))
+      DDEN(MSC)=DDEN(MSC)*(SPCSIG(MSC)-SPCSIG(MSC-1))
 !
 !/ X) --- Parameterise B1 as a function of wave steepness ------------ /
 !      U0    = SQRT(  2.0 * (ABAND * DDEN)  ) * SPCSIG
@@ -1130,14 +1130,22 @@ CONTAINS
            END IF
         END DO
         BN   = ( ABAND * SPCSIG(1:MSC) * DDIR ) * WN**3 / (sum(K,1)*ddir)
+
+!/    --- A constant value for B1 attenuates swell too strong in the
+!/        western central Pacific (i.e. cross swell less than 1.0m).
+!/        Workaround is to scale B1 with steepness a*kp, where kp is
+!/        the peak wavenumber. SWL6B1 remains a scaling constant, but
+!/        with different magnitude.  --------------------------------- /
+        IS    = MAXLOC(ABAND,1)                ! Index for peak
+        B1    = feswell * ( 2. * SQRT(SUM(ABAND*DDEN)) * WN(IS) )
+!
 !
 !/ 2) --- The total turbulent spectral dissipation of narrow-banded 
 !         swell is SDIS = B1/3/GRAV * U0**3 (in units of m²/s). 
 !         Calculate the derivative term only.------------------------- /
       DO Is = 1,ISSTOP
          IF (ABAND(IS) .GT. 1.E-30) THEN
-!	    DDIS(IS) = (2* feswell / 3. / GRAV) * SPCSIG(IS)**3*AORB(IS)
-	    DDIS(IS) = 0.6666666 * feswell * SPCSIG(IS) * BN(IS)
+	    DDIS(IS) = 0.6666666 * B1 * SPCSIG(IS) * BN(IS)
          END IF
       END DO
 !

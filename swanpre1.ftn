@@ -2231,13 +2231,13 @@
         ELSE IF ( KEYWIS ('BABANIN')) THEN
 !         *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
           IWCAP = 8
-          CALL INREAL ('a1sds', a1sds, 'REQ', 6.24E-7)
-          CALL INREAL ('a2sds', a2sds, 'REQ', 8.74E-6)
+          CALL INREAL ('a1sds', a1sds, 'REQ', 3.74E-7)
+          CALL INREAL ('a2sds', a2sds, 'REQ', 5.24E-6)
           CALL INREAL ('p1sds', p1sds, 'REQ', 4.0)
           CALL INREAL ('p2sds', p2sds, 'REQ', 4.0)
           CALL INREAL ('Cdsv', Cdsv, 'REQ', 1.2)
-          CALL INREAL ('feswell', feswell, 'REQ', 0.006)
-          CALL INREAL ('a0sin', a0sin, 'REQ', 0.04)
+          CALL INREAL ('feswell', feswell, 'REQ', 0.0032)
+          CALL INREAL ('a0sin', a0sin, 'REQ', 0.09)
           CALL INKEYW ('REQ', ' ')
           IF (KEYWIS ('UP')) THEN
              UPWARDS = .TRUE.
@@ -2826,13 +2826,13 @@
         IF (LWINDR .GT. 0) IWIND = LWINDM                               
 !       *** whitecapping according to Rogers et al. (2011) based on work of Babanin, Young, Tsagareli, Ardhuin and others.
         IWCAP = 8                                                       
-        CALL INREAL ('a1sds', a1sds, 'STA', 6.24E-7)
-        CALL INREAL ('a2sds', a2sds, 'STA', 8.74E-6)
+        CALL INREAL ('a1sds', a1sds, 'STA', 3.74E-7)
+        CALL INREAL ('a2sds', a2sds, 'STA', 5.24E-6)
         CALL INREAL ('p1sds', p1sds, 'STA', 4.0)
         CALL INREAL ('p2sds', p2sds, 'STA', 4.0)
-        CALL INREAL ('Cdsv', Cdsv, 'STA', 1.2)
-        CALL INREAL ('feswell', feswell, 'STA', 0.006)
-        CALL INREAL ('a0sin', a0sin, 'STA', 0.04)
+        CALL INREAL ('Cdsv', Cdsv, 'STA', 1.2)   !+ve Cdsv activates ST4 swell dissipation, otherwise ST6 dissipation
+        CALL INREAL ('feswell', feswell, 'STA', 0.0032)  !Defaults based on Stefan Ziegler's latest work
+        CALL INREAL ('a0sin', a0sin, 'STA', 0.09)
         CALL INKEYW ('STA', 'UP')
         IF (KEYWIS ('UP')) THEN
            UPWARDS = .TRUE.
