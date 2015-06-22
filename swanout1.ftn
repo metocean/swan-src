@@ -675,6 +675,9 @@
            TNEXT = OUTR(1)
         ENDIF
         IF ( PARLL.AND.OURQT.EQ.-9999.) OURQT = OUTR(1)                   40.51 40.30
+!MPI! an mpi build run with only 1 process fails to produce netCDF output, maybe
+!MPI! the following line will help?
+!MPI        IF ( OURQT.EQ.-9999.) OURQT = OUTR(1)                             MSL/aport
         IF (ITEST.GE.60) WRITE (PRTEST, *) ' output times ', TNEXT,
      &        OUTR(2), DT, TFINC, TIMCO
         IF (ABS(DIF).LT.0.5*DT .AND. OUTR(2).LT.0.) THEN                  40.00
