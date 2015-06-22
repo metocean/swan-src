@@ -1575,7 +1575,7 @@
       OVULIM(IVTYPE) = 100.
       OVLEXP(IVTYPE) = -2.
       OVHEXP(IVTYPE) = 2.
-      OVEXCV(IVTYPE) = 0.
+      OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 6
       OVKEYW(IVTYPE) = 'UBOT'                                             40.00
@@ -1743,7 +1743,7 @@
       OVULIM(IVTYPE) = 100.
       OVLEXP(IVTYPE) = -10.
       OVHEXP(IVTYPE) = 10.
-      OVEXCV(IVTYPE) = 0.
+      OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 20
       OVKEYW(IVTYPE) = 'FOR'                                              40.00
@@ -1827,7 +1827,7 @@
       OVULIM(IVTYPE) = 100.
       OVLEXP(IVTYPE) = -50.
       OVHEXP(IVTYPE) = 50.
-      OVEXCV(IVTYPE) = 0.
+      OVEXCV(IVTYPE) = -999.
 !
       IVTYPE = 27
       OVKEYW(IVTYPE) = 'FRC'                                              40.00
