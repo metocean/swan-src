@@ -12,9 +12,9 @@ FLAGS_MPI   = -fc=ifort
 INCS_SER    = -I/usr/include 
 INCS_OMP    =
 INCS_MPI    = -I/usr/include 
-LIBS_SER    = -L/usr/lib -lnetcdf -lnetcdff
+LIBS_SER    = -L/usr/lib -lnetcdff -lnetcdf
 LIBS_OMP    =
-LIBS_MPI    = -L/usr/lib -lnetcdf -lnetcdff
+LIBS_MPI    = -L/usr/lib -lnetcdff -lnetcdf
 O_DIR       = ../work/odir4/
 OUT         = -o 
 EXTO        = o
