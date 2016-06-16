@@ -1,1 +1,1 @@
-macros/ifort_macros.inc
+macros/ifort_static_macros.inc
