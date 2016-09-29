@@ -2411,7 +2411,7 @@
       OVKEYW(IVTYPE) = 'TPSEA'
       OVSNAM(IVTYPE) = 'tp_sea'
       OVLNAM(IVTYPE) = 'Peak period of sea'
-      OVUNIT(IVTYPE) = UDI
+      OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
       OVULIM(IVTYPE) = 1000.
@@ -2423,7 +2423,7 @@
       OVKEYW(IVTYPE) = 'TPSW'
       OVSNAM(IVTYPE) = 'tp_sw'
       OVLNAM(IVTYPE) = 'Peak period of swell'
-      OVUNIT(IVTYPE) = UDI
+      OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
       OVULIM(IVTYPE) = 1000.
@@ -2510,7 +2510,7 @@
       OVKEYW(IVTYPE) = 'TPSW1'
       OVSNAM(IVTYPE) = 'tp_sw1'
       OVLNAM(IVTYPE) = 'Peak period of primary swell partition'
-      OVUNIT(IVTYPE) = UDI
+      OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
       OVULIM(IVTYPE) = 1000.
@@ -2534,7 +2534,7 @@
       OVKEYW(IVTYPE) = 'TPSW2'
       OVSNAM(IVTYPE) = 'tp_sw2'
       OVLNAM(IVTYPE) = 'Peak period of secondary swell partition'
-      OVUNIT(IVTYPE) = UDI
+      OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
       OVULIM(IVTYPE) = 1000.
@@ -2558,7 +2558,7 @@
       OVKEYW(IVTYPE) = 'TPSEAS'
       OVSNAM(IVTYPE) = 'tp_seas'
       OVLNAM(IVTYPE) = 'Peak period of sea partition'
-      OVUNIT(IVTYPE) = UDI
+      OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
       OVULIM(IVTYPE) = 1000.
