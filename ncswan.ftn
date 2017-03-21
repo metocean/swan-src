@@ -11,6 +11,7 @@
 	    character (len=8) :: idx,idy
 	    character (len=40) :: descriptionx,descriptiony
 	    character (len=10) :: units
+	    character (len=70) :: stdnamex,stdnamey
 	    integer :: vtype,vidx,vidy
 	    real :: fillvalue
 	end type ncvar
@@ -25,29 +26,39 @@
 	      varnc%idy='vgrd10m'
 	      varnc%descriptionx='East component 10m wind'
 	      varnc%descriptiony='North component 10m wind'
+	      varnc%stdnamex='eastward_wind'
+	      varnc%stdnamey='northward_wind'
 	    elseif (vind.eq.19) then
 	      varnc%idx='eflx'
 	      varnc%idy='efly'
 	      varnc%descriptionx='East component energy flux'
 	      varnc%descriptiony='North component energy flux'
+	      varnc%stdnamex='eastward_wave_energy_flux'
+	      varnc%stdnamey='northward_wave_energy_flux'
 	    elseif (vind.eq.4) then
               varnc%idx='dep'
               varnc%vtype=0
-              varnc%descriptionx='Static depth'
+              varnc%descriptionx='Water depth'
+              varnc%stdnamex='sea_floor_depth_below_sea_surface'
             else
 	      if (OVSVTY(vind).eq.3) then
+              varnc%stdnamex = 'eastward_'//OVCNAM(vind)
+     &(1:LEN_TRIM(OVCNAM(vind)))
+              varnc%stdnamey = 'northward_'//OVCNAM(vind)
+     &(1:LEN_TRIM(OVCNAM(vind)))
               varnc%idx = strtolower(OVSNAM(vind)
      &(1:LEN_TRIM(OVSNAM(vind)))//'_x')
               varnc%idy = strtolower(OVSNAM(vind)
      &(1:LEN_TRIM(OVSNAM(vind)))//'_y')
-              varnc%descriptionx = OVLNAM(vind)
-     &(1:LEN_TRIM(OVLNAM(vind)))//' comp-x'
-              varnc%descriptiony = OVLNAM(vind)
-     &(1:LEN_TRIM(OVLNAM(vind)))//' comp-y'
+              varnc%descriptionx = 'Eastward '//OVLNAM(vind)
+     &(1:LEN_TRIM(OVLNAM(vind)))
+              varnc%descriptiony = 'Northward '//OVLNAM(vind)
+     &(1:LEN_TRIM(OVLNAM(vind)))
               varnc%vtype=3
 	      else
               varnc%idx = strtolower(OVSNAM(vind))
               varnc%descriptionx = OVLNAM(vind)
+              varnc%stdnamex = OVCNAM(vind)
 	      endif
 	    end if
 	    varnc%fillvalue=OVEXCV(vind)
@@ -79,13 +90,22 @@
 	    initnc= NF_DEF_VAR(ncfid, 'time',NF_DOUBLE, 1, dimtid, vartid)
 	      if (initnc.lt.0) return
 	    initnc=NF_PUT_ATT_TEXT
+     &(ncfid, varxid, 'standard_name', 9, 'longitude')
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_ATT_TEXT
      &(ncfid, varxid, 'units', 12, 'degrees_east')
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_ATT_TEXT
+     &(ncfid, varyid, 'standard_name', 8, 'latitude')
 	      if (initnc.lt.0) return
 	    initnc=NF_PUT_ATT_TEXT
      &(ncfid, varyid, 'units', 13, 'degrees_north')
 	      if (initnc.lt.0) return
 	    initnc=NF_PUT_ATT_TEXT
-     &(ncfid, vartid, 'units', 16, 'days since 1-1-1')
+     &(ncfid, vartid, 'standard_name', 4, 'time')
+	      if (initnc.lt.0) return
+	    initnc=NF_PUT_ATT_TEXT
+     &(ncfid, vartid, 'units', 21, 'days since 0001-01-01')
 	      if (initnc.lt.0) return
 	    initnc=NF_ENDDEF(ncfid)
 	    initnc=NF_PUT_VAR_REAL(ncfid, varxid,xp)
@@ -110,6 +130,10 @@
      &(ncfid, TRIM(varnc%idx) ,NF_REAL, 3, vardims, varnc%vidx)
 	    endif
 	    if (defncvar.lt.0) return
+	    ndum=LEN_TRIM(varnc%stdnamex)
+	    defncvar=NF_PUT_ATT_TEXT
+     &(ncfid, varnc%vidx, 'standard_name', ndum, TRIM(varnc%stdnamex))
+	      if (defncvar.lt.0) return
 	    ndum=LEN_TRIM(varnc%units)
 	    defncvar=NF_PUT_ATT_TEXT
      &(ncfid, varnc%vidx, 'units', ndum, TRIM(varnc%units))
@@ -125,6 +149,10 @@
 	      defncvar= NF_DEF_VAR
      &(ncfid, TRIM(varnc%idy) ,NF_REAL, 3, vardims, varnc%vidy)
 		if (defncvar.lt.0) return
+	    ndum=LEN_TRIM(varnc%stdnamey)
+	    defncvar=NF_PUT_ATT_TEXT
+     &(ncfid, varnc%vidy, 'standard_name', ndum, TRIM(varnc%stdnamey))
+	      if (defncvar.lt.0) return
 	      ndum=LEN_TRIM(varnc%units)
 	      defncvar=NF_PUT_ATT_TEXT
      &(ncfid, varnc%vidy, 'units', ndum, TRIM(varnc%units))
