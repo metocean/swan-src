@@ -26,8 +26,8 @@
 	      varnc%idy='vgrd10m'
 	      varnc%descriptionx='East component 10m wind'
 	      varnc%descriptiony='North component 10m wind'
-	      varnc%stdnamex='eastward_wind'
-	      varnc%stdnamey='northward_wind'
+	      varnc%stdnamex='eastward_wind_at_10m_above_ground_level'
+	      varnc%stdnamey='northward_wind_at_10m_above_ground_level'
 	    elseif (vind.eq.19) then
 	      varnc%idx='eflx'
 	      varnc%idy='efly'
