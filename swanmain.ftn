@@ -1560,7 +1560,7 @@
       IVTYPE = 4
       OVKEYW(IVTYPE) = 'DEP'                                              40.00
       OVSNAM(IVTYPE) = 'dep'
-      OVLNAM(IVTYPE) = 'Depth'
+      OVLNAM(IVTYPE) = 'Water depth'
       OVCNAM(IVTYPE) = 'sea_floor_depth_below_sea_surface'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
@@ -2188,8 +2188,8 @@
       IVTYPE = 52                                                         40.51
       OVKEYW(IVTYPE) = 'BOTL'
       OVSNAM(IVTYPE) = 'Botlev'
-      OVLNAM(IVTYPE) = 'Bottom level'
-      OVCNAM(IVTYPE) = ' '
+      OVLNAM(IVTYPE) = 'Static water depth'
+      OVCNAM(IVTYPE) = 'sea_floor_depth_below_sea_level'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = -1.E4
@@ -2450,7 +2450,8 @@
       OVKEYW(IVTYPE) = 'DPM'
       OVSNAM(IVTYPE) = 'dpm'
       OVLNAM(IVTYPE) = 'Mean direction of spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_wave_from_direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_wave_from_direction_at_
+     &variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2463,7 +2464,8 @@
       OVKEYW(IVTYPE) = 'DPMSEA'
       OVSNAM(IVTYPE) = 'dpm_sea'
       OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_wind8sec_wave_from_direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_wind8sec_wave_from_direction_at_
+     &variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2476,7 +2478,8 @@
       OVKEYW(IVTYPE) = 'DPMSW'
       OVSNAM(IVTYPE) = 'dpm_sw'
       OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_swell8sec_wave_from_direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_swell8sec_wave_from_direction_at_
+     &variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2585,7 +2588,8 @@
       OVKEYW(IVTYPE) = 'DPMSW1'
       OVSNAM(IVTYPE) = 'dpm_sw1'
       OVLNAM(IVTYPE) = 'Mean direction of primary swell spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_swell1_wave_from_direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_swell1_wave_from_direction_at_
+     &variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2612,7 +2616,8 @@
       OVKEYW(IVTYPE) = 'DPMSW2'
       OVSNAM(IVTYPE) = 'dpm_sw2'
       OVLNAM(IVTYPE) = 'Mean direction of secondary swell spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_swell2_wave_from_direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_swell2_wave_from_direction_at_
+     &variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2639,7 +2644,8 @@
       OVKEYW(IVTYPE) = 'DPMSEAS'
       OVSNAM(IVTYPE) = 'dpm_seas'
       OVLNAM(IVTYPE) = 'Mean direction of sea partition spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_wind_wave_from_direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_wind_wave_from_direction_at_
+     &variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.

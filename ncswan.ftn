@@ -35,11 +35,11 @@
 	      varnc%descriptiony='North component energy flux'
 	      varnc%stdnamex='eastward_wave_energy_flux'
 	      varnc%stdnamey='northward_wave_energy_flux'
-	    elseif (vind.eq.4) then
-              varnc%idx='dep'
+        elseif (vind.eq.52) then
+              varnc%idx='botlev'
+              varnc%stdnamex='sea_floor_depth_below_sea_level'
               varnc%vtype=0
-              varnc%descriptionx='Water depth'
-              varnc%stdnamex='sea_floor_depth_below_sea_surface'
+              varnc%descriptionx='Bottom level'
             else
 	      if (OVSVTY(vind).eq.3) then
               varnc%stdnamex = 'eastward_'//OVCNAM(vind)
