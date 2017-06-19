@@ -11,7 +11,7 @@
 	    character (len=8) :: idx,idy
 	    character (len=40) :: descriptionx,descriptiony
 	    character (len=10) :: units
-	    character (len=70) :: stdnamex,stdnamey
+	    character (len=90) :: stdnamex,stdnamey
 	    integer :: vtype,vidx,vidy
 	    real :: fillvalue
 	end type ncvar
