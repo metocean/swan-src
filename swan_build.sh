@@ -10,7 +10,7 @@ echo -e "\n$(date): $me started\n"
 
 # ----------------------------------------- get or update MetOcean's SWAN source
 # ------------------------------------------------------------------------------
-if [[ $# -gt 1 ]]; then
+if [[ $# -eq 1 ]]; then
     ver=$1
 else
     echo "What version do you want to compile? [msl | stock]"
