@@ -1,0 +1,52 @@
+version: '2'
+
+services:
+
+    tinyhc:
+        image: metocean/swan:40.91-opserver
+        user:  metocean
+        command: python /source/swan/swan/swanhc.py HCTest.test_hc
+        volumes:
+            - /scratch/docker/data:/data
+            - /scratch/docker/hot:/hot
+            - /scratch/docker/flush:/flush
+            - /static:/static
+            - /prod:/prod
+            - /newops:/ops:ro
+            - /source/swan:/source/swan
+            - /source/mopy:/source/mopy
+            - /scratch/docker/scratch:/scratch
+            - /newops/scheduler/testing/local_settings.py:/source/scheduler/scheduler/local_settings.py 
+            - ./scripts/qsub:/usr/bin/qsub
+            - ./scripts/qstat:/usr/bin/qstat
+    
+    interactive:
+        image: metocean/swan:40.91-opserver
+        user:  metocean
+        dns: 10.1.1.71
+        volumes_from:
+            - test_volumes
+
+    test_volumes:
+        image: metocean/swan:40.91-opserver
+        volumes:
+            - /home/rafael/mnt/flush:/flush
+            - /home/rafael/mnt/hot:/hot
+            - /home/rafael/mnt/prod:/prod
+            - /home/rafael/mnt/scratch:/scratch
+            - /home/rafael/mnt/source:/source
+            - /home/rafael/mnt/static:/static
+            - /home/rafael/mnt/data:/data
+
+    build:
+        image: metocean/swan:compile
+        user: metocean
+        depends_on:
+            - ifort
+        volumes_from:
+            - ifort
+
+    ifort:
+        image: metocean/ifort
+        volumes:
+            - /home/rafael/mnt/source:/source
