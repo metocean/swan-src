@@ -46,7 +46,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -173,7 +173,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -305,7 +305,8 @@
 !NADC      REAL   , ALLOCATABLE :: BSPECS(:,:,:,:)                             40.31
 !NADC      REAL   , ALLOCATABLE :: AC1(:,:,:), COMPDA(:,:)                     40.31
 !NADC!
-!NADC      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:), OURQT(:)               40.51 40.41
+!NADC      REAL, ALLOCATABLE    :: BLKND(:), BLKNDC(:)                         40.51 40.41
+!NADC      REAL*8, ALLOCATABLE  :: OURQT(:)                                    40.51 40.41
 !
 !  7. Common blocks used
 !
@@ -789,7 +790,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -950,7 +951,7 @@
       VERTXT = BLANK                                                      40.03
       VERNUM = 41.10
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-!      CALL BUGFIX ('A')
+      CALL BUGFIX ('A')
 !      CALL BUGFIX ('B')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
@@ -1290,9 +1291,9 @@
 !     --- parameters for limiting Csigma and Ctheta
 !
       PNUMS(33) = 0.0                                                     41.35
-      PNUMS(34) = 0.5                                                     41.35
+      PNUMS(34) = 0.9                                                     41.35
       PNUMS(35) = 0.0                                                     41.35
-      PNUMS(36) = 0.5                                                     41.35
+      PNUMS(36) = 0.9                                                     41.35
 !
 !     *** (1) and (2): Komen et al. (1984) formulation ***
 !
@@ -3328,7 +3329,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3568,11 +3569,17 @@
         ENDIF
       ENDIF
 !
+      ATMP = -999.                                                        41.48
+      J    = 0                                                            41.48
+!
       CURRBS => FBS                                                       40.31
       DO                                                                  40.31
          NBS = CURRBS%NBS                                                 40.31
          IF (NBS.EQ.-999) EXIT                                            40.31
          SPPARM(1:4) = CURRBS%SPPARM(1:4)                                 40.31
+         J = J + 1                                                        41.48
+         IF ( J.EQ.1 ) ATMP = 0.                                          41.48
+         ATMP = ATMP + SPPARM(3)                                          41.48
          FSHAPE      = CURRBS%FSHAPE                                      40.31
          DSHAPE      = CURRBS%DSHAPE                                      40.31
          CALL SSHAPE (BSPECS(1,1,NBS,1), SPCSIG, SPCDIR,                  40.31
@@ -3580,6 +3587,24 @@
          IF (.NOT.ASSOCIATED(CURRBS%NEXTBS)) EXIT                         40.31
          CURRBS => CURRBS%NEXTBS                                          40.31
       END DO                                                              40.31
+
+      IF (J.GT.0) ATMP = ATMP/REAL(J)                                     41.48
+!
+      IF ( ATMP.NE.-999. ) THEN                                           41.48
+         ATMP = DEGCNV (ATMP)
+         ALTMP = ATMP / 360.
+         ATMP = PI2 * (ALTMP - NINT(ALTMP))
+      ENDIF
+!
+      IF ( .NOT. asort.NE.-999. ) THEN                                    41.48
+         IF ( NSTATM == 0 ) THEN
+            IF (ATMP.NE.-999. .OR. IWIND.EQ.0 .OR. VARWI) THEN
+               asort = ATMP
+            ELSE
+               asort = WDIP
+            ENDIF
+         ENDIF
+      ENDIF
 
       BGRIDP = 0                                                          40.31
       IF (OPTG.NE.5) THEN                                                 40.80
@@ -3662,7 +3687,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4045,7 +4070,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4566,7 +4591,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4969,7 +4994,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5098,7 +5123,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5228,7 +5253,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5403,7 +5428,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5502,7 +5527,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5852,7 +5877,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6466,7 +6491,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6988,7 +7013,7 @@
 !       obtain boundary spectra
 !
           IF (TIMF1.NE.TIMF2) THEN                                        40.41
-             W1 = (TIMF2-TIMCO) / (TIMF2-TIMF1)
+             W1 = (TIMF2-REAL(TIMCO)) / (TIMF2-TIMF1)
           ELSE
              W1 = 0.
           END IF
@@ -7068,7 +7093,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7500,7 +7525,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7559,7 +7584,6 @@
 !
 !     ARR      real  i  array holding values read from file (x-comp)
 !     ARR2     real  i  array holding values read from file (y-comp)
-!     TIMR2    real i/o time of last reading of input field
 !     INTRV    real  i  time interval between input fields
 !     TMENDR   real  i  end time of input field
 !     IGR1     int   i  location in array COMPDA for interpolated input field data (x-comp)
@@ -7646,8 +7670,10 @@
       REAL       SVALQI
 !     SVALQI     real function giving interpolated value of an input array
 !
-      REAL       TIMR1, XP, YP, UU, VV, VTOT, W1, W3,
+      REAL       XP, YP, UU, VV, VTOT, W1, W3,
      &           SIZE1, SIZE2, SIZE3
+      REAL*8     FAC
+      REAL*8     TIMR1
 !     TIMR1      time of one but last input field
 !     XP         x-coord of one comput grid point
 !     YP         y-coord of one comput grid point
@@ -7820,7 +7846,8 @@
 !
 !         Interpolation in time
 !
- 400  W3 = (TIMCO-TIMR1) / (IFLTIM(IGR1)-TIMR1)
+ 400  FAC = (TIMCO-TIMR1) / (IFLTIM(IGR1)-TIMR1)
+      W3 = REAL(FAC)
       W1 = 1.-W3
       IF (ITEST.GE.60) WRITE(PRTEST,402) IGR1,
      &        TIMCO,IFLTIM(IGR1),W1,W3,JX1,JY1,JX2,JY2,JX3,JY3
@@ -7881,7 +7908,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8178,7 +8205,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

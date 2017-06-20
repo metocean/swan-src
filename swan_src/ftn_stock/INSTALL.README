@@ -37,6 +37,8 @@ tasks:
       Intel Pentium (64-bit) PC           MS Windows     Intel
       Intel Pentium (32-bit) PC           MS Windows     Compaq Visual
       Power Mac G4                        Mac OS X       IBM
+      MacBook                             macOS          gfortran
+      MacBook                             macOS          Intel
 
    3) Compilation of the SWAN source code for sequential runs can
       be done by typing 'make ser' or 'nmake ser' (in case of

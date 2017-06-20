@@ -26,7 +26,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -184,7 +184,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -306,7 +306,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -409,7 +409,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -552,7 +552,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1426,7 +1426,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1560,10 +1560,11 @@
       INTEGER IGTYPE(NUMGRD),           LEDS(NUMGRD)
       INTEGER MXG(NUMGRD), MYG(NUMGRD), LWDATE
       INTEGER OPTG,        NBFILS,      NBSPEC,      NBGRPT
+      REAL*8  RDTIM
       REAL    ALPG(NUMGRD),             COSPG(NUMGRD)
       REAL    COSVC,       COSWC,       DXG(NUMGRD)
       REAL    DYG(NUMGRD), EXCFLD(NUMGRD)
-      REAL    RDTIM,       SINPG(NUMGRD)
+      REAL    SINPG(NUMGRD)
       REAL    SINVC,       SINWC,       STAGX(NUMGRD)
       REAL    STAGY(NUMGRD),            XOFFS
       REAL    XPG(NUMGRD), YOFFS,       YPG(NUMGRD)
@@ -1592,8 +1593,8 @@
       INTEGER      IFLDYN(NUMGRD)
       INTEGER      IFLIDL(NUMGRD), IFLIFM(NUMGRD), IFLNHF(NUMGRD),
      &             IFLNHD(NUMGRD), IFLNDS(NUMGRD), IFLNDF(NUMGRD)
-      REAL         IFLBEG(NUMGRD), IFLINT(NUMGRD), IFLEND(NUMGRD),
-     &             IFLTIM(NUMGRD)
+      REAL*8       IFLBEG(NUMGRD), IFLINT(NUMGRD), IFLEND(NUMGRD)
+      REAL*8       IFLTIM(NUMGRD)
       REAL         IFLFAC(NUMGRD)
       CHARACTER*40 IFLFRM(NUMGRD)
 !
@@ -1635,7 +1636,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2493,7 +2494,7 @@
       REAL                SPPARM(MSPPAR),SY0,       U10
       REAL                WDIC,          WDIP,      HSRERR
       REAL                PQUAD(MQUAD)
-      REAL                RCOMPT(50,5)
+      REAL*8              RCOMPT(50,5)
       REAL                PDIFFR(MDIFFR)                                  40.21
       REAL                PMUD(MMUD)                                      40.59
       REAL                PTURBV(MTURBV)                                  40.35
@@ -2544,7 +2545,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2698,7 +2699,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2768,7 +2769,7 @@
 ! TIMCO     [    ] Time and date of the computation during the simulation (in
 !                  seconds since the reference day (REFDAY))
 !
-      REAL TINIC, DT, TFINC, TIMCO
+      REAL*8 TINIC, DT, TFINC, TIMCO
 !
 !     *** Time related variables for nested runs ***
 !

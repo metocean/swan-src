@@ -52,7 +52,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -289,7 +289,8 @@
       INTEGER           :: MPTST,IPP,NLEN,ITRAS,JJ,IGR2,IGRD,MXS,MYS
       INTEGER           :: IVAL,NUMCOR,MSS,I,J,NVAR,IVTYPE,IFTMAX
       REAL              :: TRCF,HGT,SLP,BK,OGAM,OBET,REF0,XP,YP
-      REAL              :: ALTMP,FRLOW,FRHIG,DIFF,GAMMA,TMPDIR,VALX,VALY
+      REAL              :: ALTMP,FRLOW,FRHIG,GAMMA,TMPDIR,VALX,VALY
+      REAL*8            :: DIFF
       REAL              :: DEGCNV
       REAL              :: HH, CC, DD
       INTEGER           :: NN
@@ -312,6 +313,7 @@
       CHARACTER*6  QOVSNM                                                 40.87
       CHARACTER*40 QOVLNM                                                 40.87
       REAL         QR(9)                                                  40.87
+      REAL*8       DVAL                                                   40.87
 
       TYPE(OBSTDAT), POINTER :: OBSTMP                                    40.31
       TYPE(OBSTDAT), SAVE, POINTER :: COBST                               40.31
@@ -848,7 +850,7 @@
         CALL INKEYW ('STA','  ')
         IF (NSTATM.LE.0 .OR. KEYWIS('STAT')) THEN                         40.00
           IF (NSTATM.EQ.-1) NSTATM = 0                                    40.00
-          IF (NSTATM.GT.0) CALL INCTIM (ITMOPT,'TIME',TINIC,'REQ',0.)     40.00
+          IF (NSTATM.GT.0) CALL INCTIM (ITMOPT,'TIME',TINIC,'REQ',0D0)    40.00
           IF (TINIC .LT. TIMCO) THEN                                      40.03
             CALL MSGERR (2, '[time] before current time')                 40.03
             TINIC = TIMCO                                                 40.03
@@ -862,7 +864,7 @@
         ELSE
           CALL IGNORE ('NONST')
           IF (TIMCO .LT. -0.9E10) THEN                                    40.00
-            CALL INCTIM (ITMOPT,'TBEGC',TINIC,'REQ',0.)                   40.03
+            CALL INCTIM (ITMOPT,'TBEGC',TINIC,'REQ',0D0)                  40.03
           ELSE
             CALL INCTIM (ITMOPT,'TBEGC',TINIC,'STA',TIMCO)                40.03
           ENDIF
@@ -870,8 +872,8 @@
             CALL MSGERR (2, 'start time [tbegc] before current time')     40.03
             TINIC = TIMCO                                                 40.03
           ENDIF                                                           40.03
-          CALL ININTV ('DELTC', DT, 'REQ', 0.)                            40.03
-          CALL INCTIM (ITMOPT,'TENDC',TFINC,'REQ',0.)                     40.03
+          CALL INITVD ('DELTC', DT, 'REQ', 0D0)                           40.03
+          CALL INCTIM (ITMOPT,'TENDC',TFINC,'REQ',0D0)                    40.03
           NSTATC = 1                                                      40.00
 !
 !           *** tfinc must be greater than tinic **
@@ -1883,7 +1885,7 @@
         CALL INKEYW ('STA','  ')
         IF (KEYWIS ('CT')) THEN
            PNUMS(35) = 1.
-           CALL INREAL ('CFL', PNUMS(36) ,'STA', 0.5)
+           CALL INREAL ('CFL', PNUMS(36) ,'STA', 0.9)
         ENDIF
 !
 !       limit Csigma if user want so                                      41.35
@@ -1891,7 +1893,7 @@
         CALL INKEYW ('STA','  ')
         IF (KEYWIS ('CS')) THEN
            PNUMS(33) = 1.
-           CALL INREAL ('CFL', PNUMS(34) ,'STA', 0.5)
+           CALL INREAL ('CFL', PNUMS(34) ,'STA', 0.9)
         ENDIF
 !
         CALL INKEYW ('STA','  ')                                          30.82
@@ -2015,7 +2017,7 @@
          IF (KEYWIS ('CURV')) CCURV = .TRUE.                              41.53
          CALL ININTG ('PRINTF'  , PRINTF   , 'UNC', 0 )
          CALL ININTG ('PRTEST'  , PRTEST   , 'UNC', 0 )
-         if ( asort.ne.-999. ) then                                       41.48
+         if ( asort.gt.-999. ) then                                       41.48
             asort = DEGCNV (asort)
             ALTMP = asort / 360.
             asort = PI2 * (ALTMP - NINT(ALTMP))
@@ -2057,7 +2059,8 @@
             CALL INREAL ('LEXP' , QR(1) , 'STA',  999. )                  40.87
             CALL INREAL ('HEXP' , QR(2) , 'STA', -999. )                  40.87
             CALL INREAL ('EXCV' , QR(3) , 'STA',  999. )                  40.87
-            CALL INCTIM (ITMOPT, 'REF', QR(4), 'STA', -999.)              40.87
+            CALL INCTIM (ITMOPT, 'REF', DVAL, 'STA', -9.99D2)             40.87
+            QR(4) = REAL(DVAL)                                            40.87
             CALL INREAL ('POWER', QR(5) , 'STA', -999.)                   40.87
             CALL INREAL ('FSWELL', QR(6), 'STA', -999.)                   40.87
             CALL INREAL ('FMIN' , QR(8) , 'STA',  999. )                  40.87
@@ -2958,7 +2961,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3229,9 +3232,9 @@
         NSTATM = 1
         IF (IGRID1.EQ.1 .OR. IGRID1.EQ.8) CALL MSGERR (2,
      &        'nonstationary input field not allowed in this case')
-        CALL INCTIM (ITMOPT,'TBEGINP',IFLBEG(IGRID1),'REQ',0.)            40.00
-        CALL ININTV ('DELTINP', IFLINT(IGRID1), 'REQ', 0.)                40.00
-        CALL INCTIM (ITMOPT,'TENDINP',IFLEND(IGRID1),'STA',1.E20)         40.00
+        CALL INCTIM (ITMOPT,'TBEGINP',IFLBEG(IGRID1),'REQ',0D0)           40.00
+        CALL INITVD ('DELTINP', IFLINT(IGRID1), 'REQ', 0D0)               40.00
+        CALL INCTIM (ITMOPT,'TENDINP',IFLEND(IGRID1),'STA',1.D20)         40.00
         IFLDYN(IGRID1) = 1                                                40.00
         IFLTIM(IGRID1) = IFLBEG(IGRID1)                                   40.00
         IF (IGRID2 .GT. 0) THEN
@@ -3393,7 +3396,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3906,7 +3909,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4073,7 +4076,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4349,7 +4352,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4564,7 +4567,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4929,7 +4932,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5039,7 +5042,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5211,7 +5214,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5382,7 +5385,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5674,7 +5677,7 @@
          DO IP = 1, NUMDIR
            READ (NREF) DIRTMP(IP)
          ENDDO
-         IF (.NOT.EQREAL(DIRTMP(1)*PI/180.,SPCDIR(1,1)))
+         IF (ABS(DIRTMP(1)*PI/180.-SPCDIR(1,1)).GT.0.5*DDIR)
      &      IID = NINT(REAL(MDC)*(DIRTMP(1)-ALPC)/360.)
 !
 !        reading of heading is completed, read time if nonstationary
@@ -5807,7 +5810,7 @@
            DO IP = 1, NUMDIR
              READ (NREF, *) DIRTMP(IP)                                    40.41
            ENDDO
-           IF (.NOT.EQREAL(DIRTMP(1)*PI/180.,SPCDIR(1,1)))                40.41
+           IF (ABS(DIRTMP(1)*PI/180.-SPCDIR(1,1)).GT.0.5*DDIR)            40.41
      &        IID = NINT(REAL(MDC)*(DIRTMP(1)-ALPC)/360.)                 40.41
            READ (NREF, 102) RLINE
          ENDIF
@@ -5981,7 +5984,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

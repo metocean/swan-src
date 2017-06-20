@@ -72,7 +72,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -514,7 +514,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -707,7 +707,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1205,7 +1205,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1607,7 +1607,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2001,7 +2001,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2407,7 +2407,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2695,7 +2695,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2824,7 +2824,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3028,7 +3028,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3167,7 +3167,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3516,7 +3516,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3895,7 +3895,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4024,15 +4024,15 @@
       REAL :: SIGPI, STRI
 !
 !     --- for use of COAPP
-      REAL    SX(MSC,MSC,2)
-      REAL    KX(MSC,MSC,2)
-      REAL    CGX(MSC,MSC,2)
-      REAL    CX(MSC,MSC,2)
-      REAL    E2(MDC,MSC)
-      REAL    EI(MDC,MSC)
-      REAL    EX(MDC,MSC,MSC,2)
-      REAL    EIX(MDC,MSC,MSC,2)
-      REAL    WX(MSC,MSC,2)
+      REAL, ALLOCATABLE :: SX(:,:,:)
+      REAL, ALLOCATABLE :: KX(:,:,:)
+      REAL, ALLOCATABLE :: CGX(:,:,:)
+      REAL, ALLOCATABLE :: CX(:,:,:)
+      REAL, ALLOCATABLE :: E2(:,:)
+      REAL, ALLOCATABLE :: EI(:,:)
+      REAL, ALLOCATABLE :: EX(:,:,:,:)
+      REAL, ALLOCATABLE :: EIX(:,:,:,:)
+      REAL, ALLOCATABLE :: WX(:,:,:)
 !
       REAL, ALLOCATABLE :: CONTS(:,:)   !sum contribution
       REAL, ALLOCATABLE :: CONTD(:,:)   !difference contribution
@@ -4063,6 +4063,16 @@
 ! 13. Source text
 !
 !     --- allocate and initialize
+!
+      ALLOCATE (SX(MSC,MSC,2))
+      ALLOCATE (KX(MSC,MSC,2))
+      ALLOCATE (CGX(MSC,MSC,2))
+      ALLOCATE (CX(MSC,MSC,2))
+      ALLOCATE (E2(MDC,MSC))
+      ALLOCATE (EI(MDC,MSC))
+      ALLOCATE (EX(MDC,MSC,MSC,2))
+      ALLOCATE (EIX(MDC,MSC,MSC,2))
+      ALLOCATE (WX(MSC,MSC,2))
 !
       ALLOCATE (CONTS(1:MDC,1:MSC))
       ALLOCATE (CONTD(1:MDC,1:MSC))
@@ -4197,7 +4207,7 @@
           ENDDO
       ENDDO
 !
-      DEALLOCATE(CONTS,CONTD)
+      DEALLOCATE(SX,KX,CGX,CX,E2,EI,EX,EIX,WX,CONTS,CONTD)
 !
       RETURN
       END subroutine SWSPB
@@ -4229,7 +4239,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2016  Delft University of Technology
+!     Copyright (C) 1993-2017  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
