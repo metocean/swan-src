@@ -622,10 +622,10 @@
 !  6. Parameter variables
 !
 !     NMOVAR [ 171]  maximum number of output variables                   41.62 40.85 40.64 40.61 40.51 40.21 40.41
-!     MOUTPA [  50]  number of output parameters                          40.87
+!     MOUTPA [  60]  number of output parameters                          MSL 40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 171, MOUTPA=50)                                 41.62 40.35 41.15 40.85 40.87 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 171, MOUTPA=60)                                 MSL 41.62 40.35 41.15 40.85 40.87 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
@@ -700,9 +700,16 @@
 !  (69) [  'RADS']
 !  (70) [   'NPL']
 !  (71) [ 'LWAVP']
-!  (72) [  'DISTU']
+!  (72) [ 'DISTU']
 !  (73) [  'TURB']
 !  (74) [  'DISM']
+!  (80) [   'DPM']                                                         MSL
+!  (81) ['DPMSEA']                                                         MSL
+!  (82) ['DPMSWE']                                                         MSL
+!  (83) ['TPSSEA']                                                         MSL
+!  (84) ['TPSSWE']                                                         MSL
+!  (85) [  'HSEA']                                                         MSL
+!  (85) [   'SWE']                                                         MSL
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
 !  ( 2) [    'Yp']
@@ -773,6 +780,13 @@
 !  (72) [  'Stur']
 !  (73) [  'Turb']
 !  (74) [  'Smud']
+!  (80) [   'dpm']                                                         MSL
+!  (81) ['dpmsea']                                                         MSL
+!  (82) ['dpmswe']                                                         MSL
+!  (83) ['tpssea']                                                         MSL
+!  (84) ['tpsswe']                                                         MSL
+!  (84) [  'hsea']                                                         MSL
+!  (85) [   'swe']                                                         MSL
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
 !  ( 2) [                        'Y user coordinate']
@@ -843,6 +857,13 @@
 !  (72) [                    'Turbulent dissipation']
 !  (73) [                      'Turbulent viscosity']
 !  (74) [                    'Fluid mud dissipation']
+!  (80) [      'Mean direction at the spectral peak']                      MSL
+!  (81) ['Mean direction of wind waves at the spectral peak']              MSL
+!  (82) ['Mean direction of swell waves at the spectral peak']             MSL
+!  (83) [    'Smooth peak wave period of wind waves']                      MSL
+!  (84) [   'Smooth peak wave period of swell waves']                      MSL
+!  (85) [         'significant height of wind waves']                      MSL
+!  (86) [                       'Spectral bandwidth']                      MSL
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
 !  ( 2) [CALCULAT] =UL
@@ -913,6 +934,13 @@
 !  (72) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (73) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (74) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (80) [CALCULAT] =UDI                                                    MSL
+!  (81) [CALCULAT] =UDI                                                    MSL
+!  (82) [CALCULAT] =UDI                                                    MSL
+!  (83) [CALCULAT] =UT                                                     MSL
+!  (84) [CALCULAT] =UT                                                     MSL
+!  (85) [CALCULAT] =UH                                                     MSL
+!  (86) [     ' ']
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
 ! UD    [        ] not used
@@ -1028,6 +1056,13 @@
 !  (72)  [  1]   Stur
 !  (73)  [  1]   Turb
 !  (74)  [  1]   Smud
+!  (80)  [  1]   Dpm                                                       MSL
+!  (81)  [  1]   Dpmsea                                                    MSL
+!  (82)  [  1]   Dpmswe                                                    MSL
+!  (83)  [  1]   Tpssea                                                    MSL
+!  (84)  [  1]   Tpsswe                                                    MSL
+!  (85)  [  1]   Hsea                                                      MSL
+!  (86)  [  1]   Swe                                                       MSL
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1096,6 +1131,13 @@
 !  (72)  [    -9.] Stur
 !  (73)  [   -99.] Turb
 !  (74)  [    -9.] Smud
+!  (80)  [   -999] Dpm                                                     MSL
+!  (81)  [   -999] Dpmsea                                                  MSL
+!  (82)  [   -999] Dpmswe                                                  MSL
+!  (83)  [     -9] Tpssea                                                  MSL
+!  (84)  [     -9] Tpsswe                                                  MSL
+!  (85)  [     -9] Hsea                                                    MSL
+!  (86)  [     -9] Swe                                                     MSL
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1164,6 +1206,13 @@
 !  (72)  [     0.] Stur
 !  (73)  [     0.] Turb
 !  (74)  [     0.] Smud
+!  (80)  [     0.] Dpm                                                     MSL
+!  (81)  [     0.] Dpmsea                                                  MSL
+!  (82)  [     0.] Dpmswe                                                  MSL
+!  (83)  [     0.] Tpssea                                                  MSL
+!  (84)  [     0.] Tpsswe                                                  MSL
+!  (85)  [     0.] Hsea                                                    MSL
+!  (86)  [     0.] Swe                                                     MSL
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
 !  ( 2)  [ -1.E10] Yp
@@ -1232,6 +1281,13 @@
 !  (72)  [     0.] Stur
 !  (73)  [     0.] Turb
 !  (74)  [     0.] Smud
+!  (80)  [     0.] Dpm                                                     MSL
+!  (81)  [     0.] Dpmsea                                                  MSL
+!  (82)  [     0.] Dpmswe                                                  MSL
+!  (83)  [     0.] Tpssea                                                  MSL
+!  (84)  [     0.] Tpsswe                                                  MSL
+!  (85)  [     0.] Hsea                                                    MSL
+!  (86)  [     0.] Swe                                                     MSL
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1300,6 +1356,13 @@
 !  (72)  [    0.1] Stur
 !  (73)  [   100.] Turb
 !  (74)  [    0.1] Smud
+!  (80)  [   360.] Dpm                                                     MSL
+!  (81)  [   360.] Dpmsea                                                  MSL
+!  (82)  [   360.] Dpmswe                                                  MSL
+!  (83)  [   100.] Tpssea                                                  MSL
+!  (84)  [   100.] Tpsswe                                                  MSL
+!  (85)  [   100.] Hsea                                                    MSL
+!  (86)  [     1.] Swe                                                     MSL
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
 !  ( 2)  [  1.E10] Yp
@@ -1368,6 +1431,13 @@
 !  (72)  [  1000.] Stur
 !  (73)  [    10.] Turb
 !  (74)  [  1000.] Smud
+!  (80)  [   360.] Dpm                                                     MSL
+!  (81)  [   360.] Dpmsea                                                  MSL
+!  (82)  [   360.] Dpmswe                                                  MSL
+!  (83)  [  1000.] Tpssea                                                  MSL
+!  (84)  [  1000.] Tpsswe                                                  MSL
+!  (85)  [   100.] Hsea                                                    MSL
+!  (86)  [     1.] Swe                                                     MSL
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
 ! SPCPOW [      1] power in expression for computation of average frequency
