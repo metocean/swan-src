@@ -76,7 +76,7 @@ module swn_outnc
 !      oqr(2)       :   delta
 !
 !   Module variables
-    character*40                :: STNAMES(71,2) = ''
+    character*40                :: STNAMES(171,2) = ''                               !MSL
     logical                     :: stnames_initialized = .false., &
                                    skip_range_error = .true.
     type(recordaxe_type), save  :: recordaxe(MAX_OUTP_REQ)
@@ -1664,32 +1664,51 @@ contains
     end subroutine create_variables
 
     subroutine stnames_init()
-        STNAMES( 4, 1) = 'depth'
+        STNAMES( 4, 1) = 'dep'             !MSL (changed name)
         STNAMES( 5, 1) = 'xcur'
         STNAMES( 5, 2) = 'ycur'
         STNAMES( 6, 1) = 'ubot'
+        STNAMES( 7, 1) = 'dissip'          !MSL (added)
+        STNAMES( 8, 1) = 'qb'              !MSL (added)
         STNAMES(10, 1) = 'hs'
         STNAMES(11, 1) = 'tm01'
-        STNAMES(12, 1) = 'tp'
-        STNAMES(13, 1) = 'theta0'
+        STNAMES(12, 1) = 'rtp'             !MSL (changed name)
+        STNAMES(13, 1) = 'thetam'          !MSL (changed name)
         STNAMES(14, 1) = 'thetap'
-        STNAMES(16, 1) = 'spread'
-        STNAMES(17, 1) = 'L'
+        STNAMES(16, 1) = 'dspr'            !MSL (changed name)
+        STNAMES(17, 1) = 'wlen'            !MSL (changed name)
+        STNAMES(18, 1) = 'steep'           !MSL (added)
         STNAMES(26, 1) = 'xwnd'
         STNAMES(26, 2) = 'ywnd'
         STNAMES(28, 1) = 'rtm01'
         STNAMES(30, 1) = 'dhs'
         STNAMES(31, 1) = 'dtm'
         STNAMES(32, 1) = 'tm02'
+        STNAMES(33, 1) = 'fspr'            !MSL (added)
         STNAMES(34, 1) = 'urms'
         STNAMES(35, 1) = 'ustar'
         STNAMES(38, 1) = 'cdrag'
+        STNAMES(39, 1) = 'setup'           !MSL (added)
+        STNAMES(42, 1) = 'tm'              !MSL (added)
+        STNAMES(43, 1) = 'rtm'             !MSL (added)
         STNAMES(44, 1) = 'hswe'
-        STNAMES(47, 1) = 'tmm10'
-        STNAMES(48, 1) = 'rtmm10'
+        STNAMES(47, 1) = 'tm10'            !MSL (changed name)
+        STNAMES(48, 1) = 'rtm10'           !MSL (changed name)
         STNAMES(51, 1) = 'ssh'
         STNAMES(52, 1) = 'botl'
         STNAMES(53, 1) = 'tps'
+        STNAMES(54, 1) = 'disbot'          !MSL (added)
+        STNAMES(55, 1) = 'dissurf'         !MSL (added)
+        STNAMES(56, 1) = 'diswcap'         !MSL (added)
+        STNAMES(57, 1) = 'disveg'          !MSL (added)
+        STNAMES(69, 1) = 'radstr'          !MSL (added)
+        STNAMES(71, 1) = 'lwavp'           !MSL (added)
+        STNAMES(80, 1) = 'dpm'             !MSL (not in official SWAN)
+        STNAMES(81, 1) = 'dpmsea'          !MSL (not in official SWAN)
+        STNAMES(82, 1) = 'dpmswe'          !MSL (not in official SWAN)
+        STNAMES(83, 1) = 'tpssea'          !MSL (not in official SWAN)
+        STNAMES(84, 1) = 'tpsswe'          !MSL (not in official SWAN)
+        STNAMES(85, 1) = 'hsea'            !MSL (not in official SWAN)
         stnames_initialized = .true.
 
     end subroutine stnames_init
