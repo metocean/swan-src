@@ -2470,7 +2470,7 @@
       OVULIM(IVTYPE) = 1000.                                              MSL
       OVLEXP(IVTYPE) = 0.                                                 MSL
       OVHEXP(IVTYPE) = 100.                                               MSL
-      OVEXCV(IVTYPE) = -99.                                               MSL
+      OVEXCV(IVTYPE) = -9.                                                MSL
 !
       IVTYPE = 85                                                         MSL
       OVKEYW(IVTYPE) = 'HSEA'                                             MSL
@@ -2481,7 +2481,7 @@
       OVLLIM(IVTYPE) = 0.                                                 MSL
       OVULIM(IVTYPE) = 100.                                               MSL
       OVLEXP(IVTYPE) = 0.                                                 MSL
-      OVHEXP(IVTYPE) = 10.                                                MSL
+      OVHEXP(IVTYPE) = 100.                                                MSL
       OVEXCV(IVTYPE) = -9.                                                MSL
 !
       IVTYPE = 86                                                         MSL
