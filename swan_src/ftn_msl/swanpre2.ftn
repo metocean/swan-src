@@ -1162,7 +1162,7 @@
 !             DHSIGN/DRTM01/LEAK/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/         &
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
 !             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS|LWAVP/   &
-!             DISTUR/TURB/                                                   &
+!             DISTUR/TURB/DPM/DPMSEA/DPMSW/TPSEA/TPSW/HSSEA                  &
 !             PTHSIGN/PTRTP/PTWLEN/PTDIR/PTDSPR/PTWFRAC/PTSTEEPNESS>         &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
@@ -1475,7 +1475,7 @@
 !             DHSIGN/DRTM01/LEAK/TIME/TSEC/XP/YP/DIST/SETUP/TMM10/RTMM10/    &
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
 !             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS|LWAVP/   &
-!             DISTUR/TURB/                                                   &
+!             DISTUR/TURB//DPM/DPMSEA/DPMSW/TPSEA/TPSW/HSSEA                 &
 !             PTHSIGN/PTRTP/PTWLEN/PTDIR/PTDSPR/PTWFRAC/PTSTEEPNESS>         &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
