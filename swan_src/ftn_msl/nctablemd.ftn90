@@ -23,6 +23,7 @@
 !         %datamax       real       maximum expected data value
 !         %varid         int        nc90_var_id
         use netcdf
+        use SWCOMM1, only: OUTPAR         !MSL (so we have access to fcutt)
         implicit none
         private
         public                                       :: nctable, nctable_record
@@ -42,176 +43,249 @@
             integer                                  :: varid
         end type nctable_record
 
-        type (nctable_record)                        :: nctable(42)
 
-        data nctable(1) / nctable_record("depth",&
-                            "sea_floor_depth_below_sea_level",&
-                            "depth below mean sea level", &
-                            "m", NF90_FLOAT, 0, 0, variddum) /, &
+        type (nctable_record)                        :: nctable(60)
+
+        data nctable(1) / nctable_record("dep",&                                                                        !MSL (made name consistent with OVKEYW)
+                            "sea_floor_depth_below_sea_surface",&                                                       !MSL (this should consider tides as well)
+                            "depth below still water level", &                                                          !MSL (this should consider tides as well)
+                            "m", NF90_SHORT, 0., 100000., variddum) /, &                                                !MLS (changed type and datamax)
              nctable(2) / nctable_record("xcur",&
                             "eastward_sea_water_velocity",&
-                            "x component of current", &
-                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
+                            "eastward component of current velocity", &                                                 !MSL (changed long name)
+                            "m/s", NF90_SHORT, -20., 20., variddum) /, &                                                !MSL (unit more likely to be parseable)
              nctable(3) / nctable_record("ycur",&
                             "northward_sea_water_velocity",&
-                            "y component of current", &
-                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
+                            "northward component of current velocity", &                                                !MSL (changed long name)
+                            "m/s", NF90_SHORT, -20., 20., variddum) /, &                                                !MSL (unit more likely to be parseable)
              nctable(4) / nctable_record("xwnd",&
-                            "eastward_wind",&
-                            "U-Component of Wind", &
-                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
+                            "eastward_wind_at_10m_above_ground_level",&                                                 !MSL (specifying vertical level because variable is 2d not 3d)
+                            "eastward component of wind velocity", &                                                    !MSL (changed long name)
+                            "m/s", NF90_SHORT, -100., 100., variddum) /, &                                              !MSL (unit more likely to be parseable)
              nctable(5) / nctable_record("ywnd",&
-                            "northward_wind",&
-                            "V-Component of Wind", &
-                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
+                            "northward_wind_at_10m_above_ground_level",&                                                !MSL (specifying vertical level because variable is 2d not 3d)
+                            "northward component of wind velocity", &                                                   !MSL (changed long name)
+                            "m/s", NF90_SHORT, -100., 100., variddum) /, &                                              !MSL (unit more likely to be parseable)
              nctable(6) / nctable_record("astd",&
-                            "none",&
-                            "air sea temperature difference (k)", &
+                            "air_sea_temperature_difference",&                                                          !MSL (added stdname, not in CF list)
+                            "air sea temperature difference", &                                                         !MSL (removing unit from name)
                             "k", NF90_BYTE, 0, 0, variddum) /, &
              nctable(7) / nctable_record("ustar",&
                             "none",&
                             "friction velocity", &
-                            "m s-1", NF90_SHORT, 0, 20, variddum) /,&
+                            "m/s", NF90_SHORT, 0, 20, variddum) /,&                                                     !MSL (unit more likely to be parseable)
              nctable(8) / nctable_record("hs",&
                             "sea_surface_wave_significant_height",&
-                            "hs", &
-                            "m", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(9) / nctable_record("L",&
-                            "none",&
-                            "L", &
-                            "m", NF90_SHORT, 0, 0, variddum) /, &
-             nctable(10) / nctable_record("theta0",&
-                            "sea_surface_wave_from_direction",&
-                            "theta0", &
-                            "degrees", NF90_SHORT, 0., 360., variddum) /, &
-             nctable(11) / nctable_record("tmm10",&
-                            "sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment",&
-                            "tm-10", &
+                            "significant height of wind and swell waves", &                                             !MSL (added long name)
+                            "m", NF90_SHORT, 0., 100., variddum) /, &
+             nctable(9) / nctable_record("wlen",&                                                                       !MSL (made name consistent with OVKEYW)
+                            "sea_surface_wave_mean_length",&                                                            !MSL (added stdname)
+                            "mean wave length of wind and swell waves", &                                               !MSL (added long name)
+                            "m", NF90_SHORT, 0, 10000, variddum) /, &                                                   !MSL (added datamax)
+             nctable(10) / nctable_record("thetam",&                                                                    !MSL (using thetam for mean dir, removed theta0 entry)
+                            "sea_surface_wave_from_direction_mean",&                                                    !MSL (specifying "mean", not in CF list)
+                            "mean wave direction of wind and swell waves", &                                            !MSL (more descriptive long name)
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &                                              !MSL (changed units)
+             nctable(11) / nctable_record("tm10",&                                                                      !MSL (couldn't find reason for second "m")
+                            "sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment",&    
+                            "mean wave period of wind and swell waves from the inverse frequency moment", &             !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(12) / nctable_record("thetam",&
-                            "none",&
-                            "thetam", &
-                            "degrees", NF90_BYTE, 0, 0, variddum) /, &
-             nctable(13) / nctable_record("tp",&
-                            "none",&
-                            "tp", &
+             nctable(12) / nctable_record("rtp",&                                                                       !MSL (using rtp to be consistent with OVKEYW and make it clear it is relative)
+                            "sea_surface_relative_wave_period_at_variance_spectral_density_maximum",&                   !MSL (changed CF to specify it is "relative"; absolute counterpart uses CF's)
+                            "relative peak wave period of wind and swell waves", &                                      !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(14) / nctable_record("thetap",&
-                            "none",&
-                            "thetap", &
-                            "degrees", NF90_SHORT, 0., 360., variddum) /,&
-             nctable(15) / nctable_record("fpl",&
+             nctable(13) / nctable_record("thetap",&
+                            "sea_surface_wave_from_direction_at_variance_spectral_density_maximum",&                    !MSL (added stdname, CF-compliant)
+                            "peak wave direction of wind and swell waves", &                                            !MSL (added long name)
+                            "degree", NF90_SHORT, 0., 360., variddum) /,&                                               !MSL (changed units)
+             nctable(14) / nctable_record("fpl",&
                             "none",&
                             "peak frequency of wind sea part of spectrum", &
-                            "s-1", NF90_BYTE, 0., 10., variddum) /,&
-             nctable(16) / nctable_record("dpl",&
+                            "1/s", NF90_BYTE, 0., 10., variddum) /,&                                                    !MSL (unit more likely to be parseable)
+             nctable(15) / nctable_record("dpl",&
                             "none",&
                             "direction of peak frequency of wind sea part of spectrum", &
-                            "degrees", NF90_BYTE, 0., 360., variddum) /,&
-             nctable(17) / nctable_record("sign_wave_height_partitions",&
-                            "none",&
+                            "degree", NF90_BYTE, 0., 360., variddum) /,&                                                !MSL (changed units)
+             nctable(16) / nctable_record("sign_wave_height_partitions",&
+                            "none",&                                                                                    !MSL (replace N by zero-based index to be consistent with ww3)
                             "hs of partitions. does this mean that i have an extra dimension???", &
-                            "m", NF90_SHORT, 0., 30., variddum) /, &
-             nctable(18) / nctable_record("tp_partitions",&
+                            "m", NF90_SHORT, 0., 100., variddum) /, &                                                   !MSL (increased datamax)
+             nctable(17) / nctable_record("tp_partitions",&
                             "none",&
                             "relative peak periods of partitions of the spectrum", &
-                            "s", NF90_BYTE, 0., 24., variddum) /,&
-             nctable(19) / nctable_record("tp_length_partitions",&
+                            "s", NF90_BYTE, 0., 50., variddum) /,&                                                      !MSL (increased datamax)
+             nctable(18) / nctable_record("lwavp_partitions",&                                                          !MSL (drafting consistent name)
                             "none",&
                             "peak wave lengths of partitions of the spectrum", &
                             "s", NF90_SHORT, 0, 0, variddum) /,&
-             nctable(20) / nctable_record("theta0_partitions",&
+             nctable(19) / nctable_record("thetam_partitions",&                                                         !MSL (replaced theta0 by thetam)
                             "none",&
                             "mean wave direction of partitions of spectrum", &
-                            "degrees", NF90_BYTE, 0., 360., variddum) /,&
-             nctable(21) / nctable_record("spread_partitions",&
+                            "degree", NF90_BYTE, 0., 360., variddum) /,&                                                !MSL (changed units)
+             nctable(20) / nctable_record("dspr_partitions",&                                                           !MSL (drafting consistent name)
                             "none",&
                             "directional spread of partition of spectrum cf", &
-                            "degrees", NF90_BYTE, 0, 81, variddum) /, &
-             nctable(22) / nctable_record("wind_sea_fraction_partitions",&
+                            "degree", NF90_BYTE, 0, 81, variddum) /, &                                                  !MSL (changed units)
+             nctable(21) / nctable_record("wind_sea_fraction_partitions",&
                             "none",&
                             "wind sea fraction of partitions of spectrum", &
                             "1", NF90_SHORT, 0., 1., variddum) /,&
-             nctable(23) / nctable_record("wind_sea_fraction",&
+             nctable(22) / nctable_record("wind_sea_fraction",&
                             "none",&
                             "wind sea fraction of entire spectrum", &
                             "1", NF90_SHORT, 0., 1., variddum) /,&
-             nctable(24) / nctable_record("npartitions",&
-                            "none",&
-                            "number of partitions found in spectrum", &
-                            "1", NF90_BYTE, 0, 0, variddum) /,&
-             nctable(25) / nctable_record("source_term_timestep",&
+             nctable(23) / nctable_record("npart",&                                                                     !MSL (made name consistent with OVKEYW)
+                            "sea_surface_wave_number_of_partitions",&                                                   !MSL (added stdname)
+                            "number of partitions in spectrum", &                                                       !MSL (slight modification)
+                            "1", NF90_INT, 0, 100, variddum) /,&                                                        !MSL (changing type)
+             nctable(24) / nctable_record("source_term_timestep",&
                             "none",&
                             "average timestep in the source term integration", &
                             "s", NF90_SHORT, 0, 0, variddum) /,&
-             nctable(26) / nctable_record("cut_off_frequency",&
+             nctable(25) / nctable_record("cut_off_frequency",&
                             "none",&
                             "cut-off frequency", &
-                            "s-1", NF90_SHORT, 0., 40., variddum) /,&
-             nctable(27) / nctable_record("icec",&
-                            "sea_ice_area_fraction",&
+                            "1/s", NF90_SHORT, 0., 40., variddum) /,&                                                   !MSL (unit more likely to be parseable)
+             nctable(26) / nctable_record("icec",&
+                            "sea_ice_area_fraction",&                                                                   !MSL (maybe CF's floating_ice_shelf_area_fraction? not in swan though I guess)
                             "ice cover", &
                             "1", NF90_BYTE, 0., 1., variddum) /,&
-             nctable(28) / nctable_record("ssh",&
-                            "sea_surface_height",&
-                            "SSH", &
+             nctable(27) / nctable_record("ssh",&
+                            "sea_surface_height_above_geoid",&                                                          !MSL (changed stdname)
+                            "sea surface height", &
                             "m", NF90_SHORT, -15., 15., variddum) /, &
-             nctable(29) / nctable_record("landmask",&
+             nctable(28) / nctable_record("landmask",&
                             "land_binary_mask",&
                             "land cover (1=land, 0=sea)", &
-                            "m", nf90_byte, 0, 0, variddum) /, &
-             nctable(30) / nctable_record("tm02",&
+                            "m", NF90_BYTE, 0, 0, variddum) /, &
+             nctable(29) / nctable_record("tm02",&
                             "sea_surface_wave_mean_period_from_variance_spectral_density_second_frequency_moment", &
-                            "tm02", &
+                            "mean wave period of wind and swell waves from the second frequency moment", &              !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(31) / nctable_record("tm01",&
+             nctable(30) / nctable_record("tm01",&
                             "sea_surface_wave_mean_period_from_variance_spectral_density_first_frequency_moment", &
-                            "tm01", &
+                            "mean wave period of wind and swell waves from the first frequency moment", &               !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(32) / nctable_record("tps",&
-                            "none",&
-                            "tps", &
+             nctable(31) / nctable_record("tps",&
+                            "sea_surface_wave_period_at_variance_spectral_density_maximum",&                            !MSL (added stdname, using CF's supported one here)
+                            "smooth peak wave period of wind and swell waves", &                                        !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(33) / nctable_record("spread",&
-                            "none",&
-                            "directional spreading", &
-                            "degrees", NF90_SHORT, 0., 360., variddum) /, &
-             nctable(34) / nctable_record("rtm01",&
-                            "none", &
-                            "rtm01", &
+             nctable(32) / nctable_record("dspr",&                                                                      !MSL (made name consistent with OVKEYW)
+                            "sea_surface_wave_directional_spread",&                                                     !MSL (added standard name, not in CF)
+                            "directional spreading of wind and swell waves", &                                          !MSL (updated long name)
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &                                              !MSL (changed units)
+             nctable(33) / nctable_record("rtm01",&
+                            "sea_surface_wave_mean_relative_period_from_variance_spectral_density_first_frequency_moment", &  !MSL (similar to rtm, added "relative" here to distinguish)
+                            "mean relative wave period of wind and swell waves from the first frequency moment", &      !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(35) / nctable_record("hswe",&
-                            "sea_surface_swell_wave_significant_height",&
-                            "wave height of swell part", &
+             nctable(34) / nctable_record("hswe",&
+                            "sea_surface_wave_significant_height_over_TCUT",&                                              !MSL (changed from CF's which is not specific and pattern is not consistent across other variables)
+                            "significant height of swell waves over TCUT seconds", &                                       !MSL (updated long name)
                             "m", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(36) / nctable_record("rtmm10",&
-                            "none",&
-                            "rtm-10", &
+             nctable(35) / nctable_record("rtm10",&                                                                     !MSL (again removed second "m")
+                            "sea_surface_wave_mean_relative_period_from_variance_spectral_density_inverse_frequency_moment",&  !MSL (similar to rtm, added "relative" here to distinguish)
+                            "mean relative wave period from the inverse frequency moment", &                            !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
-             nctable(37) / nctable_record("botl",&
-                            "none",&
-                            "depth below still water level", &
-                            "m", NF90_FLOAT, 0, 0, variddum) /, &
-             nctable(38) / nctable_record("ubot",&
-                            "none",&
-                            "orbital velocity near bottom", &
-                            "m s-1", NF90_SHORT, 0, 15, variddum) /, &
-             nctable(39) / nctable_record("urms",&
-                            "none",&
-                            "rms of orbital velocity near bottom", &
-                            "m s-1", NF90_SHORT, 0, 5, variddum) /, &
-             nctable(40) / nctable_record("dhs",&
-                            "none",&
-                            "dHs", &
+             nctable(36) / nctable_record("botl",&
+                            "sea_floor_depth_below_sea_level",&                                                         !MSL (This is the one that do not include tides)
+                            "depth below mean sea level", &                                                             !MSL (updating long name)
+                            "m", NF90_SHORT, 0., 100000, variddum) /, &                                                 !MSL (changing type and datamax)
+             nctable(37) / nctable_record("ubot",&
+                            "near_bottom_orbital_velocity_maxima_root_mean_square",&                                    !MSL (added stdname, not in CF's)
+                            "rms of orbital velocity maxima near bottom", &                                             !MSL (updated long name)
+                            "m/s", NF90_SHORT, 0, 15, variddum) /, &                                                    !MSL (unit more likely to be parseable)
+             nctable(38) / nctable_record("urms",&
+                            "near_bottom_orbital_velocity_root_mean_square",&                                           !MSL (added stdname, not in CF's)
+                            "rms of orbital velocity near bottom", &                                                    !MSL (updated stdname)
+                            "m/s", NF90_SHORT, 0, 5, variddum) /, &                                                     !MSL (unit more likely to be parseable)
+             nctable(39) / nctable_record("dhs",&
+                            "sea_surface_swell_wave_significant_height_difference_between_iterations",&                 !MSL (added stdname, not in CF's)
+                            "difference in significant wave height between iterations", &                               !MSL (added long name)
                             "m", NF90_SHORT, 0, 25, variddum) /, &
-             nctable(41) / nctable_record("dtm",&
-                            "none",&
-                            "dTm", &
+             nctable(40) / nctable_record("dtm",&
+                            "sea_surface_wave_mean_period_from_variance_spectral_density_first_frequency_moment_difference_between_iterations",&  !MSL (added stdname, not in CF's)
+                            "difference in peak wave period between iterations", &                                      !MSL (added long name)
                             "s", NF90_SHORT, 0, 25, variddum) /, &
-             nctable(42) / nctable_record("cdrag",&
-                            "none",&
-                            "Cdrag", &
-                            "1", NF90_SHORT, 0, 1, variddum) /
+             nctable(41) / nctable_record("cdrag",&
+                            "atmosphere_surface_drag_coefficient",&                                                     !MSL (added stdname)
+                            "wind drag coefficient", &                                                                  !MSL (added longname)
+                            "1", NF90_SHORT, 0, 1, variddum) /, &
+             nctable(42) / nctable_record("qb",&                                                                        !MSL (ALL NEW FROM HERE)
+                            "sea_surface_wave_breaking_fraction",&
+                            "fraction of breaking waves", &
+                            "1", NF90_SHORT, 0., 1., variddum) /, &
+             nctable(43) / nctable_record("steep",&
+                            "sea_surface_wave_steepness",&
+                            "wave steepness of sea and swell waves", &
+                            "1", NF90_SHORT, 0., 1., variddum) /, &
+             nctable(44) / nctable_record("fspr",&
+                            "sea_surface_wave_frequency_spread",&
+                            "normalized width of the frequency spectrum of wind and swell waves", &
+                            "1", NF90_SHORT, 0., 1., variddum) /, &
+             nctable(45) / nctable_record("tm",&                                                                        !MSL (using tm instead of PER which is not too descriptive)
+                            "sea_surface_wave_mean_period",&
+                            "mean wave period", &
+                            "s", NF90_SHORT, 0., 50., variddum) /, &
+             nctable(46) / nctable_record("rtm",&                                                                       !MSL (using rtm instead of RPER which is not too descriptive)
+                            "sea_surface_wave_mean_relative_period",&
+                            "mean relative wave period", &
+                            "s", NF90_SHORT, 0., 50., variddum) /, &
+             nctable(47) / nctable_record("dissip",&
+                            "sea_surface_wave_energy_dissipation",&
+                            "wave energy dissipations of sea and swell waves", &
+                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+             nctable(48) / nctable_record("disbot",&
+                            "sea_surface_wave_energy_dissipation_due_to_bottom_friction",&
+                            "wave energy dissipations of sea and swell waves due to bottom friction", &
+                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+             nctable(49) / nctable_record("dissurf",&
+                            "sea_surface_wave_energy_dissipation_due_to_depth_induced_breaking",&
+                            "wave energy dissipations of sea and swell waves due to depth-induced breaking", &
+                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+             nctable(50) / nctable_record("diswcap",&
+                            "sea_surface_wave_energy_dissipation_due_to_whitecapping",&
+                            "wave energy dissipations of sea and swell waves due to whitecapping", &
+                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+             nctable(51) / nctable_record("disveg",&
+                            "sea_surface_wave_energy_dissipation_due_to_vegetation",&
+                            "wave energy dissipations of sea and swell waves due to whitecapping", &
+                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+             nctable(52) / nctable_record("radstr",&
+                            "energy_transfer_between_waves_and_currents_due_to_radiation_stress",&
+                            "energy transfer between waves and currents due to radiation stress", &
+                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+             nctable(53) / nctable_record("lwavp",&
+                            "sea_surface_wave_length_at_variance_spectral_density_maximum",&
+                            "peak wave length of wind and swell waves", &
+                            "m", NF90_SHORT, 0., 10000., variddum) /, &
+             nctable(54) / nctable_record("dpm",&                                                                       !MSL (not in official SWAN)
+                            "sea_surface_wave_from_direction_at_variance_spectral_density_maximum",&
+                            "mean direction at the spectral peak of wind and swell waves", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /,&
+             nctable(55) / nctable_record("dpmsea",&                                                                    !MSL (not in official SWAN)
+                            "sea_surface_wave_from_direction_at_variance_spectral_density_maximum_under_TCUT",&
+                            "mean direction at the spectral peak of wind waves under TCUT seconds", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /,&
+             nctable(56) / nctable_record("dpmswe",&                                                                    !MSL (not in official SWAN)
+                            "sea_surface_wave_from_direction_at_variance_spectral_density_maximum_over_TCUT",&
+                            "mean direction at the spectral peak of swell waves over TCUT seconds", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /,&
+             nctable(57) / nctable_record("hsea",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_wave_significant_height_under_TCUT",&
+                            "significant height of sea waves under TCUT seconds", &
+                            "m", NF90_SHORT, 0., 50., variddum) /, &
+             nctable(58) / nctable_record("tpssea",&                                                                    !MSL (not in official SWAN)
+                            "sea_surface_wave_period_at_variance_spectral_density_maximum_under_TCUT",&
+                            "smooth peak wave period of wind waves under TCUT seconds", &
+                            "s", NF90_SHORT, 0., 50., variddum) /, &
+             nctable(59) / nctable_record("tpsswe",&                                                                    !MSL (not in official SWAN)
+                            "sea_surface_wave_period_at_variance_spectral_density_maximum_over_TCUT",&
+                            "smooth peak wave period of swell waves over TCUT seconds", &
+                            "s", NF90_SHORT, 0., 50., variddum) /, &
+             nctable(60) / nctable_record("setup",&
+                            "sea_surface_wave_setup",&
+                            "Wave setup", &
+                            "m", NF90_SHORT, 0., 20., variddum) /
 
     contains
         subroutine get_nctable_record(varname, trecord, found)
@@ -224,6 +298,8 @@
             do i=1,size(nctable)
                 if ( nctable(i)%name == varname ) then
                     trecord = nctable(i)
+                    call set_partition_name(trecord%standard_name, trecord%standard_name)    !MSL
+                    call set_partition_name(trecord%long_name, trecord%long_name)            !MSL
                     if ( .not.nautical ) then
                         tmpname = trecord%standard_name
                         call nautical_to_cartesian_name(tmpname, trecord%standard_name)
@@ -258,4 +334,25 @@
                 end if
             end if
         end subroutine nautical_to_cartesian_name
+
+        subroutine set_partition_name(nname, cname)                                                    !MSL
+            character(128),             intent( in)    :: nname                                        !MSL
+            character(128),             intent(out)    :: cname                                        !MSL
+            integer                                    :: i, tint                                      !MSL
+            character(4)                               :: search = 'TCUT'                              !MSL
+            character(20)                              :: tstr                                         !MSL
+            i = index(nname, search)                                                                   !MSL
+            if ( i > 0 ) then                                                                          !MSL
+                tint =  1/OUTPAR(5)                                                                    !MSL
+                write(tstr, '(i1)') tint                                                               !MSL
+                if ( i+len(search) < len(trim(nname)) ) then                                           !MSL
+                    cname = nname(1:i-1) // trim(tstr) // nname(i+len(search):len(trim(nname)))        !MSL
+                else                                                                                   !MSL
+                    cname = nname(1:i-1) // trim(tstr)                                                 !MSL
+                end if                                                                                 !MSL
+            else                                                                                       !MSL
+                cname = nname                                                                          !MSL
+            end if                                                                                     !MSL
+        end subroutine set_partition_name                                                              !MSL
+
     end module nctablemd
