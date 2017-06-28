@@ -270,6 +270,7 @@
 
             ! global attributes
             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Conventions', 'CF-1.5') )
+            call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Institution', 'MetOcean Solutions Ltd') )
             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'History', history) )
             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Directional_convention', dconv) )
 
