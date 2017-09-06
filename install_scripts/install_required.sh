@@ -14,10 +14,6 @@ export CXX=icpc
 
 build_output=/home/metocean/build_output
 
-##############################
-## Download intel compilers ##
-##############################
-
 ###########
 ## mpich ##
 ###########
