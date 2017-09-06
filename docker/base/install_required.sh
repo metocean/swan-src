@@ -53,22 +53,6 @@ make install 2>&1 | tee ${logdir}/make_install.log
 ldconfig /usr/local/lib
 cd ../
 
-########
-## m4 ##
-########
-
-echo "Installing m4..."
-logdir=${build_output}/m4
-mkdir -p ${logdir}
-wget ftp://ftp.gnu.org/gnu/m4/m4-1.4.10.tar.gz
-tar zxvf m4-1.4.10.tar.gz
-cd m4-1.4.10
-./configure --prefix=/usr/local | tee ${logdir}/configure.log
-make 2>&1 | tee ${logdir}/make.log
-make install 2>&1 | tee ${logdir}/make_install.log
-ldconfig /usr/local/lib
-cd ../
-
 ##########################################
 ## netcdf4, static, no dap, no parallel ##
 ##########################################

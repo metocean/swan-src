@@ -3,7 +3,7 @@ MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
 
 # Remove some pre-installed libraries and install others
 RUN yum -y remove mpich* hdf5* netcdf* &&\
-	yum -y install man make gcc-c++ glibc-static zlib-static zlib-devel &&\
+	yum -y install man make gcc-c++ glibc-static zlib-static zlib-devel m4 &&\
     yum clean all
 
 # Copy keys to root for github access
