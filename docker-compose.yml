@@ -1,0 +1,19 @@
+version: '2'
+
+services:
+
+  base:
+    image: metocean/swan:tt
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        mpich_version: 3.2
+        hdf5_version: 1.10.1
+        netcdf_version: 4.4.1
+
+  model:
+    image: metocean/swan:model-v40.91
+    build:
+      context: ./
+      dockerfile: Dockerfile-model

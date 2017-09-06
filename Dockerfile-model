@@ -1,0 +1,18 @@
+FROM metocean/swan:base
+MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
+
+# Set required environment variables
+ENV INSTALL_SCRIPTS="/tmp/install_scripts"
+
+# Install mpich2
+COPY docker/install_scripts/install_mpich2.sh $INSTALL_SCRIPTS/
+RUN yum -y remove mpich
+RUN sh $INSTALL_SCRIPTS/install_mpich2.sh
+
+# Compile and install model
+COPY docker/install_scripts/install_model.sh $INSTALL_SCRIPTS/
+COPY ww3_src /source/ww3-src/ww3_src
+RUN sh $INSTALL_SCRIPTS/install_model.sh $physics
+
+# copy entrypoint
+COPY docker/install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
