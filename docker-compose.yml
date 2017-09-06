@@ -3,7 +3,7 @@ version: '2'
 services:
 
   base:
-    image: metocean/swan:tt
+    image: metocean/swan:base
     build:
       context: ./
       dockerfile: Dockerfile
