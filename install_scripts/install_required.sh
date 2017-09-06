@@ -1,7 +1,4 @@
-# History:
-#   2016-01-16 - Merged from Tom Durrant and Alex Port scripts
-#   2016-02-19 - To be called from dockerfile as root (sudo needs tty session)
-#   2017-10-05 - Updated library versions, installing m4
+#!/bin/bash
 
 set -e
 
@@ -21,20 +18,20 @@ build_output=/home/metocean/build_output
 ## Download intel compilers ##
 ##############################
 
-# ###########
-# ## mpich ##
-# ###########
-# echo "Installing mpich..."
-# logdir=${build_output}/mpich
-# mkdir -p ${logdir}
-# wget http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
-# tar zxvf mpich-$MPICH_VERSION.tar.gz
-# cd mpich-$MPICH_VERSION
-# ./configure 2>&1 | tee ${logdir}/configure.log
-# make 2>&1 | tee ${logdir}/make.log
-# make install 2>&1 | tee ${logdir}/make_install.log
-# ldconfig /usr/local/lib
-# cd ../
+###########
+## mpich ##
+###########
+echo "Installing mpich..."
+logdir=${build_output}/mpich
+mkdir -p ${logdir}
+wget http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
+tar zxvf mpich-$MPICH_VERSION.tar.gz
+cd mpich-$MPICH_VERSION
+./configure 2>&1 | tee ${logdir}/configure.log
+make 2>&1 | tee ${logdir}/make.log
+make install 2>&1 | tee ${logdir}/make_install.log
+ldconfig /usr/local/lib
+cd ../
 
 #######################################
 ## hdf5, static, no dap, no parallel ##
