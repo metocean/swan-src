@@ -4,11 +4,13 @@ MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
 ARG mpich_version
 ARG hdf5_version
 ARG netcdf_version
+ARG netcdf_fortran_version
 
 # Set required environment variables
 ENV MPICH_VERSION=$mpich_version
 ENV HDF5_VERSION=$hdf5_version
 ENV NETCDF_VERSION=$netcdf_version
+ENV NETCDF_FORTRAN_VERSION=$netcdf_fortran_version
 
 # Remove some pre-installed libraries and install others
 RUN yum -y remove mpich* hdf5* netcdf* &&\

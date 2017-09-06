@@ -11,6 +11,7 @@ services:
         mpich_version: 3.2
         hdf5_version: 1.10.1
         netcdf_version: 4.4.1
+        netcdf_fortran_version: 4.4.4
 
   model:
     image: metocean/swan:model-v40.91
