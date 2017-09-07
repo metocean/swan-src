@@ -18,3 +18,5 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-model
+    volumes:
+      - /source:/source
