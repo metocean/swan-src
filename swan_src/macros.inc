@@ -1,1 +1,0 @@
-macros/ifort_static_macros.inc
