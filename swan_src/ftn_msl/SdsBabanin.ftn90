@@ -1,0 +1,1218 @@
+MODULE SdsBabanin
+
+CONTAINS
+
+  subroutine calc_Sds(nfreq,EDENS,f,Kds,ANAR_IN,p1sds,p2sds,a1,a2,TESTFL,UPWARDS,kwave,Cg)
+
+    USE SWCOMM1, ONLY: CHTIME
+    IMPLICIT NONE
+
+    !   INPUT: EDENS(f), f, OUTPUT: calculate Kds(f) [Kds(f)=Sds(f)/EDENS(f)]
+    ! EDENS is given wave spectrum m2/Hz
+    ! f is frequency in Hz example: f=0.01:0.01:0.5 
+    ! @EDENS/@t=Sin+Snl+Sds
+
+    ! Kds=T1+T2
+
+    ! T1=a1*f*A*DEDENS                                                     (inherent breaking dissipation)
+    ! T2=a2*cumsum(A*DEDENS)   an integration of A*DEDENS from fp to f     (induced breaking dissipation)
+
+    ! A is directional narrowness, calculated in calling subroutine, but set to unity in this version
+
+    ! DEDENS=EDENS-EDENST
+    ! EDENST=(2*g.^2)*((2*pi).^-4)*(f.^-5).*(A.^-1)*Bnt
+    ! a1 and a2 are function of U/cp given by Babanin
+    ! Bnt is an empirical coefficient related to the spectral density in the saturation range (Babanin et al 2007)
+
+    ! this program is to calculate the spectral dissipation Sds based on given wave spectrum 
+    ! Ref: 
+    ! Young and Babanin (2006): JPO
+    ! Babanin and Young (2005): wave measurement conference
+    ! Babanin et al (2007): implementation of new experimental input
+    ! /dissipation terms for modeling spectral evolution of wind waves
+    ! The code is "unified" insofar as depending on the setting of the logical "UPWARDS", one gets something similar to the method of :
+
+    !   =true: Fabrice et al. (more similar to the early, nondirectional 
+    !      version of Fabrice's Sds published in a conference paper, as opposed to the 
+    !      Ardhuin et al. JPO 2010 directional Sds) 
+
+    !   =false: Tsagareli, Babanin, Young. (but it differs from theirs 
+    !      insofar as our normalization for the cumulative term is more correct 
+    !      mathemetically, so we don't have to created a set of a1, b1 for each wave 
+    !      age...with the normalization used here, one calibration works for all 
+    !      wave age values. Another improvement is in the exponent L : in the 
+    !      Tsagereli formula, the only dimensionally correct form of the equation 
+    !      is for L=1.
+
+    !   primary reference for this "unified method" = WISE presentations by Rogers in 2009, 2010.
+
+    !   normalize by EDENST, a la Fabrice, this means that, with L=2 and large exceedence, the dissipation will get very strong
+    !      NDEDENS(is)=DEDENS(is)/EDENST(is)  "UPWARDS.eq.TRUE"
+
+    !   normalize by EDENS, a la Kakha, this means that the normalized value is always less than 1, which means that using L=2 
+    !      instead of L=1 will actually make the dissipation weaker (though since a1 a2 would need to be recalibrated, 
+    !      this relation is a bit more complicated) "UPWARDS.eq.FALSE"
+
+    LOGICAL          , INTENT(IN)  ::  TESTFL     ! TRUE IF OUTPUT REQUESTED FOR THIS POINT (USE SPARINGLY, CAN RESULT IN LARGE FILES)
+    LOGICAL          , INTENT(IN)  ::  UPWARDS    ! TRUE IF CONCAVE UP, e.g. v54U
+    REAL             , INTENT(IN)  ::  EDENS(:)   ! E(f) m2/Hz
+    real             , INTENT(IN)  ::  f(:)       ! f in Hz
+    real             , INTENT(IN)  ::  ANAR_IN(:) ! directional narrowness as defined in Babanin publications (input value)
+    real             , INTENT(IN)  ::  a1         ! coefficient on T1
+    real             , INTENT(IN)  ::  a2         ! coefficient on T2
+    !  p1sds,p2sds is the power on (F-Fth)/Fth or (F-Fth)/F which is part of how I formulate "X" given by Young and Babanin eq 27, further explained below
+    REAL             , INTENT(IN)  ::  p1sds       ! power on threshold exceedence in T1 (precise definition depends on whether using "U" vs "D" method)
+    REAL             , INTENT(IN)  ::  p2sds       ! power on threshold exceedence in T2 (precise definition depends on whether using "U" vs "D" method)
+    Integer          , INTENT(IN)  ::  nfreq      ! # freqs
+    REAL             , INTENT(IN)  ::  KWAVE(:,:) ! KWAVE(MSC,MICMAX)
+    REAL             , INTENT(IN)  ::  CG(:,:)    ! CG(MSC,MICMAX)
+    real             , INTENT(OUT) ::  Kds(:)     ! Kds(f)=Sds(f)/E(f)
+    real             , allocatable ::  Sds(:)     ! Sds(f), the source term
+    real             , allocatable ::  ndedens(:) ! NDEDENS(f)=DEDENS(f)/EDENST(f)
+    real             , allocatable ::  dedens(:)  ! DEDENS(f)=EDENS(f)-EDENST(f)
+    real             , allocatable ::  edenst(:)  ! EDENST(f)=(2*g.^2)*((2*pi).^-4)*(f.^-5).*(A.^-1)*Bnt
+    real             , allocatable ::  T1(:)      ! inherent dissipation (divided by E(f))
+    real             , allocatable ::  T2(:)      ! induced dissipation (divided by E(f))
+    real             , allocatable ::  ST1(:)     ! inherent dissipation 
+    real             , allocatable ::  ST2(:)     ! induced dissipation
+    real             , allocatable ::  ANAR(:)    ! directional narrowness as defined in Babanin publications (value used)
+    real             , allocatable ::  xff(:),ADF(:) ! temporary arrays for integration
+    REAL              :: grav
+    REAL              :: PI
+    REAL              :: ASUM   ! temporary variable for integration
+    REAL              :: BNT    ! is an empirical coefficient related to the spectral density in the saturation range (Babanin et al 2007)
+    INTEGER           :: II,IS ! counters
+    real              :: ST1_INT,ST2_INT,Sds_int ! integrated values (for test output only)
+    INTEGER           :: imax,i3fp ! used to figure out T1 and T2 at 3fp (for test output only)
+    REAL              :: fp ! used to figure out T1 and T2 at 3fp        (for test output only)
+    real, allocatable :: fd(:)     ! used to figure out T1 and T2 at 3fp (for test output only)
+    real ::  ELIM ! needed for 54D
+    REAL ::  CTMP1 ! temporary variable
+
+    ! ------- START SUBROUTINE --------------------------------------------------------------------------------------
+    
+    ALLOCATE(sds(NFREQ))
+    ALLOCATE(xff(NFREQ))
+    ALLOCATE(ndedens(NFREQ))
+    ALLOCATE(dedens(NFREQ))
+    ALLOCATE(edenst(NFREQ))
+    ALLOCATE(T1(NFREQ))
+    ALLOCATE(T2(NFREQ))
+    ALLOCATE(ANAR(NFREQ))
+    ALLOCATE(ST1(NFREQ))
+    ALLOCATE(ST2(NFREQ))
+    ALLOCATE(ADF(NFREQ))
+    ALLOCATE(fd(NFREQ))
+
+    Bnt=(0.035**2)    !  Use the Bnt given by Babanin et al 2007
+    grav=9.81
+    pi=2.0*acos(0.0)
+
+    ! ----------------------------------------------------------------------------------------------------------------
+    ! #1        a1 and a2              get a1 and a2 as a function of U/cp
+    ! ------------------------------------------------------------------------------------------------------------------
+
+    ! needed: A(f), see Young and Babanin eq 19.
+    ! Originally, it was read in and applied, but per recommendation by Alex that it is unnecessary/obsolete, I set it to 1.0 here:
+    ANAR=1.0 ! option 1
+!   ANAR=ANAR_IN ! option 2
+
+    ! (point output write location 1)
+    if(TESTFL)write(*,*)'calc_Sds : a1,a2 = ',a1,a2
+
+!   new calculation, depends on k and Cg instead of f : 
+    CTMP1=2.0*pi*Bnt
+    do IS=1,nfreq
+       EDENST(IS)=CTMP1/(Cg(IS,1)*kwave(IS,1)**3)
+    end do
+!   potential optimization: if ANAR is always unity, then EDENST doesn't vary with time step and only needs to be calculated once, rather than every time this routine is called.
+
+    DEDENS=EDENS-EDENST ! matrix operation
+
+    ! if DEDENS < 0 set to zero   
+    DEDENS=MAX(0.0,DEDENS)
+
+! notes: Mar 22 2011, Stefan has noticed sensitivity to ELIM.  (this variable only applies to concave down case). I have experimented with ELIM=0.0 and noticed no sensitivity for the U10=12 m/s point model case.
+
+!   ELIM=maxval(Edens)*1.0e-5 ! ELIM is needed for v54D
+    ELIM=0.0 ! ELIM is needed for v54D
+
+    do is=1,nfreq
+
+!   See notes above re: UPWARDS
+       
+       if(UPWARDS)then
+          NDEDENS(is)=DEDENS(is)/EDENST(is)
+       else
+          if(Edens(is).gt.ELIM)then
+             NDEDENS(is)=DEDENS(is)/EDENS(is)
+          else
+             NDEDENS(is)=0.0
+          end if
+       endif
+
+    enddo
+
+    NDEDENS=MAX(0.0,NDEDENS)
+    ! -------------------------------------------------------------------------------
+    !                      calculate T1
+    !  -------------------------------------------------------------------------------
+
+    do  is=1,nfreq
+       T1(is)=a1*f(is)*ANAR(is)*NDEDENS(is)**p1sds
+    end do
+
+    ! ------------------------------------------------------------------------------------
+    !                      calculate  T2  an integration from fp to f
+    ! ------------------------------------------------------------------------------------
+
+    ! Note that we don't worry about starting at fp (which can be difficult to define), 
+    ! since stuff below fp is typically not breaking, so it isn't part of the calculation anyway.
+
+    xff=0.0
+    do is=1,nfreq
+       ASUM=0.0
+       xff(is)=f(is)
+       ADF(is)=ANAR(is)*NDEDENS(is)**p2sds
+       ! The "integrate" routine is based on finite differencing, but we could replace with an operation that uses FRINTF
+       CALL integrate(ASUM,xff,ADF,is)
+       T2(is)=a2*ASUM
+    enddo
+
+    T1=max(0.0,T1)  !  a matrix operation
+    T2=max(0.0,T2)  !  a matrix operation
+    Kds=(T1+T2) !  a matrix operation
+
+    ! (point output write location 2)
+    if(TESTFL)then
+       write(402,*)CHTIME,' % CHTIME'
+       write(402,*)'% f(is),EDENS(is),EDENST(is),T1(is),T2(is)'
+       do  is=1,nfreq
+          write(402,205)f(is),EDENS(is),EDENST(is),T1(is),T2(is)
+       end do
+205    format(5(1x,e11.5))
+    
+       ! figure out integrated T1 and T2 (for output purposes only)
+
+       ! 3/9/2009 Since we have already non-dimensionalized by using NDEDENS instead of DEDENS, we do it backwards: Sds=Kds*Edens
+       do is=1,nfreq
+          Sds(is)=Kds(is)*Edens(is) ! note that in most cases, the calling routine will not use Sds
+          ST1(is)=T1(is)*Edens(is)
+          ST2(is)=T2(is)*Edens(is)
+       end do
+
+       CALL integrate(ST1_INT,f,ST1,nfreq)
+       CALL integrate(ST2_INT,f,ST2,nfreq)
+       CALL integrate(Sds_int,f,Sds,nfreq)
+
+       ! figure out T1 and T2 at 3fp
+       imax=maxloc(Edens,1)
+       fp=f(imax)
+       fd=abs(f-fp*3.0)
+       i3fp=minloc(fd,1)
+
+       ! (point output write location 3)
+       WRITE(*,208)ST1_INT,ST2_INT,Sds_INT,ST1(i3fp),ST2(i3fp)
+208    format('integral of T1,T2,Sds = ',5(1x,e14.8))
+    endif
+
+! Deallocate and return
+    DEALLOCATE(sds)
+    DEALLOCATE(xff)
+    DEALLOCATE(ndedens)
+    DEALLOCATE(dedens)
+    DEALLOCATE(edenst)
+    DEALLOCATE(T1)
+    DEALLOCATE(T2)
+    DEALLOCATE(ANAR)
+    DEALLOCATE(ST1)
+    DEALLOCATE(ST2)
+    DEALLOCATE(ADF)
+    DEALLOCATE(fd)
+
+  END subroutine calc_Sds
+
+  ! ************************************************************************************************
+
+
+  !****************************************************************
+  !
+  SUBROUTINE SWIND_DBYB (    SPCSIG  ,THETAW  ,KWAVE   ,IMATRA,IDCMIN ,IDCMAX  ,AC2   &
+                             ,UFRIC , WIND10 ,PLWNDB  ,ISSTOP  ,SPCDIR  ,ANYWND,  CG  &
+                             , GENC0, IT )   ! 30.21
+    !
+    !****************************************************************
+    !
+!   TESTFL IS IN MODULE SWCOMM4
+    USE SWCOMM1, ONLY: CHTIME
+    USE SWCOMM3                                                      !   40.41
+    USE SWCOMM4                                                      !   40.41
+    USE OCPCOMM4                                                     !   40.41
+    implicit none
+    !
+    !  SUBROUTINE SWIND_DBYB follows the structure of SWIND3 of SWAN.
+    !     As such, it contains features that are not general to all wave models.
+    !     In particular, the quadrant sweeping creates special challenges that 
+    !     are not general.
+    !
+    !  0. Authors
+    !
+    !     W.E. Rogers, NRL 7320
+    !
+    !  1. Updates
+    !
+    !  2. PURPOSE
+    !
+    !     Computation of the source term for the wind input for a
+    !     third generation wind growth model:
+    !
+    !     1)  Exponential input term, (Donelan et al. JPO 2006)
+    !
+    !  3. METHOD
+    !
+    !     Sin (s,d) =  B*E(s,d)
+    !
+    !  4. Argument variables
+    !
+    ! i   SPCDIR: (*,1); spectral directions (radians)                        30.82
+    !             (*,2); cosine of spectral directions                        30.82
+    !             (*,3); sine of spectral directions                          30.82
+    !             (*,4); cosine^2 of spectral directions                      30.82
+    !             (*,5); cosine*sine of spectral directions                   30.82
+    !             (*,6); sine^2 of spectral directions                        30.82
+    ! i   SPCSIG: Relative frequencies in computational domain in sigma-space 30.72
+    !
+    REAL    SPCDIR(MDC,6)                                   !           30.82
+    REAL    SPCSIG(MSC)                                     !           30.72
+    !
+    !        IS          Counter of relative frequency band
+    !        ID          Counter of directional distribution
+    !        MSC         Maximum counter of relative frequency
+    !        MDC         Maximum counter of directional distribution
+    !
+    !        REALS:
+    !        ---------
+    !        THETA       Spectral direction
+    !        THETAW      Mean direction of the relative wind vector
+    !        UFRIC       Wind friction velocity
+    !
+    !        one and more dimensional arrays:
+    !        ---------------------------------
+    !        KWAVE     2D    Wavenumber
+    !        IMATRA    2D    Coefficients of right hand side of matrix
+    !        PWIND     1D    Wind coefficients
+    !        IDCMIN    1D    Frequency dependent counter
+    !        IDCMAX    1D    Frequency dependent counter
+    !        ANYWND    1D    Wind input for bin considered
+    !
+    !     5. SUBROUTINES CALLING
+    !
+    !        SOURCE
+    !
+    !     6. SUBROUTINES USED
+    !
+    !        calc_Lfactor
+    !
+    !     7. ERROR MESSAGES
+    !
+    !        ---
+    !
+    !     8. REMARKS
+    !
+    !   Here is what I had prior to Oct 4 2011:
+    !   U10MOD=UFRIC*28.0
+    !
+    !   Here is my email Aug 25 2011:
+    !       u10=28u* implies a fixed Cd. In order for the model to scale with U*, we 
+    !       must use a fixed Cd to convert the Donelan formula from U10 to U*. If 
+    !       we use a proper, realistic Cd to do this, then we are basically keeping 
+    !       the Donelan formula in terms of U10.
+    !
+    !       The 28U* comes from Komen et al. (1984). 
+    !
+    !       Of course, the "28" is semi-arbitrary and negotiable. We could just as 
+    !       easily use 22, but to get past a reviewer, following Komen seemed the 
+    !       safest.
+    !
+    !       Well, actually, you force me to think about this some more, ...
+    !
+    !       So, my argument has been that :
+    !       If we keep the Donelan formula in terms of U10, which you are arguing 
+    !       for, then the model will scale with U10, which is bad.
+    !
+    !       However, this is not necessarily a foregone conclusion, since we have 
+    !       this physical constraint which is in terms of U*. The means that the old 
+    !       rules don't necessarily apply
+    !
+    !       On the other hand, the physical constraint is partly or mostly in the 
+    !       diagnostic tail, so it doesn't necessarily make the model scale with U*.
+    !
+    !       I think it would be worthwhile for Stefan to actually investigate how 
+    !       the model scales using the point model test, U10 or U*, or something in 
+    !       between using both approaches:
+    !       a) U10MOD=28U*
+    !       b) U10=U10
+    !
+    !   Based on Stefan's reported results (which are with WW3 rather than SWAN),
+    !       I have decided to use U10 instead of 28*Ustar above.
+    !       Will this necessitate new calibration?
+    !    Oct 4 2011: I started using U10 instead of 28*Ustar for the U/C calculation
+    !       in the code which does the tail reduction. It was my intention to also 
+    !       start using U10 instead of 28Ustar in  SWIND_DBYB, but I missed this 
+    !       until Aug 9 2012 (thank you to Stefan for pointing this out)
+    !    Aug 9 2012: When the new logical variable "TRUE_U10" is true, 
+    !       I am now using U10 instead of 28Ustar in SWIND_DBYB 
+    !       Ustar is used only for the physical constraint in this case.
+    !        ---
+    !
+    !     9. STRUCTURE
+    !
+    !   ------------------------------------------------------------
+    !   For every spectral bin that fall in teh sweep considered
+    !     compute the source term and store the results in IMATRA
+    !   --------------------------------------------------------------
+    !   End of the subroutine SWIND_DBYB
+    !   --------------------------------------------------------------
+    !
+    !     10. SOURCE
+    !
+    !***********************************************************************
+    !
+    INTEGER  IDDUM ,ID    ,IS  ,  ISSTOP
+
+    REAL     UFRIC ,THETA ,THETAW,SIGMA    ,SWINEB, CTW   ,STW   ,COSDIF,   TEMP2 ,UoverC , WIND10
+
+    !
+    REAL    AC2(MDC,MSC,MCGRD), S_IN(MDC,MSC), IMATRA(MDC,MSC), KWAVE(MSC,ICMAX),  PLWNDB(MDC,MSC,NPTST) , CG(MSC,ICMAX)
+    !
+    INTEGER IDCMIN(MSC)          , IDCMAX(MSC)
+    !
+    LOGICAL  ANYWND(MDC)
+
+    REAL    DMAX,AINV
+    REAL    KTHETA(MSC,MDC) ! like D(theta), except max value at each freq is unity
+    REAL    ANAR(MSC),SIGDENS(MSC),SQRTBN(MSC),CINV(MSC),LFACTOR(MSC)
+    REAL    GAMMAD,GDONEL,TEMP4,WPSI,TEMP5,TEMP6,BN
+!   REAL    BN_OLD
+    REAL    SIN1D(MSC),SWND,FREQ,STRESS
+    INTEGER IENT
+    REAL  :: GENC0(MDC,MSC,MGENR)                           !            40.85
+    INTEGER          , INTENT(IN)  ::   IT
+
+    REAL EDENS2D ! ,HM0,ETOT! for test calcs
+
+    !      real,parameter :: GRAV=9.81
+
+    SAVE IENT
+    DATA IENT/0/
+    IF (LTRACE) CALL STRACE (IENT,'SWIND_DBYB')
+    !
+
+    CTW   = COS(THETAW)                                       !          40.41
+    STW   = SIN(THETAW)                                       !          40.41
+
+!   Calculate 1d spectrum E(sigma)
+    DO  IS = 1, MSC
+       SIGDENS(IS) = 0.
+       DO  ID = 1, MDC
+          SIGDENS(IS) = SIGDENS(IS) + SPCSIG(IS) * AC2(ID,IS,KCGRD(1))
+          KTHETA(IS,ID)=AC2(ID,IS,KCGRD(1))
+       END DO
+       SIGDENS(IS)=SIGDENS(IS)*DDIR  ! units m^2/(radHz)
+    END DO
+
+!   Calculate K(sigma,theta)
+    DO  IS = 1, MSC
+       DMAX=-1.0
+       DO  ID = 1, MDC
+          IF(KTHETA(IS,ID).GT.DMAX)DMAX=KTHETA(IS,ID)
+       END DO
+       IF(DMAX.EQ.0.0)THEN ! FIX FOR FREQ BINS (USUALLY FIRST TWO OR SO) THAT ARE EMPTY
+          DMAX=1.0
+          DO  ID = 1, MDC
+             KTHETA(IS,ID)=1.0
+          END DO
+       ENDIF
+       DO  ID = 1, MDC
+          KTHETA(IS,ID)=KTHETA(IS,ID)/DMAX
+       END DO
+    END DO
+
+!   Calculate SQRT(Bn(IS))
+    DO IS=1,MSC
+       AINV=0.0
+       DO  ID = 1, MDC
+          AINV=AINV+KTHETA(IS,ID)*DDIR
+       END DO
+       ANAR(IS)=1.0/AINV
+!      BN_OLD=ANAR(IS)*(SPCSIG(IS)**5)*SIGDENS(IS)/(2.0*GRAV**2) !  old, deepwater version
+       BN=ANAR(IS)*SIGDENS(IS)*(KWAVE(IS,1)**3)*CG(IS,1) ! since EDENST(IS)=CTMP1/(Cg(IS,1)*kwave(IS,1)**3)
+
+       SQRTBN(IS)=SQRT(BN)
+    END DO
+
+    ! swancom1.for:C     PWIND(9)  = RHOAW    0.00125  (density air / density water)
+
+    ! Calculate S_in for *ALL* directions (not just current sweep). Though this is somewhat wasteful 
+    ! Since S_in will end up being calculated 4 times for each bin , it is nececessary in order to 
+    ! have the correct stress going into CALC_LFACTOR
+
+    IF(TRUE_U10)THEN 
+       TEMP2 = WIND10  !  "TEMP2=WIND10" is basically saying "use DBYB as is"
+    ELSE
+       TEMP2 = 28.0 * UFRIC
+    ENDIF
+    S_IN=0.0
+    DO IS = 1, MSC
+       SIGMA = SPCSIG(IS)                                          !       30.72
+       CINV(IS)  = KWAVE(IS,1) / SIGMA
+       UoverC = TEMP2 * CINV(IS)
+       DO ID=1,MDC
+          IF ( ANYWND(ID) ) THEN
+             COSDIF = SPCDIR(ID,2)*CTW + SPCDIR(ID,3)*STW            !       40.41
+             TEMP4=( UoverC * COSDIF - 1.0 )
+             TEMP4=MAX(0.0,TEMP4)
+             WPSI=TEMP4**2
+             TEMP5=10.0*SQRTBN(IS)*WPSI-11.0
+             TEMP6=1.0+TANH(TEMP5)
+             GDONEL=2.8-TEMP6
+             GAMMAD=GDONEL*SQRTBN(IS)*WPSI
+             !OLD            SWINEB = TEMP1 * TEMP4 ! OLD SWINEB PHASE 1
+             !OLD            SWINEB = MAX ( 0. , SWINEB * SIGMA ) ! OLD SWINEB PHASE 2 
+             SWINEB =  GAMMAD * SIGMA * PWIND(9) ! NEW SWINEB 
+             ! In Donelan notation, SWINEB is BETA, so I use BETA=GAMMA*sigma*rhoa/rhow (Donelan eq 3)
+
+             S_IN(ID,IS)=SWINEB*AC2(ID,IS,KCGRD(1))*SPCSIG(IS) ! actual wind input term Sin=Beta*Edens
+          END IF
+       ENDDO
+    ENDDO
+
+
+    call calc_Lfactor(Lfactor,S_in,UFRIC,PWIND,DDIR,SPCSIG,FRINTF,CINV,grav,WIND10,TESTFL,SPCDIR,vector_tau,true_u10,CTW,STW)
+
+    !  ONLY ADD TO IMATRA FOR CURRENT SWEEP
+    DO IS = 1, ISSTOP
+       DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+          ID = MOD ( IDDUM - 1 + MDC, MDC ) + 1
+          IF ( ANYWND(ID) ) THEN
+             S_IN(ID,IS)= S_IN(ID,IS) * Lfactor(IS)
+	  endif
+	enddo
+    enddo
+
+    if (a0sin.gt.0) then
+       DO IS = 1, MSC
+       SIGMA = SPCSIG(IS)                                          !       30.72
+       CINV(IS)  = KWAVE(IS,1) / SIGMA
+       UoverC = TEMP2 * CINV(IS)
+       DO ID=1,MDC
+             COSDIF = SPCDIR(ID,2)*CTW + SPCDIR(ID,3)*STW            !       40.41
+             TEMP4=( UoverC * COSDIF - 1.0 )
+	     if (temp4.ge.0.) cycle
+             WPSI=TEMP4**2
+             TEMP5=10.0*SQRTBN(IS)*WPSI-11.0
+             TEMP6=1.0+TANH(TEMP5)
+             GDONEL=2.8-TEMP6
+             GAMMAD=GDONEL*SQRTBN(IS)*WPSI
+             SWINEB =  a0sin * GAMMAD * SIGMA * PWIND(9) ! NEW SWINEB
+             S_IN(ID,IS)=S_IN(ID,IS)-SWINEB*AC2(ID,IS,KCGRD(1))*SPCSIG(IS) ! actual wind input term Sin=Beta*Edens
+       ENDDO
+       ENDDO
+    endif
+	
+! We want to add B*N to RHS. This is SWINEB*AC2, see SWIND3.
+! Above, we had S_IN(ID,IS)=SWINEB*AC2(ID,IS,KCGRD(1))*SPCSIG(IS) 
+! Thus, we just need to divide out SPCSIG(IS) and we are good.
+    DO IS = 1, ISSTOP
+       DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+          ID = MOD ( IDDUM - 1 + MDC, MDC ) + 1
+          IF ( ANYWND(ID) ) THEN
+             IMATRA(ID,IS) = IMATRA(ID,IS) + S_IN(ID,IS)/SPCSIG(IS) ! THIS was moved from loop above
+             IF(AC2(ID,IS,KCGRD(1)).NE.0.0)THEN
+                SWINEB=S_IN(ID,IS)/(AC2(ID,IS,KCGRD(1))*SPCSIG(IS))
+             ELSE
+                SWINEB=0.0
+             ENDIF
+
+! May 2 2012: Code re: PLWNDA and PLWNDB is reverted to form prior to patch A for 40.72.
+!             See notes in swancom1.ftn for further explanation
+
+             IF (TESTFL) PLWNDB(ID,IS,IPTST) = SWINEB       
+!OLD         IF (TESTFL) PLWNDA(ID,IS,IPTST) = SWINEB*AC2(ID,IS,KCGRD(1))
+
+! SWIND3 in 40.72A and later has this:
+!            IF (TESTFL) PLWNDA(ID,IS,IPTST) = SWINEB*AC2(ID,IS,KCGRD(1))  40.85 40.00
+! PLTSRC has this:
+!        PLWNDA   2D    SWINEA
+!        PLWNDB   2D    SWINEB
+
+             GENC0(ID,IS,1) = GENC0(ID,IS,1) + SWINEB*AC2(ID,IS,KCGRD(1)) ! 40.85
+
+          END IF
+       ENDDO
+    ENDDO
+
+    !
+    !     *** test output ***
+    !
+    IF (ITEST.GE. 80.AND.TESTFL) THEN                            !       40.00
+       WRITE(PRTEST,6000) KCGRD(1), THETAW*180./PI
+6000   FORMAT(' SWIND_DBYB: POINT  THETAW        :',I5,E12.4)
+       WRITE(PRTEST,6100) TEMP2, UFRIC
+6100   FORMAT(' SWIND_DBYB: TEMP2 UFRC     :',3E12.4, /,'  IS ID1 ID2       Wind source term')
+       DO IS = 1, MSC
+          WRITE(PRTEST,6200) IS, IDCMIN(IS), IDCMAX(IS),(PLWNDB(ID,IS,IPTST), ID=IDCMIN(IS), IDCMAX(IS))
+6200      FORMAT(3I4, 600e12.4)
+       ENDDO
+       WRITE(PRTEST,*)
+    END IF
+    !
+    RETURN
+  END SUBROUTINE SWIND_DBYB
+
+
+
+  subroutine calc_Lfactor(Lfactor_S,S_in,UFRIC,PWIND,DDIR_RAD,SIGMA_S,FRINTF,CINV_S,grav,WIND10,TESTFL, &
+                          SPCDIR,vector_tau,true_u10,ctheta_wind,stheta_wind)
+
+
+    USE SWCOMM1, ONLY: CHTIME
+    implicit none
+
+    ! objective : provide Lfactor (1-d array) by solving for optimal REDUC (scalar). It uses a solver method 
+    !     that should work for all monotonic relations. For non-monotonic relations, it may get confused.  
+    !     Here, tau_normal definitely has a monotonic dependence on REDUC, so this potential limitation on 
+    !     the solver is OK. (Monoticity of S_in, or lack thereof, is irrelevant.)
+    ! points made here: 
+    !  1) the normal stress plus the tangential/viscous stress cannot be greater than the total stress. 
+    !  2) we don't know what the contribution is beyone fmax, but we know that it isn't negative, so again,
+    !              we  we say that the normal stress in our prognostic range cannot be greater than the 
+    !              total stress...so tau_total=tau_normal_prognostic+tau_normal_diagnostic+tau_tangential...all are >=0, 
+    !              so maximum allowed value of tau_normal_prognostic is tau_total 
+    !              Update: in this code, we partially address this issue by extending the integration (fmax) to 10 Hz
+    !              for the purposes of this integration.
+    !  3) similar to Kakha's argument, we use the exponential adjustment that is stronger at the higher 
+    !              frequencies (more reduction) since this is where our formula is less well-informed by 
+    !              observations (more wiggle room), since typical observations are for the dominant waves, f=fp 
+    !  4) Kakha uses f/fp to scale the reduction, which makes sense in the context of item (3), but use 
+    !              of fp has disadvantages, so we use U/C instead. This means that for young wind sea, 
+    !              S_in for the entire spectrum is reduced...will this be a problem?
+    !              It is probably worthwhile to try using an fp value defined in a manner similar to Tolman and Chalikov,
+    !              which does not have the traditional problems with using fp
+    !  5) S_in=S_in_linear+S_in_exponential....same argument as (1). Linear wind input is assumed small and not included in 
+    !              the stress calculation.
+
+
+! notes re: "vector_tau": 
+!        In earlier versions of this code, to simplify calcs, I used S_in1D(f)
+!        S_in1D_S=sum(S_in,1)*DDIR_rad*(2.0*PI) ! in units m2/Hz
+!        this simplication implies that we will follow the Tsagareli et al. (2010 JPO) method for calculating stress:
+!        tau=integral (Sin(f)/C(f) df
+!        This calculation is not so good, since it assumes all stresses are in the same direction and so never counteract each other.
+!        In fact, if you look at Donelan (1998), he has 
+!        tau(x/y)= integral (Sin(f)*(k/omega) cos(theta) dtheta df
+!        Though probably what he meant was
+!        tau_x=integral Sin(f)*(k/omega) cos(theta) dtheta df
+!        tau_y=integral Sin(f)*(k/omega) sin(theta) dtheta df (assumed zero if symmetrical about theta=0)
+!        And if we wanted to do this better, we would caculate tau_x, tau_y, then tau
+! From my email Sep 15 2011:
+!        The suggestion is to replace the non-directional
+!        tau=integral of Sin(f)/C(f) df
+!        with
+!        tau_x=integral of Sin(f,theta)*k_x/(k*C(f)) df dtheta
+!        tau_y=integral of Sin(f,theta)*k_y/(k*C(f)) df dtheta
+!        essentially using the unit vector <k> = k_vector/k_scalar
+!             and I suppose it can be written also
+!        tau_vector=integral of (k_vector/omega) Sin(f,theta) df dtheta
+! Now (Aug 2012), if vector_tau is true, I use a vector calculation.
+!        If vector_tau is false, I don't need the directional Sin(f,theta).
+!        However, to keep the code simple I pass  Sin(f,theta) to calc_tau_total routine
+!        regardless.
+
+    REAL             , INTENT(OUT) ::  Lfactor_S(:) ! "_S" denotes "short" (fewer freqs)
+    REAL             , INTENT(IN)  ::  S_in(:,:)
+    REAL             , INTENT(IN)  ::  SPCDIR(:,:)
+    REAL             , INTENT(IN)  ::  UFRIC
+    REAL             , INTENT(IN)  ::  DDIR_RAD
+    REAL             , INTENT(IN)  ::  FRINTF
+    REAL             , INTENT(IN)  ::  PWIND(:)
+    REAL             , INTENT(IN)  ::  CINV_S(:)
+    REAL             , INTENT(IN)  ::  SIGMA_S(:)
+    REAL             , INTENT(IN)  ::  grav
+    REAL             , INTENT(IN)  ::  WIND10,ctheta_wind,stheta_wind
+    LOGICAL          , INTENT(IN)  ::  TESTFL
+    LOGICAL          , INTENT(IN)  ::  vector_tau,true_u10
+
+!   REAL             , ALLOCATABLE  ::  S_in1D_S(:) ! "_S" denotes "short" (fewer freqs) (1d version, not used now)
+    REAL             , ALLOCATABLE  ::  S_in1D_L(:) ! "_L" denotes "long" (freqs out to 10 Hz) (1d version: was used for calculations, but now used only for diagnostic output)
+    REAL             , ALLOCATABLE  ::  S_in_L(:,:) ! "_L" denotes "long" (freqs out to 10 Hz) (2d version: added and now used for calculations)
+    REAL             , ALLOCATABLE  ::  DF(:)
+    REAL             , ALLOCATABLE  ::  CINV_L(:),cinv_Ldf(:),S_in_red(:),UoverC(:)
+    REAL             , ALLOCATABLE  ::  SIGMA_L(:)
+    REAL             , ALLOCATABLE  ::  LFACTOR(:)
+
+    REAL :: DSIGMA
+    REAL :: REDUC
+    REAL :: sign_new,sign_old
+    REAL :: frat
+    REAL :: err
+    REAL :: RCHANGE
+    REAL :: tau_total_max ! the maximum value for total wind stress that we will allow
+    REAL :: tau_total ! the value for the total wind stress computed from tau_wave and tau_visc (i.e. tau_normal and tau_tangential)
+    REAL :: DDIR_DEG
+    REAL :: RHOA,RHOW,PI,rhowg
+    REAL :: freq_tmp
+    REAL :: Cv,tau_visc,tau_visc_x,tau_visc_y,tau_x,Tau_y
+
+    INTEGER :: nf_old,nf_new,ndir
+    INTEGER :: dir
+    INTEGER :: iter
+    INTEGER :: slow_down
+    INTEGER :: isol
+    INTEGER :: IS,idir
+
+!... S_in(theta,freq)
+    ndir=size(S_in,1)
+    nf_old=size(S_in,2)
+    pi=2.0*acos(0.0)
+
+    ! Initialize LFACTOR_S (for error catching)
+    LFACTOR_S=HUGE(LFACTOR_S)
+
+    ! find nf_new
+    frat=FRINTF+1.0 ! =freq(nf_old)/freq(nf_old-1)
+    FREQ_TMP=SIGMA_S(nf_old)/(2.0*pi)
+    nf_new=-99
+    do IS=(nf_old+1),(nf_old+100)
+       FREQ_TMP=FREQ_TMP*frat
+       if(FREQ_TMP > 10.0)then ! 10.0 here is f=10 Hz
+          nf_new=IS
+          exit
+       endif
+    enddo
+    ! shortcoming of this method: the maximum frequency changes slightly from one simulation 
+    !    to the next, depending on the frequency bands the user selects. To correct this, 
+    !    we should stop at 10 Hz and change df of last bin df for the last bin would have 
+    !    to use finite differencing, instead of FRINTF (as used below), 
+    !    e.g. DF=FREQ(nf_new)-FREQ(nf_new-1)
+
+    ! allocate arrays on nf_new
+    ALLOCATE(S_in_L(ndir,nf_new))
+    ALLOCATE(S_in1d_L(nf_new)) ! for diagnostic output only
+    ALLOCATE(DF(nf_new))
+    ALLOCATE(CINV_L(nf_new),cinv_ldf(nf_new))
+    ALLOCATE(SIGMA_L(nf_new))
+    ALLOCATE(LFACTOR(nf_new))
+    ALLOCATE(UoverC(nf_new))
+    ALLOCATE(S_in_red(nf_new))
+
+    ! extend freqs to nf_new
+    SIGMA_L(1:nf_old)=SIGMA_S(1:nf_old)
+    CINV_L(1:nf_old)=CINV_S(1:nf_old)
+    S_in_L(:,1:nf_old)=S_in(:,1:nf_old)
+    do IS=(nf_old+1),nf_new
+       SIGMA_L(IS)=SIGMA_L(IS-1)*frat
+       CINV_L(IS)=SIGMA_L(IS)*0.102 ! deep water assumption for hf tail is OK
+       ! For Sin, we use an f-2 approximation...Sin=Beta*E~sigma*(U/C)^2*E=f1*f2*f-5=f-2
+       do idir=1,ndir
+          S_in_L(idir,IS)=S_in_L(idir,nf_old)*(SIGMA_L(nf_old)/SIGMA_L(IS))**2
+       enddo
+    enddo
+    DF=SIGMA_L*FRINTF/(2.0*PI)  ! since DF=FREQ*FRINTF
+    CINV_LDF=CINV_L*DF
+
+    S_in_L=S_in_L*(2.0*PI) ! was in units of m2/(rad-Hz)/rad, so put in units m2/Hz/rad
+
+    S_in1D_L=sum(S_in_L,1)*DDIR_rad ! note that variable is S_in(ID,IS)
+    if(TESTFL)then 
+       write(406,*)CHTIME,' % CHTIME'
+       write(406,*)' % (freq , old S_in)'
+       do IS=1,nf_new
+          write(406,211)(SIGMA_L(IS)/(2.0*pi)),S_in1D_L(IS)
+       end do
+    endif
+    S_in1D_L=0.0
+
+    rhoa=pwind(16)
+    rhow=pwind(17)
+    rhowg=rhow*grav
+
+    tau_total_max=(UFRIC**2)*rhoa
+    DDIR_DEG=DDIR_RAD*180.0/PI
+
+    Cv=(-5.0e-5)*WIND10+1.1e-3
+    Cv=max(Cv,0.0) ! otherwise Cv<0 for U10>22 m/s
+    tau_visc=rhoa*Cv*(WIND10**2)
+    
+
+!   Notes, Aug 15 2012: Stefan noticed that at low wind speeds, |Cv| is slightly larger than |Cd|
+!       This probably is not reasonable. To address this, we say "tau_visc cannot be more than 90%
+!       of tau_total_max, regardless". The 90% is semi-arbitrary, selected because it implies that this 
+!       "fix" has a very minor impact on computations, relative to, say, 60%. 
+!       Note to self: see viscous_stress_component.m for example plots.
+    tau_visc=min((0.9*tau_total_max),tau_visc)
+
+!   We will assume that viscous stress is in wind direction
+    tau_visc_x=tau_visc*ctheta_wind
+    tau_visc_y=tau_visc*stheta_wind  
+
+    IF(TRUE_U10)THEN
+      UoverC=WIND10 * CINV_L
+    ELSE
+      UoverC=28.0*UFRIC*CINV_L
+    ENDIF
+
+
+    ! calculate without reduction
+    REDUC=0.0
+
+    Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
+      tau_x=tau_visc_x/rhowg/DDIR_RAD
+      tau_y=tau_visc_y/rhowg/DDIR_RAD
+      do idir=1,ndir
+	S_in_red=S_in_L(idir,:) * Lfactor
+	tau_x=tau_x+SPCDIR(IDIR,2)*sum(S_in_red*CINV_Ldf)
+	tau_y=tau_y+SPCDIR(IDIR,3)*sum(S_in_red*CINV_Ldf)
+      enddo
+      tau_total=DDIR_RAD*rhowg*sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
+    else
+     tau_total=sqrt(tau_visc_x**2+tau_visc_y**2)+rhowg*DDIR_rad*sum(sum(S_in_L,1)*Lfactor*CINV_Ldf) ! should recover old method, based on scalar addition
+    endif
+
+    if(TESTFL)then
+206    format('tau_total_max = ',f9.6,' ; tau_total = ',f9.6,' ; tau_visc = ',f9.6)
+       write(*,206)tau_total_max,tau_total,tau_visc
+    endif
+
+    if(tau_total < tau_total_max)then
+       DO IS=1,NF_OLD
+          Lfactor_S(IS)=1.0
+       END DO
+! Deallocate and return
+       DEALLOCATE(S_in_L)
+       DEALLOCATE(S_in1D_L)
+       DEALLOCATE(DF)
+       DEALLOCATE(CINV_L,cinv_ldf)
+       DEALLOCATE(SIGMA_L)
+       DEALLOCATE(LFACTOR)
+       deallocate(UoverC,S_in_red)
+       RETURN
+    else
+       if(TESTFL)then
+          write(*,*)'reducing Sin to make tau_total = tau_total_max'
+       endif
+    endif
+    
+    if(TESTFL)then
+       if(tau_total > 500.0)then ! e.g. 132+ for NGOM Katrina case, 502+ for GMEX HRD_buoy Ivan case...note that if Edens is too large due to weak Sds, this will be large as a result
+          write(*,*)'tau_total without reduction seems large: ',tau_total
+          !       stop
+       endif
+    endif
+
+! calculate *with* reduction, start value arbitrary
+    REDUC=0.05 ! Original
+!   err=tau_total-tau_total_max ! req'd to use Stefan's suggestion
+!   REDUC=ABS(ERR)/tau_total_max/90.0  ! Stefan's suggestion
+
+     Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
+      tau_x=tau_visc_x/rhowg/DDIR_RAD
+      tau_y=tau_visc_y/rhowg/DDIR_RAD
+      do idir=1,ndir
+	S_in_red=S_in_L(idir,:) * Lfactor
+	tau_x=tau_x+SPCDIR(IDIR,2)*sum(S_in_red*CINV_Ldf)
+	tau_y=tau_y+SPCDIR(IDIR,3)*sum(S_in_red*CINV_Ldf)
+      enddo
+      tau_total=DDIR_RAD*rhowg*sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
+    else
+     tau_total=sqrt(tau_visc_x**2+tau_visc_y**2)+rhowg*DDIR_rad*sum(sum(S_in_L,1)*Lfactor*CINV_Ldf) ! should recover old method, based on scalar addition
+    endif
+
+    err=tau_total-tau_total_max
+    sign_new=sign(1.0,err)
+    if(TESTFL)then
+       write(*,207)0,REDUC,0.0,tau_total,err
+    endif
+
+    slow_down=0
+    RCHANGE=2.0
+    isol=0
+
+!  Notes: Objective: find value of REDUC that yields desired tau_total.
+!         Current method is to change REDUC sequentially, and slow down the incrementing
+!            of REDUC if there is a sign change in the err value.
+!            [incrementing of REDUC=RCHANGE]
+!         Would this be done faster using Newton-Raphson or similar?
+
+    do iter=1,50
+       if(tau_total > tau_total_max)then ! increase REDUC
+          REDUC=REDUC*RCHANGE
+       else ! then reduce REDUC
+          REDUC=REDUC/RCHANGE
+       endif
+
+       Lfactor=min(1.0,exp((1-UoverC) * REDUC))
+    if(vector_tau)then
+      tau_x=tau_visc_x/rhowg/DDIR_RAD
+      tau_y=tau_visc_y/rhowg/DDIR_RAD
+      do idir=1,ndir
+	S_in_red=S_in_L(idir,:) * Lfactor
+	tau_x=tau_x+SPCDIR(IDIR,2)*sum(S_in_red*CINV_Ldf)
+	tau_y=tau_y+SPCDIR(IDIR,3)*sum(S_in_red*CINV_Ldf)
+      enddo
+      tau_total=DDIR_RAD*rhowg*sqrt(tau_x**2+tau_y**2) ! new method, based on vector addition
+    else
+     tau_total=sqrt(tau_visc_x**2+tau_visc_y**2)+rhowg*DDIR_rad*sum(sum(S_in_L,1)*Lfactor*CINV_Ldf) ! should recover old method, based on scalar addition
+    endif
+
+       err=tau_total-tau_total_max
+       sign_old=sign_new
+       sign_new=sign(1.0,err)
+       if(TESTFL)then
+207       format('iter = ',i3,' ; REDUC = ',f9.6,' ; RCHANGE = ',f9.6,' ; tau_total = ',f9.6,' ; err = ',f9.6)
+          write(*,207)iter,REDUC,RCHANGE,tau_total,err
+       endif
+
+!!    BEGIN ORIGINAL METHOD
+!!    once "slow_down" is set for a given iteration, it stays in this state for future iterations
+       if(sign_new /= sign_old)then
+          slow_down=1
+       endif
+       if(slow_down==1)then
+          RCHANGE=0.5*(1.0+RCHANGE)
+       endif
+!!    END ORIGINAL METHOD
+
+!!    BEGIN STEFAN METHOD
+!!      slow_down is based purely on current iteration, not prior ones. 
+!!      code is smaller
+!!      Q: does it converge faster or slower or no difference?
+!!      Example simulation: original method 26830 iterations throughout (single point)
+!!                          Stefan method   37138 iterations throughout (single point)
+!!      Of course, this outcome may depend on the simulation and the exit criterion.
+!      if(sign_new /= sign_old) RCHANGE=0.5*(1.0+RCHANGE)
+!!    END STEFAN METHOD
+
+       if((abs(err)/tau_total_max) < 1.54E-4)then
+          isol=1
+          exit
+       endif
+    end do !    do iter=1,50
+
+!!  BEGIN: force stop in case of failure
+    if(isol==0)then
+       write(*,*)'no solution found'
+       write(*,*)'  tau_total = ',tau_total,' tau_total_max = ',tau_total_max,' err = ',err, &
+                 '(abs(err)/tau_total_max)  = ',(abs(err)/tau_total_max)
+       if((abs(err)/tau_total_max).ge.1.0.or.tau_total.ne.tau_total)then
+          write(*,*)nf_new     ! scalar
+          write(*,*)Lfactor  ! LFACTOR(nf_new)
+          write(*,*)S_in_L     ! S_in_L(ndir,nf_new)
+          write(*,*)df         ! DF(nf_new)
+          write(*,*)CINV_L     ! CINV_L(nf_new)
+          write(*,*)CINV_Ldf     ! CINV_L(nf_new)
+          write(*,*)tau_total_max    ! scalar
+          write(*,*)tau_total ! scalar
+          write(*,*)REDUC      ! scalar
+          write(*,*)WIND10     ! scalar
+          write(*,*)rhow       ! scalar
+          stop
+       end if
+       if(tau_total.ne.tau_total)then ! check for NaN
+          write(*,*)'stopping due to tau_total=NaN'
+          stop
+       endif
+    end if
+!!  END: force stop in case of failure
+
+!!  BEGIN: test output
+210 format(f9.6,' ',e12.6,' % (freq , Lfactor)')
+    if(TESTFL)then
+       do IS=1,nf_new
+          write(403,210)(SIGMA_L(IS)/(2.0*pi)),Lfactor(IS)
+       end do
+    endif
+
+    S_in1D_L=sum(S_in_L,1)*DDIR_rad
+211 format(f9.6,1x,e12.6)
+    if(TESTFL)then
+       write(404,*)CHTIME,' % CHTIME'
+       write(404,*)' % (freq , new S_in)'
+       do IS=1,nf_new
+          write(404,211)(SIGMA_L(IS)/(2.0*pi)),(S_in1D_L(IS)*Lfactor(IS))
+       end do
+    endif
+    S_in1D_L=0.0
+!!  END: test output
+
+!   calculation of Lfactor_S is the purpose of this subroutine
+    DO IS=1,NF_OLD
+       Lfactor_S(IS)=Lfactor(IS)
+    END DO
+
+! Deallocate and return
+    DEALLOCATE(S_in_L)
+    DEALLOCATE(S_in1D_L)
+    DEALLOCATE(DF)
+    DEALLOCATE(CINV_L,cinv_ldf)
+    DEALLOCATE(SIGMA_L)
+    DEALLOCATE(LFACTOR)
+    DEALLOCATE(UoverC)
+    DEALLOCATE(S_in_red)
+
+  end subroutine calc_Lfactor
+
+  !****************************************************************
+  SUBROUTINE SSWELL (SPCSIG  ,KWAVE   ,IDCMIN  ,IDCMAX,ISSTOP , DISSC1 ,ETOT    ,IMATDA,URMSTOP, &
+                     GRAV   , RHOAW  , MDC,CGo,Cdsv,feswell)
+
+    ! note that CGo is for diagnostic purposes only, may be excluded
+    ! excluded : SPCDIR AC2 DEP2 IMATRA
+
+    !****************************************************************
+
+    IMPLICIT NONE
+
+    INTEGER, INTENT(IN) :: ISSTOP,MDC
+    INTEGER, INTENT(IN) :: IDCMIN(:) ! IDCMIN(MSC)
+    INTEGER, INTENT(IN) :: IDCMAX(:) ! IDCMAX(MSC)
+
+    REAL   , INTENT(IN)    :: ETOT
+    REAL   , INTENT(IN)    :: KWAVE(:,:) ! KWAVE(MSC,MICMAX)
+    REAL   , INTENT(IN)    :: CGo(:,:)   ! CGo(MSC,MICMAX) ! group velocity without currents, but includes depth effects
+    REAL   , INTENT(IN)    :: SPCSIG(:)  ! SPCSIG(MSC)
+    REAL   , INTENT(IN)    :: URMSTOP ! THIS SHOULD BE THE "RMS VELOCITY AMPLITUDE" *NOT* THE "RMS VELOCITY"
+
+    REAL   , INTENT(IN)    :: RHOAW
+    REAL   , INTENT(IN)    :: GRAV
+    REAL   , INTENT(IN)    :: Cdsv
+    REAL   , INTENT(IN)    :: feswell
+
+    REAL   , INTENT(INOUT) :: IMATDA(:,:) ! IMATDA(MDC,MSC)
+    REAL   , INTENT(INOUT) :: DISSC1(:,:,:) ! DISSC1(1:MDC,1:MSC,1:MDISP)  
+
+    REAL, parameter   :: Re_crit=2.0e+5 ! Re_c or SWELLF4
+    !          REAL, parameter   :: Cdsv=1.2 ! C_dsv or SWELLF5
+    REAL, parameter   :: nu_air=1.4E-5 
+
+    !   local variables:
+    INTEGER           :: IS
+    INTEGER           :: IDDUM,ID
+    REAL              :: aorb,USIGTOP
+    REAL              :: Re
+    REAL              :: SWDIS(ISSTOP) ! this is S_SWELL / E(f,theta)
+    REAL              :: myu,SWDIS_CHECK ! error checking, may be omitted
+    
+    ! Q: What should fe be?
+    !     0.004 < fe < 0.013 according to JPO 2010, near final version and March 2009 version
+    !     "for a smooth surface, fe is of the order 0.002 to 0.008" (Fabrice proposes 0.0035), GRL 2009
+    !     "Most of the values of fe fall in the range 0.005 to 0.01" (2008 Conf paper)
+    !     Supplemental information for "Ocean swell evolution from distant storms" : experiments with 3 constant values ( 0 , 0.0035 , 0.0070)
+    !     In Ardhuin et al. (JPO 2010), it is calculated using a formula (eq. 10)
+    !     Ardhuin et al. (JPO 2010) say: "Assuming a constant fe in (9), Ardhuin et al. (2009b) found that swell observations are consistent with 0.004 < fe < 0.013. 
+
+    ! Q: What should Re_crit be ?
+    ! my original code (up to and including v54):
+    !                 Re_crit=1e+5
+    ! change to this code in v55 : 
+    !                 Re_crit=2e+5
+    ! JPO 2010, near-final version: "Semi-empirical dissipation source functions for ocean waves: Part I, definition, calibration and validation."
+    !                 Re_crit=2e+5
+    ! JPO 2010, March 2009 draft
+    !                 Re_crit=1e+5
+    ! GRL 2009: Observation of swell dissipation across oceans
+    !                 Re_crit=1e+5
+    ! conf paper 2008: Spectral wave dissipation based on observations: a global validation
+    !                 Re_crit=1e+5
+    ! auxiliary material for "Strong decay of steep swells observed across oceans"
+    !                 Re_crit=1e+5
+    ! Nature submission (?), "Ocean swell evolution from distant storms"
+    !                 Re_crit=2e+5
+    ! Supplemental information for "Ocean swell evolution from distant storms"
+    !                 Re_crit=1e+5
+    ! my notes from phone call may shed light on this:
+    ! "....10^5 w/bug ..... 2x10^5 w/out bug.....
+    ! sqrt orbital displacement
+    ! aorb"
+    
+    ! Method:
+    ! In general....
+    ! @N/@t=S/sig=C(sig)*E(sig,theta)/sig=C(sig)*N(sig,theta)
+    ! where C(sig) has units of rad/sec
+    ! ...so if we are passing to IMATDA, we just need to pass C(sig)
+    ! Here, SWDIS(IS) is my C(sig)
+
+    aorb=2.0*sqrt(ETOT)
+    USIGTOP=URMSTOP*SQRT(2.0)
+    Re=4.0*USIGTOP*aorb/nu_air
+    IF(Re > Re_crit)then
+       DO IS=1, ISSTOP
+!      Apparent bug in v54: Urmstop is used where Usigtop should be used...corrected in v55
+          SWDIS(IS) = RHOAW * 16.0 * feswell * SPCSIG(IS)**2  & ! note that "-1" omitted since LHS
+                      * USIGTOP / grav ! units of radian^2/s (radians/sec is conventional)
+       END DO
+    else
+       DO IS=1, ISSTOP
+          SWDIS(IS) = RHOAW * Cdsv * 2.0 * KWAVE(IS,1)  & ! note that "-1" omitted since LHS
+                      * SQRT(2.0 * NU_AIR * SPCSIG(IS)) ! units of radian^1.5/s (radians/sec is conventional)
+
+       END DO
+    endif
+
+    DO IS=1, ISSTOP
+       !         Only fill the values for the current sweep
+       DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+          ID = MOD(IDDUM - 1 + MDC, MDC) + 1
+          IMATDA(ID,IS)   = IMATDA(ID,IS)   + SWDIS(IS)
+          DISSC1(ID,IS,4) = DISSC1(ID,IS,4) + SWDIS(IS)
+       END DO
+    END DO
+
+    RETURN
+  END SUBROUTINE SSWELL
+
+!****************************************************************
+  SUBROUTINE BSWELL (A,WN,SPCSIG,IDCMIN,IDCMAX,ISSTOP,DISSC1,IMATDA,GRAV,feswell)
+
+    !****************************************************************
+    use swcomm3, ONLY :DDIR,MDC,MSC
+
+    IMPLICIT NONE
+
+    REAL, INTENT(IN)  :: A(MDC,MSC), WN(MSC)
+
+    INTEGER, INTENT(IN) :: ISSTOP
+    INTEGER, INTENT(IN) :: IDCMIN(:) ! IDCMIN(MSC)
+    INTEGER, INTENT(IN) :: IDCMAX(:) ! IDCMAX(MSC)
+
+    REAL   , INTENT(IN)    :: SPCSIG(:)  ! SPCSIG(MSC)
+
+    REAL   , INTENT(IN)    :: GRAV
+    REAL   , INTENT(IN)    :: feswell !This is same as B1 in WaveWatch
+
+    REAL   , INTENT(INOUT) :: IMATDA(:,:) ! IMATDA(MDC,MSC)
+    REAL   , INTENT(INOUT) :: DISSC1(:,:,:) ! DISSC1(1:MDC,1:MSC,1:MDISP)  
+
+    !   local variables:
+    INTEGER           :: IDDUM,ID
+    REAL              :: SWDIS(ISSTOP) ! this is S_SWELL / E(f,theta)
+    INTEGER           :: IS, ITH
+    REAL              :: ABAND(MSC)         ! action density per freq. bin
+!    REAL              :: U0(MSC),AORB(MSC)  ! orbital velocity (narrow banded)
+    REAL              :: DDIS(MSC)          ! dissipation term of derivative
+    reaL              :: DDEN(msc)
+    real	      :: k(mdc,msc),bn(msc),kmax(msc),B1
+!/
+!/ ------------------------------------------------------------------- /
+!/
+!                                            ! in form of WN(1:NK) == WN2(IKN).
+      ABAND = SUM(A,1)     ! action density as function of wavenumber
+      DDIS  = 0.
+
+      DDEN=DDIR*SPCSIG
+      DDEN(2:MSC-1)=0.5*DDEN(2:MSC-1)*(SPCSIG(3:MSC)-SPCSIG(1:MSC-2))
+      DDEN(1)=DDEN(1)*(SPCSIG(2)-SPCSIG(1))
+      DDEN(MSC)=DDEN(MSC)*(SPCSIG(MSC)-SPCSIG(MSC-1))
+!
+!/ X) --- Parameterise B1 as a function of wave steepness ------------ /
+!      U0    = SQRT(  2.0 * (ABAND * DDEN)  ) * SPCSIG
+!      AORB       = SQRT( 2.0 * (ABAND * DDEN) )
+
+! Replace with Banner saturation
+        KMAX = MAXVAL(A,1)
+        DO IS = 1,MSC
+           IF (KMAX(IS).LT.1.0E-34) THEN
+              K(1:MDC,IS) = 1.
+           ELSE
+              K(1:MDC,IS) = A(1:MDC,IS)/KMAX(IS)
+           END IF
+        END DO
+        BN   = ( ABAND * SPCSIG(1:MSC) * DDIR ) * WN**3 / (sum(K,1)*ddir)
+
+!/    --- A constant value for B1 attenuates swell too strong in the
+!/        western central Pacific (i.e. cross swell less than 1.0m).
+!/        Workaround is to scale B1 with steepness a*kp, where kp is
+!/        the peak wavenumber. SWL6B1 remains a scaling constant, but
+!/        with different magnitude.  --------------------------------- /
+        IS    = MAXLOC(ABAND,1)                ! Index for peak
+        B1    = feswell * ( 2. * SQRT(SUM(ABAND*DDEN)) * WN(IS) )
+!
+!
+!/ 2) --- The total turbulent spectral dissipation of narrow-banded 
+!         swell is SDIS = B1/3/GRAV * U0**3 (in units of m²/s). 
+!         Calculate the derivative term only.------------------------- /
+      DO Is = 1,ISSTOP
+         IF (ABAND(IS) .GT. 1.E-30) THEN
+	    DDIS(IS) = 0.6666666 * B1 * SPCSIG(IS) * BN(IS)
+         END IF
+      END DO
+!
+!
+!/ 3) --- Apply dissipation term of derivative to all directions 
+!         integral of D over all directions.------------------------- /
+      do is=1,isstop
+	DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+	 ID = MOD(IDDUM - 1 + MDC, MDC) + 1
+         IMATDA(ID,IS) = IMATDA(ID,IS)+ddis(is)
+         DISSC1(ID,IS,4) = DISSC1(ID,IS,4)+ddis(is)
+      END DO
+      enddo
+
+   end subroutine bswell
+
+  ! -------------------------------------------------------------------------------------------------------------------------------      
+  !       ====================================================
+
+  SUBROUTINE integrate(ansNum, x,y,np)
+    !       ====================================================
+
+    IMPLICIT NONE
+
+    !
+    !    Use Trapezoidal Rule to Integrate the area under the curve
+    !    specified by the data points in x and y
+    !
+    !    John Mahaffy 4/9/95
+    !
+    !
+    !   Local Variables
+    !
+    !    esterr   -   estimated error for Trapizoidal integration
+    !    sum2     -   Trapizoidal integration using every other available point
+    !
+
+    REAL             , INTENT(IN)  ::  X(:)
+    REAL             , INTENT(IN)  ::  Y(:)
+
+    integer i
+    !  real sum2, esterr
+    REAL          , INTENT(out) :: ANSNUM
+
+    INTEGER           , INTENT(IN) :: NP
+
+    ansnum=0.0
+    !  np=size(x) ! we cannot do this because array may be partially filled
+
+    do  i=1,np-1
+       ansnum=ansnum+.5*(y(i)+y(i+1))*(x(i+1)-x(i))
+    end do
+
+    !
+    !   The following only works if np is an odd integer
+    !
+    !  sum2=0.0
+    !  do  i=1,np-1,2
+    !     sum2=sum2+.5*(y(i)+y(i+2))*(x(i+2)-x(i))
+    !  end do
+
+
+    return
+  end  SUBROUTINE integrate
+  !    ----------------------------------------------------------------------------------     
+
+
+
+
+END MODULE SdsBabanin
