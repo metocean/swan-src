@@ -18,5 +18,8 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-model
+      args:
+        ftn: msl
+        mode: mpi
     volumes:
       - /source:/source
