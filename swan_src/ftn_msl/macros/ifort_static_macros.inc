@@ -9,12 +9,12 @@ FLAGS90_MSC = $(FLAGS_MSC)
 FLAGS_SER   =
 FLAGS_OMP   = -openmp
 FLAGS_MPI   = -fc=ifort
-INCS_SER    = -I/usr/include 
+INCS_SER    = -I/usr/local/include 
 INCS_OMP    =
-INCS_MPI    = -I/usr/include 
-LIBS_SER    = -L/usr/lib -lnetcdff -lnetcdf
+INCS_MPI    = -I/usr/local/include 
+LIBS_SER    = -L/usr/local/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
 LIBS_OMP    =
-LIBS_MPI    = -L/usr/lib -lnetcdff -lnetcdf
+LIBS_MPI    = -L/usr/local/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
 O_DIR       = ../work/odir4/
 OUT         = -o 
 EXTO        = o
