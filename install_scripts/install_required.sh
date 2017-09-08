@@ -72,7 +72,7 @@ mkdir -p ${logdir}
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-${NETCDF_FORTRAN_VERSION}.tar.gz
 tar zxvf netcdf-fortran-${NETCDF_FORTRAN_VERSION}.tar.gz
 cd netcdf-fortran-${NETCDF_FORTRAN_VERSION}
-./configure 2>&1 | tee ${logdir}/configure.log
+./configure --disable-dap --disable-shared --enable-static --disable-v2 2>&1 | tee ${logdir}/configure.log
 make 2>&1 | tee ${logdir}/make.log
 make install 2>&1 | tee ${logdir}/make_install.log
 nc-config --all 2>&1 | tee ${logdir}/nc-config.log
