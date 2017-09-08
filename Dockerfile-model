@@ -8,6 +8,7 @@ ARG mode
 ENV FTN=$ftn
 ENV MODE=$mode
 ENV INSTALL_SCRIPTS="/tmp/install_scripts"
+ENV SWAN_TEST="/home/metocean"
 ENV SWAN_SRC="/source/swan-src/swan_src"
 
 # Compile and install model
@@ -15,6 +16,9 @@ COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan.sh $INSTALL_SCRIPTS/
 RUN sh $INSTALL_SCRIPTS/install_swan.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan.sh
+
+# Copy SWAN test data
+COPY test_data/swan_test_data.tar.gz $SWAN_TEST/
 
 # copy entrypoint
 COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
