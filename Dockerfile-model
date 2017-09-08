@@ -1,18 +1,20 @@
 FROM metocean/swan:base
 MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
 
-# Set required environment variables
-ENV INSTALL_SCRIPTS="/tmp/install_scripts"
+ARG ftn
+ARG mode
 
-# Install mpich2
-COPY docker/install_scripts/install_mpich2.sh $INSTALL_SCRIPTS/
-RUN yum -y remove mpich
-RUN sh $INSTALL_SCRIPTS/install_mpich2.sh
+# Set required environment variables
+ENV FTN=$ftn
+ENV MODE=$mode
+ENV INSTALL_SCRIPTS="/tmp/install_scripts"
+ENV SWAN_SRC="/source/swan-src/swan_src"
 
 # Compile and install model
-COPY docker/install_scripts/install_model.sh $INSTALL_SCRIPTS/
-COPY ww3_src /source/ww3-src/ww3_src
-RUN sh $INSTALL_SCRIPTS/install_model.sh $physics
+COPY swan_src $SWAN_SRC
+COPY install_scripts/install_swan.sh $INSTALL_SCRIPTS/
+RUN sh $INSTALL_SCRIPTS/install_swan.sh &&\
+    rm -f $INSTALL_SCRIPTS/install_swan.sh
 
 # copy entrypoint
-COPY docker/install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
+COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
