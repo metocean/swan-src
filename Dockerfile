@@ -6,6 +6,9 @@ ARG hdf5_version
 ARG netcdf_version
 ARG netcdf_fortran_version
 
+# Get rid of password need
+RUN echo /etc/sudoers >> "metocean   ALL = NOPASSWD: ALL"
+
 # Set required environment variables
 ENV MPICH_VERSION=$mpich_version
 ENV HDF5_VERSION=$hdf5_version
