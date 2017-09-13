@@ -10,10 +10,10 @@ FLAGS_SER   =
 FLAGS_OMP   = -openmp
 FLAGS_MPI   = -fc=ifort
 INCS_SER    = -I/usr/local/include 
-INCS_OMP    =
+INCS_OMP    = -I/usr/local/include
 INCS_MPI    = -I/usr/local/include 
 LIBS_SER    = -L/usr/local/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
-LIBS_OMP    =
+LIBS_OMP    = -L/usr/local/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
 LIBS_MPI    = -L/usr/local/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz
 O_DIR       = ../work/odir4/
 OUT         = -o 
