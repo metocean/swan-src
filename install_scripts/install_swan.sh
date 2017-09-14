@@ -7,20 +7,22 @@ source /opt/intel/bin/iccvars.sh intel64
 source /opt/intel/bin/ifortvars.sh intel64
 source /opt/intel/bin/compilervars.sh intel64
 
-# for some reason mpif90 does not automatically end up on the search path; and
-# we don't want to use the intel mpiexec either, so prepending this after
-# sourcing ifortvars.sh is good anyway :)
-export PATH=/usr/lib64/mpich/bin/:$PATH
+INSTALL_DIR=/usr/local/bin
+echo "SWAN install dir: $INSTALL_DIR"
 
-# Build model
-echo "Building $FTN version of SWAN in  $MODE mode"
-cd $SWAN_SRC/ftn_$FTN
-make clean
-(make $MODE 2>&1) | tee build.log
+# Building MPI and Serial versions (OMP not working for some reason)
+for mode in mpi ser; do
+    echo "Building $FTN version of SWAN in $mode mode"
+    cd $SWAN_SRC/ftn_$FTN
+    make clean
+    (make $mode 2>&1) | tee build_$mode.log
+    mv swan.exe $INSTALL_DIR/swan_$mode.exe
+done
 
-# Move binary and clean up
-echo "Moving SWAN binary to /usr/local/bin"
-mv swan.exe /usr/local/bin/
+# Setting default binary and cleaning up
+echo "Setting default SWAN binary: swan_$DEFAULT_MODE.exe --> swan.exe"
+cd $INSTALL_DIR
+ln -s swan_$DEFAULT_MODE.exe swan.exe
 cd /home/metocean
 rm -rf $SWAN_SRC
 

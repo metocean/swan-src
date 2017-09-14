@@ -2,8 +2,9 @@ version: '2'
 
 services:
 
-  base:
-    image: metocean/swan:base
+  # Install ifort and libraries required for static model compilation
+  comp:
+    image: metocean/swan:comp
     build:
       context: ./
       dockerfile: Dockerfile
@@ -13,6 +14,7 @@ services:
         netcdf_version: 4.4.1
         netcdf_fortran_version: 4.4.4
 
+  # Build and install model binaries
   model:
     image: metocean/swan:model-v40.91
     build:
@@ -20,6 +22,6 @@ services:
       dockerfile: Dockerfile-model
       args:
         ftn: msl
-        mode: mpi
+        default_mode: mpi
     volumes:
       - /source:/source

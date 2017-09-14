@@ -25,7 +25,7 @@ http://swanmodel.sourceforge.net/
 2. ## Dockerfile-model
 ### Args:
 - ftn (msl | stock)
-- mode (mpi | omp | ser)
+- default_mode (mpi | ser)
 
 ### Tasks:
 - Copy source code from /source/swan-src/swan_src/ftn_$FTN in source

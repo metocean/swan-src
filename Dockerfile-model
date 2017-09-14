@@ -1,12 +1,12 @@
-FROM metocean/swan:base
+FROM metocean/swan:comp
 MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
 
 ARG ftn
-ARG mode
+ARG default_mode
 
 # Set required environment variables
 ENV FTN=$ftn
-ENV MODE=$mode
+ENV DEFAULT_MODE=$default_mode
 ENV INSTALL_SCRIPTS="/tmp/install_scripts"
 ENV SWAN_TEST="/home/metocean"
 ENV SWAN_SRC="/source/swan-src/swan_src"
