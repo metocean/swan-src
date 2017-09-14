@@ -23,5 +23,5 @@ services:
       args:
         ftn: msl
         default_mode: mpi
-    volumes:
-      - /source:/source
+    depends_on:
+      - comp
