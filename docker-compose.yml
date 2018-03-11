@@ -16,7 +16,7 @@ services:
 
   # Build and install model binaries
   model:
-    image: metocean/swan:model-v40.91
+    image: metocean/swan:model
     build:
       context: ./
       dockerfile: Dockerfile-model
@@ -25,3 +25,8 @@ services:
         default_mode: mpi
     depends_on:
       - comp
+
+  # Testing service for bob
+  test_model:
+    image: metocean/swan:model
+    command: ls /usr/local/bin/swan.exe
