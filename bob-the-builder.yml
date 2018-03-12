@@ -2,7 +2,7 @@ docker_compose:
     file: docker-compose.yml
     test_service: test_model
     services_to_push:
-      "metocean/swan:comp": "metocean/swan:comp"
-      "metocean/swan:model": "metocean/swan:model"
+        "metocean/swan:comp": "metocean/swan:comp"
+        "metocean/swan:model": "metocean/swan:model"
 notification_emails:
-- r.guedes@metocean.co.nz
+    - r.guedes@metocean.co.nz
