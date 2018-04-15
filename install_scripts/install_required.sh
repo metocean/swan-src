@@ -6,7 +6,6 @@ set -e
 source /opt/intel/bin/iccvars.sh intel64
 source /opt/intel/bin/ifortvars.sh intel64
 source /opt/intel/bin/compilervars.sh intel64
-
 # Set compilers and flags
 export FC=ifort
 export CC=icc
