@@ -6,3 +6,4 @@ docker_compose:
         "metocean/swan:model": "metocean/swan:model"
 notification_emails:
     - r.guedes@metocean.co.nz
+    - h.rapizo@metocean.co.nz
