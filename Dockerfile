@@ -7,7 +7,7 @@ ARG hdf5_version
 ARG netcdf_version
 ARG netcdf_fortran_version
 
-# copy built intel compilers from previous stage into new docker stage
+# copy intel compiler from ifort image
 COPY --from=0 /opt/intel /opt/intel
 
 # Get rid of password need
@@ -26,10 +26,6 @@ RUN yum -y remove mpich* hdf5* netcdf* &&\
 
 # Copy keys to root for github access
 RUN ln -sf /home/metocean/.ssh /root/
-
-# Download ifort from server
-# ADD install_scripts/download_intel.sh /tmp/
-# RUN cd /tmp && sh download_intel.sh
 
 # Install model requirements
 ADD install_scripts/install_required.sh /tmp/
