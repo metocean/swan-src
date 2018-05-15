@@ -25,9 +25,18 @@ services:
         default_mode: mpi
     depends_on:
       - comp
+  
+  # Build test image  (include nco for model testing)
+  test:
+    image: metocean/swan:test
+    build:
+      context: ./
+      dockerfile: Dockerfile-test
+    depends_on:
+      - model
 
-  test_model:
-    image: metocean/swan:model
+  test_model: 
+    image: metocean/swan:test
     command: python /source/swan-src/tests/run_tinyapp.py
     volumes:
       - /source/swan-src/tests:/source/swan-src/tests
