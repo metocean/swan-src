@@ -28,6 +28,7 @@ services:
 
   test_model:
     image: metocean/swan:model
-    command: mpiexec -n 2 /usr/local/bin/swan.exe /source/swan-src/tests/tinyapp/par.20180513_00z.swn
+    command: python /source/swan-src/tests/run_tinyapp.py
     volumes:
-      - /source/swan-src/tests/tinyapp:/source/swan-src/tests/tinyapp
+      - /source/swan-src/tests:/source/swan-src/tests
+      - /source/swan/bin/exe/swan.exe:/source/swan/bin/exe/swan.exe
