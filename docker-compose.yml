@@ -28,7 +28,7 @@ services:
   
   # Build test image  (include nco for model testing)
   test:
-    image: metocean/swan:test
+    image: metocean/swan:modeltest
     build:
       context: ./
       dockerfile: Dockerfile-test
