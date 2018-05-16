@@ -5,8 +5,7 @@ import shutil
 from datetime import datetime
 from nco import Nco
 
-# BASEDIR = '/home/metocean'
-BASEDIR = '/source/swan-src/tests'
+BASEDIR = '/home/metocean'
 TESTDIR = os.path.join(BASEDIR, "{:%Y%m%d%H%M%S}".format(datetime.now()))
 CTRLDIR = os.path.join(BASEDIR, 'tinyapp')
 TARBALL = '/source/swan-src/tests/tinyapp.tar.gz'
@@ -33,8 +32,9 @@ subprocess.call(command)
 nco = Nco()
 varnames = ['hs','tp','dpm','ugrd10m','vgrd10m','hs_sw','tp_sw','dpm_sw']
 for varname in varnames:
+    print('...checking: {}'.format(varname))
     maxfile  = './maxdif-{}.nc'.format(varname)
     varmax = nco.ncwa(input=rdiffile, op_typ='max', variable=[varname], output=maxfile, returnArray=varname).data
 
     if varmax > 0.05:
-        raise Exception(' Maximum Relative {} difference = {:g} %%' %(varname.title(), varmax*100))
+        raise Exception('Maximum Relative {} difference = {:g} %'.format(varname.title(), varmax*100))
