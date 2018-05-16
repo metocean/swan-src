@@ -2,3 +2,6 @@ FROM metocean/swan:model
 MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
 
 RUN yum -y install nco
+RUN pip install --upgrade --no-cache-dir ipython==5 \                                         
+                                         nco
+RUN pip install --upgrade --no-cache-dir netCDF4                                     
