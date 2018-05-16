@@ -4,6 +4,7 @@ docker_compose:
     services_to_push:
         "metocean/swan:comp": "metocean/swan:comp"
         "metocean/swan:model": "metocean/swan:model"
+        "metocean/swan:modeltest": "metocean/swan:modeltest"
 notification_emails:
     - r.guedes@metocean.co.nz
     - h.rapizo@metocean.co.nz
