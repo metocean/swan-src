@@ -1,27 +1,29 @@
 import os
 import subprocess
 import logging
+import shutil
 from datetime import datetime
 from nco import Nco
 
-MODELDIR = '/source/swan-src/tests/tinyapp'
-os.chdir(MODELDIR)
+# BASEDIR = '/home/metocean'
+BASEDIR = '/source/swan-src/tests'
+TESTDIR = os.path.join(BASEDIR, "{:%Y%m%d%H%M%S}".format(datetime.now()))
+CTRLDIR = os.path.join(BASEDIR, 'tinyapp')
+TARBALL = '/source/swan-src/tests/tinyapp.tar.gz'
 
-TESTDIR = "{:%Y%m%d%H%M%S}".format(datetime.now())
-os.makedirs(TESTDIR) # create new folder with time name
-os.chmod(TESTDIR, 0o777)
-os.system('rsync -a * '+TESTDIR+'/ --exclude '+TESTDIR) # copy test files to new folder
-
+os.system('tar -xzvf {} -C {}'.format(TARBALL, BASEDIR))
+shutil.copytree(CTRLDIR, TESTDIR)
 os.chdir(TESTDIR)
+
 os.system('rm -rf out/*') # copy test files to new folder
-os.system('mpiexec -n 2 swan.exe par.20180513_00z.swn')
+jobstr = 'mpiexec -n 2 swan.exe par.20180513_00z.swn'
+os.system(jobstr)
 
 # compare results from newly build model with old one
-oldfile  = '../out/par.20180513_00z.nc'
-newfile  = './out/par.20180513_00z.nc'
+oldfile  = os.path.join(CTRLDIR, 'out/par.20180513_00z.nc')
+newfile  = os.path.join(TESTDIR, './out/par.20180513_00z.nc')
 diffile  = './dif.nc'
 rdiffile = './reldif.nc'
-maxfile  = './maxdif.nc'
 command  = ('ncdiff', oldfile, newfile, diffile) 
 subprocess.call(command)
 command  = ('ncbo','--op_typ=/', diffile, oldfile, rdiffile)
@@ -29,8 +31,10 @@ subprocess.call(command)
 
 # define min/max/avg values of the difference
 nco = Nco()
-hsmax = nco.ncwa(input=rdiffile, op_typ='max', variable=['hs','tp'], output=maxfile, returnArray='hs').data
-tpmax = nco.ncwa(input=rdiffile, op_typ='max', variable=['hs','tp'], output=maxfile, returnArray='tp').data
+varnames = ['hs','tp','dpm','ugrd10m','vgrd10m','hs_sw','tp_sw','dpm_sw']
+for varname in varnames:
+    maxfile  = './maxdif-{}.nc'.format(varname)
+    varmax = nco.ncwa(input=rdiffile, op_typ='max', variable=[varname], output=maxfile, returnArray=varname).data
 
-if hsmax>0.05: logging.warning(' Maximum Relative Hs difference = %g %%' %(hsmax*100))
-if tpmax>0.05: logging.warning(' Maximum Relative Tp difference = %g %%' %(tpmax*100))
+    if varmax > 0.05:
+        raise Exception(' Maximum Relative {} difference = {:g} %%' %(varname.title(), varmax*100))
