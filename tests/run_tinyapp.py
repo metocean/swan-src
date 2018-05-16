@@ -21,8 +21,8 @@ os.system(jobstr)
 # compare results from newly build model with old one
 oldfile  = os.path.join(CTRLDIR, 'out/par.20180513_00z.nc')
 newfile  = os.path.join(TESTDIR, './out/par.20180513_00z.nc')
-diffile  = './dif.nc'
-rdiffile = './reldif.nc'
+diffile  = os.path.join(TESTDIR, './dif.nc')
+rdiffile = os.path.join(TESTDIR, './reldif.nc')
 command  = ('ncdiff', oldfile, newfile, diffile) 
 subprocess.call(command)
 command  = ('ncbo','--op_typ=/', diffile, oldfile, rdiffile)
