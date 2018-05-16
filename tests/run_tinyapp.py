@@ -8,7 +8,7 @@ from nco import Nco
 BASEDIR = '/home/metocean'
 TESTDIR = os.path.join(BASEDIR, "{:%Y%m%d%H%M%S}".format(datetime.now()))
 CTRLDIR = os.path.join(BASEDIR, 'tinyapp')
-TARBALL = '/source/swan-src/tests/tinyapp.tar.gz'
+TARBALL = os.path.join(BASEDIR, 'tinyapp.tar.gz')
 
 os.system('tar -xzvf {} -C {}'.format(TARBALL, BASEDIR))
 shutil.copytree(CTRLDIR, TESTDIR)

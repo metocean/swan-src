@@ -37,7 +37,4 @@ services:
 
   test_model: 
     image: metocean/swan:modeltest
-    command: python /source/swan-src/tests/run_tinyapp.py
-    volumes:
-      - /source/swan-src/tests:/source/swan-src/tests
-      - /source/swan/bin/exe/swan.exe:/source/swan/bin/exe/swan.exe
+    command: python /usr/local/bin/run_tinyapp.py
