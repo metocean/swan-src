@@ -6,7 +6,7 @@ from datetime import datetime
 from nco import Nco
 
 BASEDIR = '/home/metocean'
-TESTDIR = os.path.join(BASEDIR, "{:%Y%m%d%H%M%S}".format(datetime.now()))
+TESTDIR = os.path.join(BASEDIR, 'newrun')
 CTRLDIR = os.path.join(BASEDIR, 'tinyapp')
 TARBALL = os.path.join(BASEDIR, 'tinyapp.tar.gz')
 

@@ -26,7 +26,7 @@ services:
     depends_on:
       - comp
   
-  # Build test image  (include nco for model testing)
+  # Build test image
   test:
     image: metocean/swan:modeltest
     build:
@@ -35,6 +35,6 @@ services:
     depends_on:
       - model
 
-  test_model: 
+  test_model:
     image: metocean/swan:modeltest
     command: python /usr/local/bin/run_tinyapp.py

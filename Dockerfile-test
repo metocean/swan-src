@@ -3,7 +3,7 @@ MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
 
 RUN yum -y install nco
 RUN pip install --upgrade --no-cache-dir ipython==5 nco                                         
-RUN pip install --upgrade --no-cache-dir netCDF4 ipdb
+RUN pip install --upgrade --no-cache-dir netCDF4
 
 # copy since mounting does not work with bob
 COPY tests/run_tinyapp.py /usr/local/bin/
