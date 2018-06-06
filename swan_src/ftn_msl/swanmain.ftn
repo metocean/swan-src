@@ -2085,7 +2085,8 @@
       OVKEYW(IVTYPE) = 'HSWELL'                                             40.00
       OVSNAM(IVTYPE) = 'hs_sw'
       OVLNAM(IVTYPE) = 'Wave height of swell part'
-      OVCNAM(IVTYPE) = 'sea_surface_over_8s_wave_significant_height'
+      OVCNAM(IVTYPE) = 'sea_surface_above_8s_period_wave_
+     &significant_height'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -2466,8 +2467,8 @@
       OVKEYW(IVTYPE) = 'DPMSEA'
       OVSNAM(IVTYPE) = 'dpm_sea'
       OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_under_8s_wave_from_
-     &direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_below_8s_period_wave_
+     &from_direction_at_variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI                                                30.72
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2480,8 +2481,8 @@
       OVKEYW(IVTYPE) = 'DPMSW'
       OVSNAM(IVTYPE) = 'dpm_sw'
       OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'
-      OVCNAM(IVTYPE) = 'sea_surface_over_8s_wave_from_
-     &direction_at_variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_above_8s_period_wave_
+     &from_direction_at_variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UDI
       OVSVTY(IVTYPE) = 2
       OVLLIM(IVTYPE) = 0.
@@ -2494,8 +2495,8 @@
       OVKEYW(IVTYPE) = 'TPSEA'
       OVSNAM(IVTYPE) = 'tp_sea'
       OVLNAM(IVTYPE) = 'Peak period of sea'
-      OVCNAM(IVTYPE) = 'sea_surface_under_8s_wave_period_at_
-     &variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_below_8s_period_wave_
+     &period_at_variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -2508,8 +2509,8 @@
       OVKEYW(IVTYPE) = 'TPSW'
       OVSNAM(IVTYPE) = 'tp_sw'
       OVLNAM(IVTYPE) = 'Peak period of swell'
-      OVCNAM(IVTYPE) = 'sea_surface_over_8s_wave_period_at_
-     &variance_spectral_density_maximum'
+      OVCNAM(IVTYPE) = 'sea_surface_above_8s_period_wave_
+     &period_at_variance_spectral_density_maximum'
       OVUNIT(IVTYPE) = UT
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
@@ -2523,7 +2524,8 @@
       OVKEYW(IVTYPE) = 'HSSEA'
       OVSNAM(IVTYPE) = 'hs_sea'
       OVLNAM(IVTYPE) = 'Wave height of sea part'
-      OVCNAM(IVTYPE) = 'sea_surface_under_8s_wave_significant_height'
+      OVCNAM(IVTYPE) = 'sea_surface_below_8s_period_wave_
+     &significant_height'
       OVUNIT(IVTYPE) = UH
       OVSVTY(IVTYPE) = 1
       OVLLIM(IVTYPE) = 0.
