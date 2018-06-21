@@ -49,7 +49,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -186,7 +186,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -530,6 +530,10 @@
 !TIMG        CALL SWTSTA(5)                                                    40.23
         CALL SWRBC(COMPDA)                                                40.31
 !TIMG        CALL SWTSTO(5)                                                    40.23
+
+!       --- setup a vertex list
+
+        IF (OPTG.EQ.5) CALL SwanVertlist(COMPDA)
 
 !       --- allocate AC1 in case of non-stationary situation or in case   40.31
 !           of using the S&L scheme                                       40.31
@@ -1004,7 +1008,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1165,7 +1169,7 @@
       VERTXT = BLANK                                                      40.03
       VERNUM = 41.20
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-!      CALL BUGFIX ('A')
+      CALL BUGFIX ('A')
 !      CALL BUGFIX ('B')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
@@ -1276,6 +1280,8 @@
       FULCIR = .TRUE.
       SPDIR1 = 0.
       asort  = -999.                                                      41.48
+      usort  = -999.                                                      41.68
+      nsweep = -999                                                       41.68
       CCURV  = .FALSE.                                                    41.53
 !     number of points needed in computational stencil:
       ICMAX  = 5
@@ -3585,7 +3591,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3677,15 +3683,20 @@
 !       ----------------------------------------------------------------
 !
 ! 10. SOURCE TEXT
+      PARAMETER  (NUNT=20)                        ! m2/s
       INTEGER   KGRPNT(MXC,MYC), CROSS(2,MCGRD)
       INTEGER   BGRIDP(6*NBGRPT)                                          40.31
       REAL      BSPECS(MDC,MSC,NBSPEC,2)                                  40.31
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
+      INTEGER   IUNT(NUNT)
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
       TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
       SAVE IENT
       DATA IENT/0/
+      SAVE IUNT
+      DATA IUNT /7, 9, 54, 55, 56, 57, 60, 61, 62, 63,
+     &           64, 65, 66, 67, 68, 69, 72, 73, 74, 75/
       CALL STRACE (IENT, 'SWPREP')
 !
       IF ( ITEST.GE.100 ) THEN                                            40.31
@@ -3748,6 +3759,31 @@
       IF (IFLDYN(1).EQ.1 .OR. IFLDYN(7).EQ.1) DYNDEP = .TRUE.             40.00
 !
       IF (OPTG.EQ.5) BNDCHK = .FALSE.                                     40.80
+!
+!     check number of sweeps meant for unstructured grid
+      IF ( nsweep.EQ.-999 ) THEN                                          41.68
+!        if nsweep = 1, the original crest method is recovered, however   41.68
+!        for stationary runs including refraction and source terms,       41.68
+!        nsweep is set to 3 (CPU time enhanced, but number of             41.68
+!        iterations decreased compared to nsweep = 1)                     41.68
+         nsweep = 3                                                       41.68
+         IF ( IREFR == 0 ) nsweep = 4                                     41.68
+         IF ( IQUAD == 0 .AND. IWCAP == 0 .AND. ISURF == 0 ) nsweep = 4   41.68
+         IF ( OFFSRC ) nsweep = 4                                         41.68
+         IF ( NSTATM == 1 ) nsweep = 3                                    41.68
+      ENDIF
+!
+!     adapt units in case of true energy
+      IF ( INRHOG.EQ.1 ) THEN
+         DO J = 1, NUNT
+            IVTYPE = IUNT(J)
+            OVUNIT(IVTYPE) = 'W/m2'
+         ENDDO
+         OVUNIT(19) = 'W/m'
+         OVUNIT(21) = 'Js/m2'
+         OVUNIT(22) = 'J/m2'
+         OVUNIT(29) = 'J/m2'
+      ENDIF
 !
 !     check wind drag
       IF (IWIND.EQ.8) THEN                                                40.88
@@ -3889,8 +3925,10 @@
          ATMP = PI2 * (ALTMP - NINT(ALTMP))
       ENDIF
 !
+!     set sweep direction based on either incoming wave direction
+!     or wind direction, if user-given direction not specified
       IF ( .NOT. asort.NE.-999. ) THEN                                    41.48
-         IF ( NSTATM == 0 ) THEN
+         IF ( NSTATM == 0 .OR. NBFILS == 0 ) THEN
             IF (ATMP.NE.-999. .OR. IWIND.EQ.0 .OR. VARWI) THEN
                asort = ATMP
             ELSE
@@ -3980,7 +4018,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4369,7 +4407,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4890,7 +4928,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5293,7 +5331,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5422,7 +5460,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5552,7 +5590,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5727,7 +5765,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5826,7 +5864,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6197,7 +6235,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6819,7 +6857,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7296,7 +7334,7 @@
 !
           IF (NSTATF) WRITE (PRINTF, 287) BTYPE, TIMF2
  287      FORMAT
-     &         (' Boundary data type ', A, ' processed, time: ', F10.1)
+     &         (' Boundary data type ', A, ' processed, time: ', F12.0)
 !
 !        cycle back to top of loop
           CYCLE GLOOP                                                     40.05
@@ -7439,7 +7477,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7881,7 +7919,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8264,7 +8302,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -8561,7 +8599,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
