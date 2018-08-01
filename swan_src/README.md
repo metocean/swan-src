@@ -1,7 +1,8 @@
 # Patching MSL changes into SWAN source code
+
 Assumes source code is organised in the following structure:
 
-```
+```bash
 |- swan-src
    |- swan_src
       |- ftn_stock
@@ -25,7 +26,7 @@ The changes can be implemented in new SWAN releases by following the steps below
 
 ## Create MSL patch from previous version of source code
 
-```
+```bash
 git checkout {PREVIOUS-SRC-VERSION}
 cd /source/swan-src/swan_src
 diff -Naur ftn_stock ftn_msl > patch.txt
@@ -33,7 +34,7 @@ diff -Naur ftn_stock ftn_msl > patch.txt
 
 ## Apply MSL patch into current version of source code
 
-```
+```bash
 git checkout {CURRENT-SRC-VERSION}
 patch -p0 < patch.txt
 ```
