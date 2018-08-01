@@ -306,12 +306,16 @@
          OPEN (UNIT=SCREEN, FILE=SCRFIL, ERR=960)                         34.01
       ENDIF
       IF (LREAD) THEN
-         IF (INPFIL.NE.'    ') THEN
-            OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                 40.41
-!CVIS     &            SHARED,                                                 40.41
-     &            ERR=910)                                                40.41
-         ENDIF
-         CALL RDINIT
+        IF (INPFIL.NE.'    ') THEN                                        MSL
+          IF (IARG().GT.0) THEN                                           MSL
+            CALL GETARG(1, INPFIL)                                        MSL
+          ENDIF                                                           MSL
+          PRINT*, 'Opening ', INPFIL                                      MSL
+          OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                   MSL
+!CVIS     &        SHARED,                                                     40.41
+     &          ERR=910)                                                  MSL
+        ENDIF                                                             MSL
+        CALL RDINIT
       ENDIF
 !
       RETURN
