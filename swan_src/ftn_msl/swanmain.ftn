@@ -1201,7 +1201,7 @@
       UT     = 'sec'
       UL     = 'm'
       UET    = 'm3/s'
-      UDI    = 'degr'
+      UDI    = 'degree'
       UST    = 'm2/s2'
       UF     = 'N/m2'
       UP     = 'W/m'
@@ -2671,6 +2671,92 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
+!
+!     IVTYPE 80-99 RESERVED FOR MSL OUTPUT
+!
+      IVTYPE = 80                                                         MSL
+      OVKEYW(IVTYPE) = 'DPM'                                              MSL
+      OVSNAM(IVTYPE) = 'dpm'                                              MSL
+      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'                  MSL
+      OVUNIT(IVTYPE) = UDI                                                MSL
+      OVSVTY(IVTYPE) = 2                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 360.                                               MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 360.                                               MSL
+      OVEXCV(IVTYPE) = -999.                                              MSL
+!
+      IVTYPE = 81                                                         MSL
+      OVKEYW(IVTYPE) = 'DPMSEA'                                           MSL
+      OVSNAM(IVTYPE) = 'dpmsea'                                           MSL
+      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'              MSL
+      OVUNIT(IVTYPE) = UDI                                                MSL
+      OVSVTY(IVTYPE) = 2                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 360.                                               MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 360.                                               MSL
+      OVEXCV(IVTYPE) = -999.                                              MSL
+!
+      IVTYPE = 82                                                         MSL
+      OVKEYW(IVTYPE) = 'DPMSWE'                                           MSL
+      OVSNAM(IVTYPE) = 'dpmswe'                                           MSL
+      OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'            MSL
+      OVUNIT(IVTYPE) = UDI                                                MSL
+      OVSVTY(IVTYPE) = 2                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 360.                                               MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 360.                                               MSL
+      OVEXCV(IVTYPE) = -999.                                              MSL
+!
+      IVTYPE = 83                                                         MSL
+      OVKEYW(IVTYPE) = 'TPSSEA'                                           MSL
+      OVSNAM(IVTYPE) = 'tpssea'                                           MSL
+      OVLNAM(IVTYPE) = 'Peak period of sea'                               MSL
+      OVUNIT(IVTYPE) = UT                                                 MSL
+      OVSVTY(IVTYPE) = 1                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 1000.                                              MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 100.                                               MSL
+      OVEXCV(IVTYPE) = -9.                                                MSL
+!
+      IVTYPE = 84                                                         MSL
+      OVKEYW(IVTYPE) = 'TPSSWE'                                           MSL
+      OVSNAM(IVTYPE) = 'tpsswe'                                           MSL
+      OVLNAM(IVTYPE) = 'Peak period of swell'                             MSL
+      OVUNIT(IVTYPE) = UT                                                 MSL
+      OVSVTY(IVTYPE) = 1                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 1000.                                              MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 100.                                               MSL
+      OVEXCV(IVTYPE) = -9.                                                MSL
+!
+      IVTYPE = 85                                                         MSL
+      OVKEYW(IVTYPE) = 'HSEA'                                             MSL
+      OVSNAM(IVTYPE) = 'hsea'                                             MSL
+      OVLNAM(IVTYPE) = 'Wave height of sea part'                          MSL
+      OVUNIT(IVTYPE) = UH                                                 MSL
+      OVSVTY(IVTYPE) = 1                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 100.                                               MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 100.                                                MSL
+      OVEXCV(IVTYPE) = -9.                                                MSL
+!
+      IVTYPE = 86                                                         MSL
+      OVKEYW(IVTYPE) = 'SWE'                                              MSL
+      OVSNAM(IVTYPE) = 'swe'                                              MSL
+      OVLNAM(IVTYPE) = 'Spectral bandwidth'                               MSL
+      OVUNIT(IVTYPE) = ' '                                                MSL
+      OVSVTY(IVTYPE) = 1                                                  MSL
+      OVLLIM(IVTYPE) = 0.                                                 MSL
+      OVULIM(IVTYPE) = 1.                                                 MSL
+      OVLEXP(IVTYPE) = 0.                                                 MSL
+      OVHEXP(IVTYPE) = 1.                                                 MSL
+      OVEXCV(IVTYPE) = -9                                                 MSL
 !
       IVTYPE = 100                                                        41.62
       OVKEYW(IVTYPE) = 'PTHS'                                             41.62

@@ -755,7 +755,9 @@
      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
-     &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
+     &       IVTYPE.EQ.80 .OR. IVTYPE.EQ.81 .OR. IVTYPE.EQ.82 .OR.        MSL
+     &       IVTYPE.EQ.83 .OR. IVTYPE.EQ.84 .OR. IVTYPE.EQ.85 .OR.        MSL
+     &       IVTYPE.EQ.86 .OR. IVTYPE.EQ.58                        )      MSL 40.64 40.61 40.51 40.41 40.00
      &   BKC = MAX (1, BKC)
 !
 !        for some quantities also compute Depth, current, K and Cg
@@ -3114,7 +3116,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=93)                                               41.62 41.15 40.64 40.51 40.41 40.00
+      PARAMETER  (NVOTP=101)                                              MSL 41.62 41.15 40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
@@ -3133,17 +3135,21 @@
 !
       LOGICAL    OQPROC(*), EQREAL                                        30.72
       LOGICAL :: EXCPT     ! if true value in point is undefined          40.86
+      REAL ISIGP(0:2)                                                     MSL
+      INTEGER IPART                                                       MSL
       SAVE IENT, IVOTP
       DATA IENT /0/
-      DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
+      DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19,                 MSL 20.61
+     &            28, 32, 33, 39, 42, 43, 44, 47, 48, 53,                 MSL 41.15 40.64 40.51 40.41 40.00
+     &            58, 59, 71, 80, 81, 82, 83, 84, 85, 86,                 MSL
      &            100, 101, 102, 103, 104, 105, 106, 107, 108, 109,       41.62
      &            110, 111, 112, 113, 114, 115, 116, 117, 118, 119,       41.62
      &            120, 121, 122, 123, 124, 125, 126, 127, 128, 129,       41.62
      &            130, 131, 132, 133, 134, 135, 136, 137, 138, 139,       41.62
      &            140, 141, 142, 143, 144, 145, 146, 147, 148, 149,       41.62
      &            150, 151, 152, 153, 154, 155, 156, 157, 158, 159,       41.62
-     &            160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 171,  41.62
-     &            42, 43, 44, 47, 48, 53, 58, 59, 71/                     41.15 40.64 40.51 40.41 40.00
+     &            160, 161, 162, 163, 164, 165, 166, 167, 168, 169,       MSL 41.62
+     &            171/                                                    MSL 41.62
       CALL STRACE (IENT, 'SWOEXA')
 !
 !     in case of transport of energy, compute the energy flux in all grid points
@@ -3210,47 +3216,52 @@
 !       significant wave height
 !
         IVTYPE = 10
-        IF (OQPROC(IVTYPE)) THEN
+        IVTYPE2 = 85                                                      MSL
+        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2)) THEN                       MSL
           IF (OUTPAR(6).EQ.0.) THEN                                       40.87
-!            integration over [0,inf]                                     40.87
-             ETOT = 0.
-!            trapezoidal rule is applied
-             DO ID=1, MDC
-               DO IS=2,MSC
-                 DS=SPCSIG(IS)-SPCSIG(IS-1)                               30.72
-                 EAD = 0.5*(SPCSIG(IS)*ACLOC(ID,IS)+                      30.72
-     &                      SPCSIG(IS-1)*ACLOC(ID,IS-1))*DS*DDIR          30.72
-                 ETOT = ETOT + EAD
-               ENDDO
-               IF (MSC .GT. 3) THEN                                       10.20
-!                contribution of tail to total energy density
-                 EHFR = ACLOC(ID,MSC) * SPCSIG(MSC)                       30.72
-                 ETOT = ETOT + DDIR * EHFR * SPCSIG(MSC) * EFTAIL         30.72
-               ENDIF
-             ENDDO
+!           integration over [0,inf]                                      40.87
+            ETOT = 0.
+!           trapezoidal rule is applied
+            DO ID=1, MDC
+              DO IS=2,MSC
+                DS=SPCSIG(IS)-SPCSIG(IS-1)                                30.72
+                EAD = 0.5*(SPCSIG(IS)*ACLOC(ID,IS)+                       30.72
+     &                     SPCSIG(IS-1)*ACLOC(ID,IS-1))*DS*DDIR           30.72
+                ETOT = ETOT + EAD
+              ENDDO
+              IF (MSC .GT. 3) THEN                                        10.20
+!               contribution of tail to total energy density
+                EHFR = ACLOC(ID,MSC) * SPCSIG(MSC)                        30.72
+                ETOT = ETOT + DDIR * EHFR * SPCSIG(MSC) * EFTAIL          30.72
+              ENDIF
+            ENDDO
           ELSE                                                            40.87
-!            integration over [fmin,fmax]                                 40.87
-             FMIN = PI2*OUTPAR(21)                                        40.87
-             FMAX = PI2*OUTPAR(36)                                        40.87
-             ECS  = 1.                                                    40.87
-             ETOT = SwanIntgratSpc(0. , FMIN, FMAX, SPCSIG, SPCDIR(1,1),  40.87
-     &                             WK , ECS , 0.  , 0.    , ACLOC      ,  40.87
-     &                             1  )                                   40.87
+!           integration over [fmin,fmax]                                  40.87
+            FMIN = PI2*OUTPAR(21)                                         40.87
+            FMAX = PI2*OUTPAR(36)                                         40.87
+            ECS  = 1.                                                     40.87
+            ETOT = SwanIntgratSpc(0. , FMIN, FMAX, SPCSIG, SPCDIR(1,1),   40.87
+     &                            WK , ECS , 0.  , 0.    , ACLOC      ,   40.87
+     &                            1  )                                    40.87
           ENDIF                                                           40.87
-          IF (ETOT .GE. 0.) THEN                                          30.00
-            VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
-          ELSE
-            VOQ(IP,VOQR(IVTYPE)) = 0.                                     40.86
-          ENDIF
-          IF (ITEST.GE.100) THEN                                          40.00
-            WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
-          ENDIF
+          IF (OQPROC(IVTYPE)) THEN                                        MSL
+            IF (ETOT .GE. 0.) THEN                                        30.00
+              VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
+            ELSE
+              VOQ(IP,VOQR(IVTYPE)) = 0.                                   40.86
+            ENDIF
+            IF (TEST.GE.100) THEN                                         40.00
+              WRITE(PRINTF,222) IP,OVSNAM(IVTYPE),VOQ(IP,VOQR(IVTYPE))    40.00
+            ENDIF
+          ENDIF                                                           MSL
         ENDIF
 !
-!       swell wave height
+!       sea/swell wave height
 !
         IVTYPE = 44
-        IF (OQPROC(IVTYPE)) THEN
+        IVTYPE2 = 85                                                      MSL
+        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2)) THEN                       MSL
+        IF (OQPROC(IVTYPE2)) ETOT2=ETOT                                   MSL
           ETOT = 0.
           FSWELL = PI2 * OUTPAR(5)
 !         trapezoidal rule is applied
@@ -3270,6 +3281,7 @@
             ENDDO
             IF (SPCSIG(IS).GT.FSWELL) EXIT
           ENDDO
+          IF (OQPROC(IVTYPE)) THEN                                        MSL
           IF (ETOT .GE. 0.) THEN                                          30.00
             VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
           ELSE
@@ -3277,8 +3289,19 @@
           ENDIF
           IF (ITEST.GE.100) THEN                                          40.00
             WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
+          ENDIF
+          ENDIF
+          IF (OQPROC(IVTYPE2)) THEN                                       MSL
+          IF (ETOT .GE. 0.) THEN                                          MSL
+            VOQ(IP,VOQR(IVTYPE2)) = 4.*SQRT(ETOT2-ETOT)                   MSL
+          ELSE                                                            MSL
+            VOQ(IP,VOQR(IVTYPE2)) = 0.                                    MSL
+          ENDIF                                                           MSL
+          IF (ITEST.GE.100) THEN                                          MSL
+           WRITE(PRINTF,222) IP,OVSNAM(IVTYPE2),VOQ(IP,VOQR(IVTYPE2))     MSL
  222        FORMAT(' SWOEXA: POINT ', I5, 2X, A, 1X, E12.4)
           ENDIF
+        ENDIF
         ENDIF
 !
 !       average relative period                              modified 10.09
@@ -3477,28 +3500,40 @@
            ENDIF
         ENDIF
 !
-!       peak period
+!       peak period - also get for dpm
 !
-        IVTYPE = 12
-        IF (OQPROC(IVTYPE)) THEN
-           EMAX = 0.
-           ISIGM = -1
-           DO IS = 1, MSC
+        FSWELL = PI2 * OUTPAR(5)                                          MSL
+        DO IPART = 0,2                                                    MSL
+          IVTYPE = 12
+          IVTYPE2 = 80                                                    MSL
+          IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2+IPART).OR.                 MSL
+     &        OQPROC(83).OR.OQPROC(84)) THEN                              MSL
+            EMAX = 0.
+            ISIGP(IPART) = -1                                             MSL
+            DO IS = 1, MSC
+              IF (IPART.EQ.1.AND.SPCSIG(IS).LT.FSWELL) CYCLE              MSL
+              IF (IPART.EQ.2.AND.SPCSIG(IS).GT.FSWELL) THEN               MSL
+                IF (ISIGP(2).EQ.IS-1) ISIGP(2)=-1                         MSL
+                EXIT                                                      MSL
+              ENDIF                                                       MSL
               ETD = 0.
               DO ID = 1, MDC
                 ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)*DDIR                  30.72
               ENDDO
               IF (ETD.GT.EMAX) THEN
+                IF (IPART.NE.1.OR.EMAX.NE.0.) ISIGP(IPART) = IS           MSL
                 EMAX  = ETD
-                ISIGM = IS
               ENDIF
-           ENDDO
-           IF (ISIGM.GT.0) THEN
-             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)                   30.72
-           ELSE
-             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
-           ENDIF
-        ENDIF
+            ENDDO
+            IF (OQPROC(IVTYPE)) THEN                                      MSL
+              IF (ISIGP(0).GT.0) THEN                                     MSL
+                VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGP(0))             30.72 MSL
+              ELSE
+                VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+              ENDIF
+            ENDIF                                                         MSL
+          ENDIF
+        ENDDO                                                             MSL
 !
 !       peak period based on parabolic fitting                            40.51
 !
@@ -3552,6 +3587,44 @@
            END IF
         END IF
 !
+!       sea/swell peak period based on parabolic fitting                  MSL
+!       40.51                                                             MSL
+!
+        DO IVTYPE = 83,84                                                 MSL
+          IF (OQPROC(IVTYPE)) THEN                                        MSL
+            E1     = 0.                                                   MSL
+            E2     = 0.                                                   MSL
+            E3     = 0.                                                   MSL
+            ETD    = 0.                                                   MSL
+            ISIGM  = ISIGP(IVTYPE-82)                                     MSL
+            IF (ISIGM.GT.1.AND.ISIGM.LT.MSC) THEN                         MSL
+              SIG1 = SPCSIG(ISIGM-1)                                      MSL
+              SIG2 = SPCSIG(ISIGM+1)                                      MSL
+              SIG3 = SPCSIG(ISIGM  )                                      MSL
+              DO ID = 1, MDC                                              MSL
+                E1 = E1+SIG1*ACLOC(ID,ISIGM-1)                            MSL
+                E2 = E2+SIG2*ACLOC(ID,ISIGM+1)                            MSL
+                E3 = E3+SIG3*ACLOC(ID,ISIGM)                              MSL
+              ENDDO                                                       MSL
+              P    = SIG1+SIG2                                            MSL
+              Q    = (E1-E2)/(SIG1-SIG2)                                  MSL
+              R    = SIG1+SIG3                                            MSL
+              T    = (E1-E3)/(SIG1-SIG3)                                  MSL
+              A    = (T-Q)/(R-P)                                          MSL
+              IF (A.LT.0) THEN                                            MSL
+                SIGP = (-Q+P*A)/(2.*A)                                    MSL
+              ELSE                                                        MSL
+                SIGP = SIG3                                               MSL
+              END IF                                                      MSL
+              VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SIGP                           MSL
+            ELSE IF (ISIGM.EQ.1) THEN                                     MSL
+              VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(1)                      MSL
+            ELSE                                                          MSL
+              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                       MSL
+            END IF                                                        MSL
+          END IF                                                          MSL
+        ENDDO                                                             MSL
+!
 !       peak direction
 !
         IVTYPE = 14
@@ -3587,6 +3660,40 @@
              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
         ENDIF
+!
+!       mean direction at peak frequency                                  MSL
+!                                                                         MSL
+        DO IPART = 0, 2                                                   MSL
+          IVTYPE = 80+IPART                                               MSL
+          IF (OQPROC(IVTYPE)) THEN                                        MSL
+            IF (ISIGP(IPART).GT.0) THEN                                   MSL
+              eex = 0                                                     MSL
+              eey = 0                                                     MSL
+              DO ID = 1, MDC                                              MSL
+                EAD = ACLOC(ID,ISIGP(IPART))                              MSL
+                EEX = EEX + EAD * SPCDIR(ID,2)                            MSL
+                EEY = EEY + EAD * SPCDIR(ID,3)                            MSL
+              ENDDO                                                       MSL
+              IF (ABS(EEX).GT.0.OR.ABS(EEY).GT.0) THEN                    MSL
+                IF (BNAUT) THEN                                           MSL 30.70
+                  DIRDEG = ATAN2(EEY,EEX) * 180./PI                       MSL 10.15
+                ELSE                                                      MSL
+                  DIRDEG = (ALCQ + ATAN2(EEY,EEX)) * 180./PI              MSL 10.15
+                ENDIF                                                     MSL
+                IF (DIRDEG.LT.0.) DIRDEG = DIRDEG + 360.                  MSL 10.15
+!                                                                         MSL
+!               *** Convert (if necessary) from nautical degrees ***      MSL 32.01
+!               *** to cartesian degrees                         ***      MSL 32.01
+!                                                                         MSL
+                VOQ(IP,VOQR(IVTYPE)) = DEGCNV( DIRDEG )                   MSL 32.01
+              ELSE                                                        MSL
+                VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                     MSL
+              ENDIF                                                       MSL
+            ELSE                                                          MSL
+              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                       MSL
+            ENDIF                                                         MSL
+          ENDIF                                                           MSL
+        ENDDO                                                             MSL
 !
 !       mean direction
 !
@@ -3791,6 +3898,35 @@
               VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
            ENDIF
         ENDIF
+!
+!       spectral bandwidth                                                MSL
+!                                                                         MSL
+        IVTYPE = 86                                                       MSL
+        IF (OQPROC(IVTYPE)) THEN                                          MSL
+          ETOT = 0.                                                       MSL
+          EM2  = 0.                                                       MSL
+          EM4  = 0.                                                       MSL
+          DO ID = 1, MDC                                                  MSL
+            DO IS = 2, MSC                                                MSL
+              DS = SPCSIG(IS)-SPCSIG(IS-1)                                MSL
+              EAD = 0.5*(SPCSIG(IS)*ACLOC(ID,IS)+                         MSL
+     &                   SPCSIG(IS-1)*ACLOC(ID,IS-1))*DS*DDIR             MSL
+              ETOT = ETOT + EAD                                           MSL
+              SIG1 = 0.5*(SPCSIG(IS)+SPCSIG(IS-1))                        MSL
+              EM2 = EM2+SIG1**2*EAD                                       MSL
+              EM4 = EM4+SIG1**4*EAD                                       MSL
+            ENDDO                                                         MSL
+          ENDDO                                                           MSL
+          EZQ = EM2**2/(ETOT*EM4)                                         MSL
+          IF (EZQ.GE.0.AND.EZQ.LE.1) THEN                                 MSL
+            VOQ(IP,VOQR(IVTYPE)) = SQRT(1-EZQ)                            MSL
+          ELSE                                                            MSL
+            VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                         MSL
+          ENDIF                                                           MSL
+          IF (ITEST.GE.100) THEN                                          MSL
+            WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   MSL
+          ENDIF                                                           MSL
+        ENDIF                                                             MSL
 !
 !       peakedness (Qp)                                                   40.64
 !

@@ -622,10 +622,10 @@
 !  6. Parameter variables
 !
 !     NMOVAR [ 171]  maximum number of output variables                   41.62 40.85 40.64 40.61 40.51 40.21 40.41
-!     MOUTPA [  50]  number of output parameters                          40.87
+!     MOUTPA [  60]  number of output parameters                          MSL 40.87
 !
       INTEGER NMOVAR, MOUTPA
-      PARAMETER (NMOVAR = 171, MOUTPA=50)                                 41.62 40.35 41.15 40.85 40.87 40.64 40.61 40.51 40.21 40.41
+      PARAMETER (NMOVAR = 171, MOUTPA=60)                                 MSL 41.62 40.35 41.15 40.85 40.87 40.64 40.61 40.51 40.21 40.41
 !
 !  7. Local variables
 !
