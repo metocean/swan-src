@@ -1,6 +1,6 @@
 FROM metocean/ifort
 FROM metocean/ops-bare
-MAINTAINER Rafael Guedes <r.guedes@metocean.co.nz>
+LABEL maintainer "Rafael Guedes <r.guedes@metocean.co.nz>"
 
 ARG mpich_version
 ARG hdf5_version
