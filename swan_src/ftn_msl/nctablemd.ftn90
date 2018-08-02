@@ -86,7 +86,7 @@
                             "sea_surface_wave_from_direction_mean",&                                                    !MSL (specifying "mean", not in CF list)
                             "mean wave direction of wind and swell waves", &                                            !MSL (more descriptive long name)
                             "degree", NF90_SHORT, 0., 360., variddum) /, &                                              !MSL (changed units)
-             nctable(11) / nctable_record("tm10",&                                            "mean wave period of wind and swell waves from the inverse frequency moment"                          !MSL (couldn't find reason for second "m")
+             nctable(11) / nctable_record("tm10",&                                                                      !MSL (couldn't find reason for second "m")
                             "sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment",&
                             "mean wave period of wind and swell waves from the inverse frequency moment", &             !MSL (added long name)
                             "s", NF90_SHORT, 0., 50., variddum) /, &
