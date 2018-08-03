@@ -24,9 +24,9 @@ else
   INCS_SER = -I/usr/include
   INCS_OMP = -I/usr/include
   INCS_MPI = -I/usr/include
-  LIBS_SER = -L/usr/lib -lnetcdff -lnetcdf
-  LIBS_OMP = -L/usr/lib -lnetcdff -lnetcdf
-  LIBS_MPI = -L/usr/lib -lnetcdff -lnetcdf
+  LIBS_SER = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
+  LIBS_OMP = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
+  LIBS_MPI = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
   NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
 endif
 O_DIR = ../work/odir4/
