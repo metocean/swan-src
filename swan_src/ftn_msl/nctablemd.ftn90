@@ -46,26 +46,26 @@
 
         type (nctable_record)                        :: nctable(60)
 
-        data nctable(1) / nctable_record("dep",&                                                                        !MSL (made name consistent with OVKEYW)
+        data nctable(1) / nctable_record("depth",&
                             "sea_floor_depth_below_sea_surface",&                                                       !MSL (this should consider tides as well)
                             "depth below sea surface", &                                                                !MSL (this should consider tides as well)
                             "m", NF90_SHORT, 0., 100000., variddum) /, &                                                !MLS (changed type and datamax)
              nctable(2) / nctable_record("xcur",&
                             "eastward_sea_water_velocity",&
                             "eastward component of current velocity", &                                                 !MSL (changed long name)
-                            "m/s", NF90_SHORT, -20., 20., variddum) /, &                                                !MSL (unit more likely to be parseable)
+                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
              nctable(3) / nctable_record("ycur",&
                             "northward_sea_water_velocity",&
                             "northward component of current velocity", &                                                !MSL (changed long name)
-                            "m/s", NF90_SHORT, -20., 20., variddum) /, &                                                !MSL (unit more likely to be parseable)
+                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
              nctable(4) / nctable_record("xwnd",&
                             "eastward_wind_at_10m_above_ground_level",&                                                 !MSL (specifying vertical level because variable is 2d not 3d)
                             "eastward component of wind velocity", &                                                    !MSL (changed long name)
-                            "m/s", NF90_SHORT, -100., 100., variddum) /, &                                              !MSL (unit more likely to be parseable)
+                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
              nctable(5) / nctable_record("ywnd",&
                             "northward_wind_at_10m_above_ground_level",&                                                !MSL (specifying vertical level because variable is 2d not 3d)
                             "northward component of wind velocity", &                                                   !MSL (changed long name)
-                            "m/s", NF90_SHORT, -100., 100., variddum) /, &                                              !MSL (unit more likely to be parseable)
+                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
              nctable(6) / nctable_record("astd",&
                             "air_sea_temperature_difference",&                                                          !MSL (added stdname, not in CF list)
                             "air sea temperature difference", &                                                         !MSL (removing unit from name)
@@ -73,14 +73,14 @@
              nctable(7) / nctable_record("ustar",&
                             "sea_surface_wave_friction_velocity",&
                             "friction velocity", &
-                            "m/s", NF90_SHORT, 0, 20, variddum) /,&                                                     !MSL (unit more likely to be parseable)
+                            "m s-1", NF90_SHORT, 0, 20, variddum) /,&
              nctable(8) / nctable_record("hs",&
                             "sea_surface_wave_significant_height",&
                             "significant height of wind and swell waves", &                                             !MSL (added long name)
                             "m", NF90_SHORT, 0., 100., variddum) /, &
              nctable(9) / nctable_record("wlenm",&                                                                      !MSL (made name consistent with OVKEYW)
-                            "sea_surface_wave_mean_wavelength",&                                                            !MSL (added stdname)
-                            "mean wavelength of wind and swell waves", &                                               !MSL (added long name)
+                            "sea_surface_wave_mean_wavelength",&                                                        !MSL (added stdname)
+                            "mean wavelength of wind and swell waves", &                                                !MSL (added long name)
                             "m", NF90_SHORT, 0, 10000, variddum) /, &                                                   !MSL (added datamax)
              nctable(10) / nctable_record("thetam",&                                                                    !MSL (using thetam for mean dir, removed theta0 entry)
                             "sea_surface_wave_mean_from_direction",&                                                    !MSL (specifying "mean", not in CF list)
@@ -193,11 +193,11 @@
              nctable(37) / nctable_record("ubot",&
                             "sea_surface_wave_root_mean_square_near_bottom_orbital_velocity_maxima",&                   !MSL (added stdname, not in CF's)
                             "root mean square of the orbital velocity maxima near the bottom", &                        !MSL (updated long name)
-                            "m/s", NF90_SHORT, 0, 15, variddum) /, &                                                    !MSL (changed unit)
+                            "m s-1", NF90_SHORT, 0, 15, variddum) /, &
              nctable(38) / nctable_record("urms",&
                             "sea_surface_wave_root_mean_square_near_bottom_orbital_velocity",&                          !MSL (added stdname, not in CF's)
                             "root mean square of the orbital velocity near the bottom", &                               !MSL (updated stdname)
-                            "m/s", NF90_SHORT, 0, 5, variddum) /, &                                                     !MSL (changed unit)
+                            "m s-1", NF90_SHORT, 0, 5, variddum) /, &
              nctable(39) / nctable_record("dhs",&
                             "sea_surface_wave_significant_height_difference_between_iterations",&                       !MSL (added stdname, not in CF's)
                             "difference in significant wave height between iterations", &                               !MSL (added long name)
@@ -233,27 +233,27 @@
              nctable(47) / nctable_record("dissip",&
                             "sea_surface_wave_energy_dissipation",&
                             "wave energy dissipations of sea and swell waves", &
-                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
              nctable(48) / nctable_record("disbot",&
                             "sea_surface_wave_energy_dissipation_due_to_bottom_friction",&
                             "wave energy dissipations of sea and swell waves due to bottom friction", &
-                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
              nctable(49) / nctable_record("dissurf",&
                             "sea_surface_wave_energy_dissipation_due_to_depth_induced_breaking",&
                             "wave energy dissipations of sea and swell waves due to depth-induced breaking", &
-                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
              nctable(50) / nctable_record("diswcap",&
                             "sea_surface_wave_energy_dissipation_due_to_whitecapping",&
                             "wave energy dissipations of sea and swell waves due to whitecapping", &
-                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
              nctable(51) / nctable_record("disveg",&
                             "sea_surface_wave_energy_dissipation_due_to_vegetation",&
                             "wave energy dissipations of sea and swell waves due to vegetation", &
-                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
              nctable(52) / nctable_record("radstr",&
                             "energy_transfer_between_waves_and_currents_due_to_radiation_stress",&
                             "energy transfer between waves and currents due to radiation stress", &
-                            "W/m2", NF90_SHORT, 0., 1000., variddum) /, &
+                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
              nctable(53) / nctable_record("wlenp",&
                             "sea_surface_wave_wavelength_at_variance_spectral_density_maximum",&
                             "peak wavelength of wind and swell waves", &
