@@ -1533,6 +1533,7 @@ contains
                 ! Definition mode
                 call create_ncfile(ncfile, ncid, recordaxe(irq), pntgrid=pntgrid, nautical=BNAUT)
                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'project', PROJID) )
+                call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'model',   VERTXT) )                                    !MSL (add model version)
                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'run', PROJNR) )
                 call create_variables(ncid, ivtyp, ovlnam, .false.)
 
@@ -1584,6 +1585,7 @@ contains
 
                 call create_ncfile(ncfile, ncid, recordaxe(irq), mapgrid=mapgrid, nautical=BNAUT)
                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'project', PROJID) )
+                call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'model',   VERTXT) )                                    !MSL (add model version)
                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'run', PROJNR) )
                 call create_variables(ncid, ivtyp, ovlnam, .true.)
 
@@ -1664,7 +1666,7 @@ contains
     end subroutine create_variables
 
     subroutine stnames_init()
-        STNAMES( 4, 1) = 'dep'
+        STNAMES( 4, 1) = 'depth'
         STNAMES( 5, 1) = 'xcur'
         STNAMES( 5, 2) = 'ycur'
         STNAMES( 6, 1) = 'ubot'
