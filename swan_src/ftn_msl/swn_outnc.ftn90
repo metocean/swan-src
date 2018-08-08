@@ -1664,7 +1664,7 @@ contains
     end subroutine create_variables
 
     subroutine stnames_init()
-        STNAMES( 4, 1) = 'dep'             !MSL (changed name)
+        STNAMES( 4, 1) = 'dep'
         STNAMES( 5, 1) = 'xcur'
         STNAMES( 5, 2) = 'ycur'
         STNAMES( 6, 1) = 'ubot'
@@ -1672,12 +1672,12 @@ contains
         STNAMES( 8, 1) = 'qb'              !MSL (added)
         STNAMES(10, 1) = 'hs'
         STNAMES(11, 1) = 'tm01'
-        STNAMES(12, 1) = 'rtp'             !MSL (changed name)
+        STNAMES(12, 1) = 'tpr'             !MSL (changed name)
         STNAMES(13, 1) = 'thetam'          !MSL (changed name)
         STNAMES(14, 1) = 'thetap'
         STNAMES(16, 1) = 'dspr'            !MSL (changed name)
-        STNAMES(17, 1) = 'wlen'            !MSL (changed name)
-        STNAMES(18, 1) = 'steep'           !MSL (added)
+        STNAMES(17, 1) = 'wlenm'           !MSL (changed name)
+        STNAMES(18, 1) = 'steepn'          !MSL (added)
         STNAMES(26, 1) = 'xwnd'
         STNAMES(26, 2) = 'ywnd'
         STNAMES(28, 1) = 'rtm01'
@@ -1692,8 +1692,8 @@ contains
         STNAMES(42, 1) = 'tm'              !MSL (added)
         STNAMES(43, 1) = 'rtm'             !MSL (added)
         STNAMES(44, 1) = 'hswe'
-        STNAMES(47, 1) = 'tm10'            !MSL (changed name)
-        STNAMES(48, 1) = 'rtm10'           !MSL (changed name)
+        STNAMES(47, 1) = 'tmm10'
+        STNAMES(48, 1) = 'rtmm10'
         STNAMES(51, 1) = 'ssh'
         STNAMES(52, 1) = 'botl'
         STNAMES(53, 1) = 'tps'
@@ -1702,7 +1702,7 @@ contains
         STNAMES(56, 1) = 'diswcap'         !MSL (added)
         STNAMES(57, 1) = 'disveg'          !MSL (added)
         STNAMES(69, 1) = 'radstr'          !MSL (added)
-        STNAMES(71, 1) = 'lwavp'           !MSL (added)
+        STNAMES(71, 1) = 'wlenp'           !MSL (added)
         STNAMES(80, 1) = 'dpm'             !MSL (not in official SWAN)
         STNAMES(81, 1) = 'dpmsea'          !MSL (not in official SWAN)
         STNAMES(82, 1) = 'dpmswe'          !MSL (not in official SWAN)
