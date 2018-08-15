@@ -11,25 +11,27 @@ import xarray as xr
 errors = []
 
 class TestSwanSrc(object):
-    """Compile msl swan-src code and compare to original Delft version """
+    """Compile msl swan-src code and compare to reference Delft version """
 
     @classmethod
     def set_dirs(self):
         # set directories
         self.BASEDIR = '/home/metocean'
         self.MSLDIR  = os.path.join(self.BASEDIR, 'swan-msl')
-        self.ORIDIR  = os.path.join(self.BASEDIR, 'swan-ori')
+        self.REFDIR  = os.path.join(self.BASEDIR, 'swan-ref')
         self.TARBALL = os.path.join(self.BASEDIR, 'tinyapp.tar.gz')
         self.CTLDIR  = os.path.join(self.BASEDIR, 'tinyapp')
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
 
-    def run_ori(self):
+    def run_ref(self):
         """run original src"""
-        if not os.path.exists(self.ORIDIR): shutil.copytree(self.CTLDIR, self.ORIDIR)
-        os.chdir(self.ORIDIR)
+        if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
+        os.chdir(self.REFDIR)
         os.system('rm -rf out/*')
-        jobstr = 'mpiexec -n 2 swan-ori.exe par.20180513_00z.swn &> ori.log'
+        jobstr = 'mpiexec -n 2 swan-ref.exe par.20180513_00z.swn &> ref.log'
         os.system(jobstr)
+        shutil.move('out/',self.BASEDIR+'/src-results')
+        shutil.move(self.BASEDIR+'/src-results/out',self.BASEDIR+'/src-results/out-ref')
 
     def run_msl(self):
         """run msl src"""
@@ -43,19 +45,19 @@ class TestSwanSrc(object):
 
         # first test runs both models
         self.set_dirs()
-        self.run_ori()
+        self.run_ref()
         self.run_msl()
 
-        dsori = xr.open_dataset(self.ORIDIR+'/out/par.20180513_00z.nc')
+        dsref = xr.open_dataset(self.REFDIR+'/out/par.20180513_00z.nc')
         dsmsl = xr.open_dataset(self.MSLDIR+'/out/par.20180513_00z.nc')
 
         varnames = ['hs','tp','dpm','ugrd10m','vgrd10m','hs_sw','tp_sw','dpm_sw']
         for varname in varnames:
             # print('...checking grid for: {}'.format(varname.title()))
 
-            parori = dsori[varname]; parmsl = dsmsl[varname]
-            diff = parori - parmsl
-            rdiff = diff/parori
+            parref = dsref[varname]; parmsl = dsmsl[varname]
+            diff = parref - parmsl
+            rdiff = diff/parref
             if rdiff.max() > 0.05:
                 errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), rdiff.max()*100))
 
@@ -63,16 +65,16 @@ class TestSwanSrc(object):
         assert not errors, "grid test - errors occured:\n{}".format("\n".join(errors))    
 
     def test_param(self):        
-        hsori = read_swan(self.ORIDIR+'/out/pt01.spec').spec.hs().values
+        hsref = read_swan(self.REFDIR+'/out/pt01.spec').spec.hs().values
         hsmsl = read_swan(self.MSLDIR+'/out/pt01.spec').spec.hs().values
-        tmori = read_swan(self.ORIDIR+'/out/pt01.spec').spec.tm01().values
+        tmref = read_swan(self.REFDIR+'/out/pt01.spec').spec.tm01().values
         tmmsl = read_swan(self.MSLDIR+'/out/pt01.spec').spec.tm01().values
-        dpori = read_swan(self.ORIDIR+'/out/pt01.spec').spec.dpm().values
+        dpref = read_swan(self.REFDIR+'/out/pt01.spec').spec.dpm().values
         dpmsl = read_swan(self.MSLDIR+'/out/pt01.spec').spec.dpm().values
         
-        ratio_hs = (hsori-hsmsl)/hsori
-        ratio_tm = (tmori-tmmsl)/tmori
-        ratio_dp = (dpori-dpmsl)/dpori
+        ratio_hs = (hsref-hsmsl)/hsref
+        ratio_tm = (tmref-tmmsl)/tmref
+        ratio_dp = (dpref-dpmsl)/dpref
 
         if ratio_hs.max() > 0.05:
             errors.append("error in hs, rdif={}".format(ratio_hs))

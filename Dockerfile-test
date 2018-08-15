@@ -16,7 +16,7 @@ COPY tests/testsrc_simple.py /usr/local/bin/
 # RUN yum -y install docker
 # install gfrotran to compile wavespectra
 RUN yum -y install gcc-gfortran
-# install wavespectra to compare model results
+# install wavespectra for model comparison
 RUN pip install --upgrade --no-cache-dir wavespectra[extra]==0.2.1
 
 # install pytest 
