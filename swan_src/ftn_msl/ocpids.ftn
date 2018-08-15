@@ -28,7 +28,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -95,6 +95,7 @@
       CHARACTER  INPFIL *40, OUTFIL *40, INIFIL *(*), TSTFIL *40,
      &           PLTOPT *4, TIMSTR *24,
      &           INPFO *40, OUTFO *40, TSTFO *40, TXT*120
+      CHARACTER (LEN=LENFNM) SCRFIL
       INTEGER    PRCTIM(6), INIVER, INIVEF
       INTEGER    PFROPT                                                   40.31
       REAL       PLPARM(10)                                               40.31
@@ -144,10 +145,6 @@
 !UNIX          DIRCH1 = CHAR(92)                                               40.41 40.30
 !UNIX          DIRCH2 = CHAR(47)                                               40.30
         ENDIF
-	if (iargc().gt.0) then
-		call getarg(1,INPFIL)
-		OUTFIL=trim(INPFIL) // '.log'
-	endif
         IF (INIVEF.LT.3) THEN
            READ (11, 140, ERR=930, END=930) PLTOPT
            READ (11, *,   ERR=930, END=930) NPLP
@@ -194,7 +191,8 @@
         PRTEST = PRINTF
         TSTFIL = '    '
         SCREEN = 6
-        IUNMAX = 9999
+        IUNMAX = 99
+!/SGI        IUNMAX = 199
 !       TABC is the Tab character (interpreted as blank in command reading)
         TABC = CHAR(9)                                                    40.69
 !       COMID is the comment identifier (usually $)
@@ -206,7 +204,7 @@
 !UNIX        DIRCH1 =  CHAR(92)                                                40.41 40.30
 !UNIX        DIRCH2 =  CHAR(47)                                                40.30
 !       INST = name of institute, max. 40 characters
-        INST = 'MSL'
+        INST = 'Delft University of Technology'
         ITMOPT = 1
 !
       ENDIF
@@ -250,7 +248,7 @@
 !
         IF ( IAMMASTER ) THEN
            OPEN  (12, FILE=INIFIL, STATUS='UNKNOWN', FORM='FORMATTED',    40.00
-     &           ERR=950)
+     &                ERR=950)
            WRITE (12, 210) INIVER, 'version of initialisation file'       10.16
            WRITE (12, 220) INST,   'name of institute'
            WRITE (12, 210) INPUTF, 'command file ref. number'
@@ -300,13 +298,23 @@
         WRITE (PRINTF, 12) TIMSTR
    12   FORMAT ('1',//,20X, 'Execution started at ',A, //)
       ENDIF
-      IF (PRTEST.NE.PRINTF) OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
-      IF (SCREEN.NE.6) OPEN(UNIT=SCREEN, FILE='screen',ERR=960)           34.01
+      IF (PRTEST.NE.PRINTF) THEN
+         OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
+      ENDIF
+      IF (SCREEN.NE.6) THEN
+         SCRFIL = 'screen'
+         OPEN (UNIT=SCREEN, FILE=SCRFIL, ERR=960)                         34.01
+      ENDIF
       IF (LREAD) THEN
-        IF (INPFIL.NE.'    ')
-     &  OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                     40.41
+        IF (INPFIL.NE.'    ') THEN                                        MSL
+          IF (IARG().GT.0) THEN                                           MSL
+            CALL GETARG(1, INPFIL)                                        MSL
+          ENDIF                                                           MSL
+          PRINT*, 'Opening ', INPFIL                                      MSL
+          OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                   MSL
 !CVIS     &        SHARED,                                                     40.41
-     &        ERR=910)                                                    40.41
+     &          ERR=910)                                                  MSL
+        ENDIF                                                             MSL
         CALL RDINIT
       ENDIF
 !
@@ -359,7 +367,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -458,7 +466,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -583,7 +591,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2012  Delft University of Technology
+!     Copyright (C) 1993-2018  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
