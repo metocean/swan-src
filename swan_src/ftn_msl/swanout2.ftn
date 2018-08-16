@@ -1639,10 +1639,10 @@
 !NCF     &      INDEX (FILENM, '.nc' ).NE.0                                   41.40
 !NCF!
 !NCF      IF ( NCF ) THEN                                                     41.40
+!NCF         ! When PARALLEL, write intermediate binary files
 !NCF         CALL swn_outnc_spec ( RTYPE, OQI, OQR, MIP, VOQR,
 !NCF     &                         VOQ, AC2, SPCSIG, SPCDIR,
 !NCF     &                         DEP2, KGRPNT, CROSS, IONOD )
-!NCF         IF (STPNOW()) RETURN
 !NCF         RETURN
 !NCF      ENDIF
 !NCF!

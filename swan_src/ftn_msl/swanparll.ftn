@@ -4849,7 +4849,6 @@
 !NCF!
 !NCF      IF ( NCF ) THEN                                                     41.40
 !NCF         CALL swn_outnc_colspc( RTYPE, OQI, OQR, MIP, KGRPGL )
-!NCF         IF (STPNOW()) RETURN
 !NCF         RETURN
 !NCF      ENDIF
 !NCF
