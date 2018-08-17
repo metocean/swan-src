@@ -1,6 +1,15 @@
 FROM metocean/swan:model
 LABEL maintainer "Rafael Guedes <r.guedes@metocean.co.nz>"
 
+# Compile and install model reference src to be compared with
+COPY swan_src $SWAN_SRC
+COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
+RUN sh $INSTALL_SCRIPTS/install_swan-ref.sh &&\
+    rm -f $INSTALL_SCRIPTS/install_swan-ref.sh
+
+# copy entrypoint
+COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
+
 RUN yum -y install nco
 RUN pip install --upgrade --no-cache-dir ipython==5 \
                                          nco        \
