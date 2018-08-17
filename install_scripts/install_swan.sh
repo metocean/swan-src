@@ -19,7 +19,8 @@ for mode in mpi omp ser; do
     (make $mode 2>&1) | tee build_$mode.log
     mv swan.exe $INSTALL_DIR/swan_$mode.exe
     if [ $mode == 'mpi' ]; then
-        mv hcat.* $INSTALL_DIR/
+        mv hcat.exe $INSTALL_DIR/
+        chmod 777 swanrun && mv swanrun $INSTALL_DIR/
     fi
 done
 
@@ -27,6 +28,8 @@ done
 echo "Setting default SWAN binary: swan_$DEFAULT_MODE.exe --> swan.exe"
 cd /usr/local/bin
 ln -s swan/swan_$DEFAULT_MODE.exe ./swan.exe
+ln -s swan/hcat.exe ./hcat.exe
+ln -s swan/swanrun ./swanrun
 cd /home/metocean
 rm -rf $SWAN_SRC
 
