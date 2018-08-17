@@ -1,0 +1,129 @@
+import os
+import subprocess
+import shutil
+import pytest
+import glob
+from collections import OrderedDict
+import logging
+from datetime import datetime
+from nco import Nco
+
+# from wavespectra import read_swan #TODO implement tests using wavespectra
+import xarray as xr # issue lots of warnings
+
+logging.basicConfig(level=logging.DEBUG)
+
+errors = []
+
+class TestSwanSrc(object):
+    """Compile new swan-src code and compare to reference Delft version """
+
+    @classmethod
+    def setup_test(self, models):
+        # model versions (parsed from command line)
+        self.ref = models[0]
+        self.new = models[1]
+
+        self.logger = logging
+
+        self.BASEDIR = '/home/metocean'
+        self.NEWDIR  = os.path.join(self.BASEDIR, 'swan-new')
+        self.REFDIR  = os.path.join(self.BASEDIR, 'swan-ref')
+        self.TARBALL = os.path.join(self.BASEDIR, 'tinyapp.tar.gz')
+        self.CTLDIR  = os.path.join(self.BASEDIR, 'tinyapp')
+        self.logger.info('  Uncompressing test files\n')
+        os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
+
+    def run_ref(self):
+        """run reference src"""
+        self.logger.info('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/new.log'))
+
+        if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
+        os.chdir(self.REFDIR)
+        os.system('rm -rf out/*')
+        jobstr = '/usr/local/bin/mpiexec -n 2 /usr/local/bin/swan-ref.exe par.20180513_00z_'+self.ref+'.swn &> ref.log'
+        os.system(jobstr)
+
+    def run_new(self):
+        """run new src"""
+        self.logger.info('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.REFDIR+'/new.log'))
+
+        if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
+        os.chdir(self.NEWDIR)
+        os.system('rm -rf out/*')
+        jobstr = '/usr/local/bin/mpiexec -n 2 /usr/local/bin/swan.exe par.20180513_00z_'+self.new+'.swn &> new.log'
+        os.system(jobstr)
+
+    def test_grid(self, models):
+        # first test runs both models
+        self.setup_test(models)
+        self.run_ref()
+        self.run_new()
+
+        ncref = glob.glob(self.REFDIR+'/out/*.nc')[0]
+        dsref = xr.open_dataset(ncref)
+        # some if is needed here to check if rename is necessary (base don the varnames of the other ds?)
+        var_mapping = OrderedDict((
+            ('vel_x', 'xcur'),
+            ('vel_y', 'ycur'),
+            ('ugrd10m', 'xwnd'),
+            ('vgrd10m', 'ywnd'),
+            ('tp_sea', 'tpssea'),
+            ('dep', 'depth'),
+            ('tp_sw', 'tpsswe'),
+            ('tp', 'tps'),
+            ('dpm_sw', 'dpmswe'),
+            ('dpm_sea', 'dpmsea'),
+            ('hs_sw', 'hswe'),
+        ))
+        dim_mapping = OrderedDict((
+            ('lon', 'longitude'),
+            ('lat', 'latitude'),
+        ))
+        dsref = dsref.rename(var_mapping)
+        dsref = dsref.rename(dim_mapping)
+        
+        ncnew = glob.glob(self.NEWDIR+'/out/*.nc')[0]
+        dsnew = xr.open_dataset(ncnew)
+
+        varnames = ['hs','tm01','tm02','dpm','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
+        self.logger.info(' Performing grid test for {}: \n'.format([dispvar.title() for dispvar in varnames]))
+        for varname in varnames:
+            # print('...checking grid for: {}'.format(varname.title()))
+
+            parref = dsref[varname]; parnew = dsnew[varname]
+            rdiff = (parref - parnew)/parref
+            if abs(rdiff.max()) > 0.05:
+                errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), abs(rdiff.max().values)*100))
+                self.logger.info(' {} failed :( \n'.format(varname.title()))
+            else:
+                self.logger.info(' {} passed :) \n'.format(varname.title()))
+
+
+        # assert no error message has been registered, else print messages
+        assert not errors, "grid test - following errors occured:\n{}".format("\n".join(errors))    
+
+    # def test_param(self):        
+    #     hsref = read_swan(self.REFDIR+'/out/pt01.spec').spec.hs().values
+    #     hsnew = read_swan(self.NEWDIR+'/out/pt01.spec').spec.hs().values
+    #     tmref = read_swan(self.REFDIR+'/out/pt01.spec').spec.tm01().values
+    #     tmnew = read_swan(self.NEWDIR+'/out/pt01.spec').spec.tm01().values
+    #     dpref = read_swan(self.REFDIR+'/out/pt01.spec').spec.dpm().values
+    #     dpnew = read_swan(self.NEWDIR+'/out/pt01.spec').spec.dpm().values
+        
+    #     ratio_hs = (hsref-hsnew)/hsref
+    #     ratio_tm = (tmref-tmnew)/tmref
+    #     ratio_dp = (dpref-dpnew)/dpref
+
+    #     if ratio_hs.max() > 0.05:
+    #         errors.append("error in hs, rdif={}".format(ratio_hs))
+    #     if ratio_tm.max() > 0.05:
+    #         errors.append("error in tm, rdif={}".format(ratio_tm))
+    #     if ratio_dp.max() > 0.05:
+    #         errors.append("error in dp, rdif={}".format(ratio_dp))
+
+    #     # assert no error message has been registered, else print messages
+    #     assert not errors, "errors occured:\n{}".format("\n".join(errors))        
+
+    # def test_spec(self):
+    #     "test spectral output"

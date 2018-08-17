@@ -35,12 +35,10 @@ services:
     depends_on:
       - model
 
-  test_model:
+  test_model: # legacy
     image: metocean/swan:modeltest
     command: python /usr/local/bin/run_tinyapp.py
     
   test_src:
     image: metocean/swan:modeltest
-    # command: pytest /usr/local/bin/testsrc.py
-    volumes:      
-      - /home/metocean/test-results:/home/metocean/src-results
+    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4091,4120"

@@ -1427,7 +1427,7 @@ contains
         if (LTRACE) call STRACE (IENT,'swn_outnc_close_on_end')
         if ( nstatm == 0 .or. TIMCO >= TFINC ) then
             call close_ncfile(ncid)
-            nref = 0
+            nref = ncid - ncoffset(irq)
         else
             call nccheck( NF90_SYNC(ncid) )
         end if
