@@ -7,7 +7,8 @@ source /opt/intel/bin/iccvars.sh intel64
 source /opt/intel/bin/ifortvars.sh intel64
 source /opt/intel/bin/compilervars.sh intel64
 
-INSTALL_DIR=/usr/local/bin
+INSTALL_DIR=/usr/local/bin/swan
+mkdir $INSTALL_DIR
 echo "SWAN install dir: $INSTALL_DIR"
 
 # Building MPI and Serial versions (OMP not working for some reason)
@@ -17,12 +18,18 @@ for mode in mpi omp ser; do
     make clean clobber
     (make $mode 2>&1) | tee build_$mode.log
     mv swan.exe $INSTALL_DIR/swan_$mode.exe
+    if [ $mode == 'mpi' ]; then
+        mv hcat.exe $INSTALL_DIR/
+        chmod 777 swanrun && mv swanrun $INSTALL_DIR/
+    fi
 done
 
 # Setting default binary and cleaning up
 echo "Setting default SWAN binary: swan_$DEFAULT_MODE.exe --> swan.exe"
-cd $INSTALL_DIR
-ln -s swan_$DEFAULT_MODE.exe swan.exe
+cd /usr/local/bin
+ln -s swan/swan_$DEFAULT_MODE.exe ./swan.exe
+ln -s swan/hcat.exe ./hcat.exe
+ln -s swan/swanrun ./swanrun
 cd /home/metocean
 rm -rf $SWAN_SRC
 
