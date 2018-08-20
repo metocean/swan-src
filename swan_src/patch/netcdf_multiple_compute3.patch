@@ -1,0 +1,225 @@
+diff -u swan4120_org/agioncmd.ftn90 ./agioncmd.ftn90
+--- swan4120_org/agioncmd.ftn90    2017-10-26 07:54:43.000000000 +0200
++++ ./agioncmd.ftn90    2018-08-14 14:01:04.278186139 +0200
+@@ -9,8 +9,6 @@
+ !/    1.4     | 11-apr-2014 | bug fixes
+ !/                          | reduced memory consumption
+ !/
+-!/    copyright 2009-2014 bmtargoss
+-!/       no unauthorized use without permission.
+ !/
+ !  1. purpose :
+ !
+@@ -49,14 +47,14 @@
+ !         %points        int        1:npoints
+ !         %longitude     r.a        x coordinates points
+ !         %latitude      r.a        y coordinates points
+-!         %lunit      char       likely unit (meter, degrees)
++!         %lunit         char       likely unit (meter, degrees)
+ !         %npoints
+ !
+ !       spcgrid                     spectral grid
+ !         %frequency     r.a        frequency axe
+ !         %direction     r.a.       directional axe
+-!         %nfreq      int        number of frequencies
+-!         %ndir       int        number of directions
++!         %nfreq         int        number of frequencies
++!         %ndir          int        number of directions
+ !
+ !       nctable          ncttype    struct array from nctablemd.f90
+ !         %standard_name char       see remarks a
+@@ -138,7 +136,7 @@
+         use netcdf
+         use nctablemd
+         implicit none
+-        real, parameter                              :: AGIONCMD_VERSION = 1.4
++        real, parameter                              :: AGIONCMD_VERSION = 1.5
+         real, parameter                              :: AGNC_DUMMY = NF90_FILL_FLOAT
+         integer(kind=1), parameter                   :: AGNC_FILL_BYTE = -2**7
+         integer(kind=2), parameter                   :: AGNC_FILL_SHORT= -2**15
+diff -u swan4120_org/swanout2.ftn ./swanout2.ftn
+--- swan4120_org/swanout2.ftn    2017-10-26 07:54:52.000000000 +0200
++++ ./swanout2.ftn    2018-08-17 22:38:28.540981151 +0200
+@@ -215,7 +215,7 @@
+            WRITE(NREF,'(A31,A20)') '        hs     tp     lp       ',
+      &                             'theta     sp      wf'
+         END IF
+-!NCF      ELSE IF (NCF .AND. NREF.EQ.0) THEN                                  41.40
++!NCF      ELSE IF (NCF .AND. NCOFFSET(IRQ).EQ.0) THEN                         41.40
+ !NCF        ! reserve free unit number
+ !NCF        IOSTAT = -1
+ !NCF        INQUIRE(FILE=FILENM, EXIST=EXIST)                                 41.43
+@@ -1639,10 +1639,10 @@
+ !NCF     &      INDEX (FILENM, '.nc' ).NE.0                                   41.40
+ !NCF!
+ !NCF      IF ( NCF ) THEN                                                     41.40
++!NCF         ! When PARALLEL, write intermediate binary files
+ !NCF         CALL swn_outnc_spec ( RTYPE, OQI, OQR, MIP, VOQR,
+ !NCF     &                         VOQ, AC2, SPCSIG, SPCDIR,
+ !NCF     &                         DEP2, KGRPNT, CROSS, IONOD )
+-!NCF         IF (STPNOW()) RETURN
+ !NCF         RETURN
+ !NCF      ENDIF
+ !NCF!
+diff -u swan4120_org/swanparll.ftn ./swanparll.ftn
+--- swan4120_org/swanparll.ftn    2017-10-26 07:54:52.000000000 +0200
++++ ./swanparll.ftn    2018-08-16 07:52:55.156655996 +0200
+@@ -4849,7 +4849,6 @@
+ !NCF!
+ !NCF      IF ( NCF ) THEN                                                     41.40
+ !NCF         CALL swn_outnc_colspc( RTYPE, OQI, OQR, MIP, KGRPGL )
+-!NCF         IF (STPNOW()) RETURN
+ !NCF         RETURN
+ !NCF      ENDIF
+ !NCF
+diff -u swan4120_org/swn_outnc.ftn90 ./swn_outnc.ftn90
+--- swan4120_org/swn_outnc.ftn90    2017-10-26 07:54:51.000000000 +0200
++++ ./swn_outnc.ftn90    2018-08-17 22:41:36.470493709 +0200
+@@ -81,6 +81,7 @@
+                                    skip_range_error = .true.
+     type(recordaxe_type), save  :: recordaxe(MAX_OUTP_REQ)
+     integer,save                :: ncoffset(MAX_OUTP_REQ) = 0
++    logical,save                :: read_header(MAX_OUTP_REQ) = .true.
+ 
+ !PUN    logical                     :: PUNSWAN = .true.
+ !NPUN    logical                     :: PUNSWAN = .false.
+@@ -238,7 +239,7 @@
+         if (STPNOW()) return
+ 
+         call nccheck(nf90_close(oqi(1) + ncoffset(irq) ))
+-        oqi(1) = 0
++        ncoffset(irq) = 0
+       end if
+ 
+       call swn_outnc_deallocate_spcaux( spcaux )
+@@ -281,10 +282,10 @@
+ !
+ !
+ !  0. Authors
+-!
++!     4x.xx A.Th.C. Hulst
+ !
+ !  1. Updates
+-!
++!     4x.xx Added support for multiple compute commands and multiple specout requests
+ !
+ !  2. Purpose
+ !
+@@ -308,7 +309,7 @@
+ !
+ !  5. Local variables
+ !
+-      logical                             :: lopen, read_header, file_exists, &
++      logical                             :: lopen, file_exists, &
+                                              EQREAL, STPNOW
+       integer                             :: ip, ierr, otype, xpctime2, &
+                                              i, tmip, binnr, irq, &
+@@ -398,9 +399,6 @@
+                     call MSGERR(4, errmsg)
+                     return
+                 end if
+-                read_header = .true.
+-            else
+-                read_header = .false.
+             end if
+             inquire(unit=binnr, opened=lopen)
+             if ( .not. lopen ) then
+@@ -411,7 +409,8 @@
+ 
+             ! In the final collocation the spatial, spectral and directional grids are unknown.
+             ! They are exchanged via the binary file of the master process.
+-            if ( read_header .and. iproc == 1 ) then
++            if ( read_header(irq) .and. iproc == 1 ) then
++                read_header(irq) = .false.
+                 read(binnr, IOSTAT=ierr) spcaux%xp
+                 if ( ierr /= 0 ) then
+                   write(errmsg,'("Reading grid data from ", A, " returned IOSTAT ", I3.3)') trim(binfile), ierr
+@@ -431,7 +430,7 @@
+ 
+             read(binnr, IOSTAT=ierr) xpctime2, tmip
+             if ( ierr /= 0 ) then
+-                write(errmsg,'("Reading time and tmip from ", A, "(",I3,") , time ", A, ", returned IOSTAT ", I3.3)') &
++                write(errmsg,'("Reading time and tmip from ", A, "(",I3,") , time ", A, ", returned IOSTAT ", I3)') &
+                      trim(binfile), binnr, CHTIME, ierr
+                 call MSGERR(4, errmsg)
+                 return
+@@ -467,18 +466,21 @@
+ !PUN         ilpos   = len(trim(LOCALDIR))+2
+ !PUN         ncfile = ncfile(ilpos:LENFNM)
+ !PUN         ncfile = trim(GLOBALDIR)//DIRCH2//trim(ncfile)
+-
+-        call swn_outnc_openspecfile(ncfile, spcaux, OQI, OQR)
+-        if (STPNOW()) return
++        if ( ncoffset(irq) == 0 ) then
++            call swn_outnc_openspecfile(ncfile, spcaux, OQI, OQR)
++            if (STPNOW()) return
++        end if
+ 
+         call swn_outnc_appendspc(OQI, spcaux, xpctime2)
+         if (STPNOW()) return
+ 
+         call swn_outnc_deallocate_spcaux( spcaux )
+-
++        
+         if ( NSTATM == 0 .or. TIMCO >= TFINC ) then
++            ! The end time is reached in each computation block. See
++            ! SWCOLOUT structure.
+             call close_ncfile(OQI(1) + ncoffset(irq) )
+-            OQI(1) = 0
++            ncoffset(irq) = 0
+ 
+             ! The intermediate binary files are closed and deleted in
+             !    swanparll.ftn -> SWCOLOUT
+@@ -526,10 +528,10 @@
+ !
+ !
+ !  0. Authors
+-!
++!     4x.xx Sander Hulst
+ !
+ !  1. Updates
+-!
++!     4x.xx Do not close binary files. Breaks on multiple compute commands 
+ !
+ !  2. Purpose
+ !
+@@ -781,20 +783,6 @@
+         end if
+       end do
+ 
+-      if ( PARLL .or. PUNSWAN ) then
+-        ! in parallel mode, close binary file when required
+-        if (NSTATM == 0 .or. TIMCO >= TFINC) then
+-          inquire(unit=OQI(1), opened=lopen)
+-          if ( lopen ) then
+-            close(unit=OQI(1))
+-          else
+-            write(errmsg, '("File ", A, " is already closed. This is a code error")') trim(OUTP_FILES(irq))
+-            call MSGERR(4, errmsg)
+-            return
+-          end if
+-        end if
+-      end if
+-
+     end subroutine swn_outnc_spcaux
+ 
+     subroutine swn_outnc_spcaux_on_wetnodes( lkgrpnt, lspcaux, spcaux )
+@@ -1061,7 +1049,7 @@
+             call agnc_add_pntdata(ncid, 'xwnd',  ri, pspcaux%wndx,  OVEXCV(26), skip_range_error)
+             call agnc_add_pntdata(ncid, 'ywnd',  ri, pspcaux%wndy,  OVEXCV(26), skip_range_error)
+         end if
+-    end if
++      end if
+ 
+       ! garbage collect
+       nullify(pspcaux)
+@@ -1426,8 +1414,8 @@
+         ! increasing the chance on file corruption
+         if (LTRACE) call STRACE (IENT,'swn_outnc_close_on_end')
+         if ( nstatm == 0 .or. TIMCO >= TFINC ) then
++            ncoffset(irq) = 0
+             call close_ncfile(ncid)
+-            nref = 0
+         else
+             call nccheck( NF90_SYNC(ncid) )
+         end if

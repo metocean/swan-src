@@ -8,3 +8,4 @@ docker_compose:
 notification_emails:
     - r.guedes@metocean.co.nz
     - h.rapizo@metocean.co.nz
+    - waves@metocean.co.nz

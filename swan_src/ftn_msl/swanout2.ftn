@@ -215,7 +215,7 @@
            WRITE(NREF,'(A31,A20)') '        hs     tp     lp       ',
      &                             'theta     sp      wf'
         END IF
-!NCF      ELSE IF (NCF .AND. NREF.EQ.0) THEN                                  41.40
+!NCF      ELSE IF (NCF .AND. NCOFFSET(IRQ).EQ.0) THEN                         41.40
 !NCF        ! reserve free unit number
 !NCF        IOSTAT = -1
 !NCF        INQUIRE(FILE=FILENM, EXIST=EXIST)                                 41.43
