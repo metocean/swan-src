@@ -136,7 +136,7 @@
         use netcdf
         use nctablemd
         implicit none
-        real, parameter                              :: AGIONCMD_VERSION = 1.6
+        real, parameter                              :: AGIONCMD_VERSION = 1.5
         real, parameter                              :: AGNC_DUMMY = NF90_FILL_FLOAT
         integer(kind=1), parameter                   :: AGNC_FILL_BYTE = -2**7
         integer(kind=2), parameter                   :: AGNC_FILL_SHORT= -2**15
