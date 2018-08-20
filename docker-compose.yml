@@ -32,6 +32,9 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-test
+      args:
+        ftnref: stock
+        default_mode: mpi
     depends_on:
       - model
 
@@ -41,4 +44,4 @@ services:
     
   test_src:
     image: metocean/swan:modeltest
-    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4091,4120"
+    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"

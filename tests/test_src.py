@@ -31,6 +31,7 @@ class TestSwanSrc(object):
         self.REFDIR  = os.path.join(self.BASEDIR, 'swan-ref')
         self.TARBALL = os.path.join(self.BASEDIR, 'tinyapp.tar.gz')
         self.CTLDIR  = os.path.join(self.BASEDIR, 'tinyapp')
+        self.BINDIR  = os.path.join('/usr/local/bin')
         self.logger.info('  Uncompressing test files\n')
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
 
@@ -41,17 +42,23 @@ class TestSwanSrc(object):
         if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
         os.chdir(self.REFDIR)
         os.system('rm -rf out/*')
-        jobstr = '/usr/local/bin/mpiexec -n 2 /usr/local/bin/swan-ref.exe par.20180513_00z_'+self.ref+'.swn &> ref.log'
-        os.system(jobstr)
-
+        if self.ref == self.new:
+            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan_$DEFAULT_MODE-ref.exe '+self.BINDIR+'/swan.exe')
+            jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_'+self.ref+'.swn -mpi 2 &> ref.log'
+            os.system(jobstr)
+            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan_$DEFAULT_MODE.exe '+self.BINDIR+'/swan.exe')
+        else:
+            jobstr = +self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan-ref.exe par.20180513_00z_'+self.ref+'.swn &> ref.log'
+            os.system(jobstr)
+       
     def run_new(self):
         """run new src"""
-        self.logger.info('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.REFDIR+'/new.log'))
+        self.logger.info('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
 
         if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
         os.chdir(self.NEWDIR)
         os.system('rm -rf out/*')
-        jobstr = '/usr/local/bin/mpiexec -n 2 /usr/local/bin/swan.exe par.20180513_00z_'+self.new+'.swn &> new.log'
+        jobstr = self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan.exe par.20180513_00z_'+self.new+'.swn &> new.log'
         os.system(jobstr)
 
     def test_grid(self, models):
@@ -62,31 +69,20 @@ class TestSwanSrc(object):
 
         ncref = glob.glob(self.REFDIR+'/out/*.nc')[0]
         dsref = xr.open_dataset(ncref)
-        # some if is needed here to check if rename is necessary (base don the varnames of the other ds?)
-        var_mapping = OrderedDict((
-            ('vel_x', 'xcur'),
-            ('vel_y', 'ycur'),
-            ('ugrd10m', 'xwnd'),
-            ('vgrd10m', 'ywnd'),
-            ('tp_sea', 'tpssea'),
-            ('dep', 'depth'),
-            ('tp_sw', 'tpsswe'),
-            ('tp', 'tps'),
-            ('dpm_sw', 'dpmswe'),
-            ('dpm_sea', 'dpmsea'),
-            ('hs_sw', 'hswe'),
-        ))
-        dim_mapping = OrderedDict((
-            ('lon', 'longitude'),
-            ('lat', 'latitude'),
-        ))
-        dsref = dsref.rename(var_mapping)
-        dsref = dsref.rename(dim_mapping)
-        
         ncnew = glob.glob(self.NEWDIR+'/out/*.nc')[0]
-        dsnew = xr.open_dataset(ncnew)
+        dsnew = xr.open_dataset(ncnew)        
+        # check if rename is necessary
 
-        varnames = ['hs','tm01','tm02','dpm','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
+        if self.ref != self.new:
+            vardict=[(list(dsref.var())[i], list(dsnew.var())[i]) for i in range(len(dsref.var()))]
+            var_mapping = OrderedDict((vardict))
+            dimdict=[(list(dsref.coords)[i], list(dsnew.coords)[i]) for i in range(len(dsref.coords))]
+            dim_mapping = OrderedDict((dimdict))
+            
+            dsref = dsref.rename(var_mapping)
+            dsref = dsref.rename(dim_mapping)
+        
+        varnames = ['hs','tm01','tm02','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
         self.logger.info(' Performing grid test for {}: \n'.format([dispvar.title() for dispvar in varnames]))
         for varname in varnames:
             # print('...checking grid for: {}'.format(varname.title()))

@@ -1,6 +1,16 @@
 FROM metocean/swan:model
 LABEL maintainer "Rafael Guedes <r.guedes@metocean.co.nz>"
 
+ARG ftnref
+ARG default_mode
+
+# Reset ftn variable to compile reference model
+ENV FTNREF=$ftnref
+ENV DEFAULT_MODE=$default_mode
+ENV INSTALL_SCRIPTS="/tmp/install_scripts"
+ENV SWAN_TEST="/home/metocean"
+ENV SWAN_SRC="/source/swan-src/swan_src"
+
 # Compile and install model reference src to be compared with
 COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
@@ -22,9 +32,6 @@ COPY tests/tinyapp.tar.gz /home/metocean
 COPY tests/test_src.py /usr/local/bin/
 COPY tests/conftest.py /usr/local/bin/
 
-# install docker to run other containers in the test
-# RUN wget -qO- https://get.docker.com/ | sh #(last stable version)
-# RUN yum -y install docker
 # install gfrotran to compile wavespectra
 #RUN yum -y install gcc-gfortran
 # install wavespectra for model comparison
