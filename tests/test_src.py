@@ -6,10 +6,9 @@ import glob
 from collections import OrderedDict
 import logging
 from datetime import datetime
-from nco import Nco
+import xarray as xr # issue lots of warnings
 
 # from wavespectra import read_swan #TODO implement tests using wavespectra
-import xarray as xr # issue lots of warnings
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -43,10 +42,10 @@ class TestSwanSrc(object):
         os.chdir(self.REFDIR)
         os.system('rm -rf out/*')
         if self.ref == self.new:
-            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan_$DEFAULT_MODE-ref.exe '+self.BINDIR+'/swan.exe')
+            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_$DEFAULT_MODE-ref.exe '+self.BINDIR+'/swan.exe')
             jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_'+self.ref+'.swn -mpi 2 &> ref.log'
             os.system(jobstr)
-            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan_$DEFAULT_MODE.exe '+self.BINDIR+'/swan.exe')
+            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_$DEFAULT_MODE.exe '+self.BINDIR+'/swan.exe')
         else:
             jobstr = +self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan-ref.exe par.20180513_00z_'+self.ref+'.swn &> ref.log'
             os.system(jobstr)

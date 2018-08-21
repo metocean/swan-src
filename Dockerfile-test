@@ -14,6 +14,9 @@ ENV SWAN_SRC="/source/swan-src/swan_src"
 # Compile and install model reference src to be compared with
 COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
+COPY swan_src/patch/netcdf_multiple_compute3.patch $SWAN_SRC/ftn_${FTNREF}
+
+RUN yum -y install patch
 RUN sh $INSTALL_SCRIPTS/install_swan-ref.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan-ref.sh
 
