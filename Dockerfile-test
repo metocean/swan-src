@@ -1,10 +1,44 @@
 FROM metocean/swan:model
 LABEL maintainer "Rafael Guedes <r.guedes@metocean.co.nz>"
 
+ARG ftnref
+ARG default_mode
+
+# Reset ftn variable to compile reference model
+ENV FTNREF=$ftnref
+ENV DEFAULT_MODE=$default_mode
+ENV INSTALL_SCRIPTS="/tmp/install_scripts"
+ENV SWAN_TEST="/home/metocean"
+ENV SWAN_SRC="/source/swan-src/swan_src"
+
+# Compile and install model reference src to be compared with
+COPY swan_src $SWAN_SRC
+COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
+COPY swan_src/patch/netcdf_multiple_compute3.patch $SWAN_SRC/ftn_${FTNREF}
+
+RUN yum -y install patch
+RUN sh $INSTALL_SCRIPTS/install_swan-ref.sh &&\
+    rm -f $INSTALL_SCRIPTS/install_swan-ref.sh
+
+# copy entrypoint
+COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
+
 RUN yum -y install nco
-RUN pip install --upgrade --no-cache-dir ipython==5 nco                                         
+RUN pip install --upgrade --no-cache-dir ipython==5 \
+                                         nco        \
+                                         xarray                              
 RUN pip install --upgrade --no-cache-dir netCDF4
 
 # copy since mounting does not work with bob
 COPY tests/run_tinyapp.py /usr/local/bin/
 COPY tests/tinyapp.tar.gz /home/metocean
+COPY tests/test_src.py /usr/local/bin/
+COPY tests/conftest.py /usr/local/bin/
+
+# install gfrotran to compile wavespectra
+#RUN yum -y install gcc-gfortran
+# install wavespectra for model comparison
+#RUN pip install --upgrade --no-cache-dir wavespectra[extra]==0.2.1
+
+# install pytest 
+RUN pip install --upgrade --no-cache-dir pytest
