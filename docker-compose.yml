@@ -32,11 +32,16 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile-test
+      args:
+        ftnref: stock
+        default_mode: mpi
     depends_on:
       - model
 
-  test_model:
+  test_model: # legacy
     image: metocean/swan:modeltest
     command: python /usr/local/bin/run_tinyapp.py
-    # volumes:
-    #   - /source/swan-src/tests:/home/metocean
+    
+  test_src:
+    image: metocean/swan:modeltest
+    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
