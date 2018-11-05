@@ -45,3 +45,9 @@ services:
   test_src:
     image: metocean/swan:modeltest
     command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+
+  test_omp:
+    image: metocean/swan:modeltest
+    volumes:
+      - /home/metocean:/home/metocean
+    command: bash -c "cd /usr/local/bin && pytest -s test_omp.py"

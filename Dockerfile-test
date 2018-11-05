@@ -34,6 +34,7 @@ COPY tests/run_tinyapp.py /usr/local/bin/
 COPY tests/tinyapp.tar.gz /home/metocean
 COPY tests/test_src.py /usr/local/bin/
 COPY tests/conftest.py /usr/local/bin/
+COPY tests/test_omp.py /usr/local/bin/
 
 # install gfrotran to compile wavespectra
 #RUN yum -y install gcc-gfortran
