@@ -21,11 +21,15 @@ class TestOMP(object):
     def setup_test(self, models):
         self.logger = logging
 
+        imp = 'bass' # couldn't parse in a different conftest, maybe is an internal pytest configuration?
+
+        self.logger.info('  Running test for '+imp+' SWAN implementation\n')
+
         self.BASEDIR = '/home/metocean'
-        self.MPIDIR  = os.path.join(self.BASEDIR, 'swan-mpi')
-        self.OMPDIR  = os.path.join(self.BASEDIR, 'swan-omp')        
-        self.TARBALL = os.path.join(self.BASEDIR, 'tinyapp.tar.gz')
-        self.CTLDIR  = os.path.join(self.BASEDIR, 'tinyapp')
+        self.MPIDIR  = os.path.join(self.BASEDIR, imp+'-mpi')
+        self.OMPDIR  = os.path.join(self.BASEDIR, imp+'-omp')
+        self.TARBALL = os.path.join(self.BASEDIR, imp+'.tar.gz')
+        self.CTLDIR  = os.path.join(self.BASEDIR, imp)
         self.BINDIR  = os.path.join('/usr/local/bin')
         self.logger.info('  Uncompressing test files\n')
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
@@ -41,10 +45,12 @@ class TestOMP(object):
         if not os.path.exists(self.MPIDIR): shutil.copytree(self.CTLDIR, self.MPIDIR)
         os.chdir(self.MPIDIR)
         os.system('rm -rf out/*')
-        jobstr = self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan.exe par.20180513_00z_4120.swn &> mpi.log'
+
+        swnfile = glob.glob('*.swn')[0]
+        jobstr = '{}/mpiexec -n 4 {}/swan.exe {} &> mpi.log'.format(self.BINDIR,self.BINDIR,swnfile)
         os.system(jobstr)
         
-        self.logger.info('  obtaining running time for mpi simmulation')
+        self.logger.info('  obtaining running time for mpi simmulation\n')
         fid = open('PRINT-001', 'r')
         timerow = fid.read().splitlines()[2] # row in PRINT file with start time
         timesepi = timerow.find(".")
@@ -66,16 +72,18 @@ class TestOMP(object):
         if not os.path.exists(self.OMPDIR): shutil.copytree(self.CTLDIR, self.OMPDIR)
         os.chdir(self.OMPDIR)
         os.system('rm -rf out/*')
-        jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_4120.swn -omp 2 &> omp.log'
+
+        swnfile = glob.glob('*.swn')[0]
+        jobstr = '{}/swanrun -input {} -omp 4 &> omp.log'.format(self.BINDIR,swnfile)
         os.system(jobstr)
 
-        self.logger.info('  obtaining running time for omp simmulation')
-        fid = open('par.20180513_00z_4120.prt', 'r')
+        self.logger.info('  obtaining running time for omp simmulation\n')
+        fid = open(swnfile.split('.swn')[0]+'.prt', 'r')
         timerow = fid.read().splitlines()[2] # row in PRINT file with start time
         timesepi = timerow.find(".")
         datei, timei = timerow[timesepi-8:timesepi], timerow[timesepi+1:timesepi+7]
         tstart = datetime.datetime.strptime(datei+timei, '%Y%m%d%H%M%S')
-        tend = datetime.datetime(1970,1,1,0,0)+datetime.timedelta(seconds=os.path.getmtime('par.20180513_00z_4120.prt'))
+        tend = datetime.datetime(1970,1,1,0,0)+datetime.timedelta(seconds=os.path.getmtime(swnfile.split('.swn')[0]+'.prt'))
         runtime = tend-tstart
 
         self.logger.info(' Running time for omp is: {} minutes \n'.format(runtime.seconds/60.))
@@ -89,7 +97,7 @@ class TestOMP(object):
         ncmpi = glob.glob(self.MPIDIR+'/out/*.nc')[0]
         dsmpi = xr.open_dataset(ncmpi)
         ncomp = glob.glob(self.OMPDIR+'/out/*.nc')[0]
-        dsomp = xr.open_dataset(ncomp)        
+        dsomp = xr.open_dataset(ncomp)
         
         varnames = ['hs','tm01','tm02','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
         self.logger.info(' Performing grid test for {}: \n'.format([dispvar.title() for dispvar in varnames]))
