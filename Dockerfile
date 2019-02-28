@@ -1,5 +1,5 @@
 FROM metocean/ifort
-FROM metocean/ops-bare
+FROM metocean/ops-bare:ops-bare-v1.5.3
 LABEL maintainer "Rafael Guedes <r.guedes@metocean.co.nz>"
 
 ARG mpich_version
