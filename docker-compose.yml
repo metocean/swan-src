@@ -28,7 +28,7 @@ services:
   
   # Build test image
   test:
-    image: metocean/swan:modeltest
+    image: metocean/swan:modeltest-4120B
     build:
       context: ./
       dockerfile: Dockerfile-test

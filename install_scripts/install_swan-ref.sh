@@ -15,7 +15,7 @@ for mode in mpi ser; do
     echo "Building ${FTNREF} version of SWAN in $mode mode"
     cd $SWAN_SRC/ftn_${FTNREF}
     make clobber
-    patch -p0 < netcdf_multiple_compute3.patch
+    # patch -p0 < netcdf_multiple_compute3.patch
     (make $mode 2>&1) | tee build_$mode.log
     mv swan.exe $INSTALL_DIR/swan_$mode-ref.exe
 done
