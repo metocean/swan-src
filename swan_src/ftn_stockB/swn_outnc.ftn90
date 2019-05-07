@@ -1501,7 +1501,11 @@ contains
                 ! should be seconds since epoch. This is probably not it.
                 recordaxe(irq)%content(1) = seconds_since_epoch(xpctmp(1), xpctmp(2))
                 write(6, *) "oqr(2),DT =", (/oqr(2), DT/)
-                recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
+                if (DT == 1.E10) then
+                    recordaxe(irq)%delta      = oqr(2)
+                else
+                    recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
+                end if
                 write(6, *) "recordaxe(irq)%delta", recordaxe(irq)%delta
                 recordaxe(irq)%nstatm     = .true.
             else
@@ -1613,7 +1617,11 @@ contains
         ! if only only record found, set delta to delta specified in command file (or 1 on stationary)
         if ( recordaxe(irq)%ncontent == 1 ) then
             if ( NSTATM > 0 ) then
-                recordaxe(irq)%delta = maxval((/oqr(2), DT/))
+                if (DT == 1.E10) then
+                    recordaxe(irq)%delta      = oqr(2)
+                else
+                    recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
+                end if
             else
                 recordaxe(irq)%delta = 1
             end if

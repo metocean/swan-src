@@ -29,7 +29,7 @@ echo "Setting default SWAN binary: swan_$DEFAULT_MODE.exe --> swan.exe"
 cd /usr/local/bin
 ln -s swan/swan_$DEFAULT_MODE.exe ./swan.exe
 ln -s swan/hcat.exe ./hcat.exe
-ln -s swan/swanrun ./swanrun
+# ln -s swan/swanrun ./swanrun
 cd /home/metocean
 rm -rf $SWAN_SRC
 
