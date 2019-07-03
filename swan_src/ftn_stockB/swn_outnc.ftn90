@@ -1475,7 +1475,6 @@ contains
         type(mapgrid_type)                    :: mapgrid
         type(pntgrid_type)                    :: pntgrid
         integer, save                         :: IENT=0
-        real*8                                :: dtt
 
         if (LTRACE) call STRACE (IENT,'swn_outnc_openblockfile')
 
@@ -1493,20 +1492,11 @@ contains
             allocate(recordaxe(irq)%content(1))
 
             recordaxe(irq)%ncontent = 1
-            write(6, *) "================================================"
-            write(6, *) "subroutine swn_outnc_openblockfile (1)"
-            write(6, *) "nstatm =", nstatm
             if ( nstatm > 0 ) then
                 READ (chtime, '(I8,1X,I6)') (xpctmp(i), i=1,2)
                 ! should be seconds since epoch. This is probably not it.
                 recordaxe(irq)%content(1) = seconds_since_epoch(xpctmp(1), xpctmp(2))
-                write(6, *) "oqr(2),DT =", (/oqr(2), DT/)
-                if (DT == 1.E10) then
-                    recordaxe(irq)%delta      = oqr(2)
-                else
-                    recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
-                end if
-                write(6, *) "recordaxe(irq)%delta", recordaxe(irq)%delta
+                recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
                 recordaxe(irq)%nstatm     = .true.
             else
                 ! stationary, record axe is "run"
@@ -1588,11 +1578,6 @@ contains
                 ! write mode, e.g, fill dimension variables. Note that record dimension
                 ! variable is updated by open_ncfile
                 call close_ncfile(ncid)
-                write(6, *) "recordaxe%varid is ", recordaxe(irq)%varid
-                write(6, *) "recordaxe%content is ", recordaxe(irq)%content
-                write(6, *) "recordaxe%ncontent is ", recordaxe(irq)%ncontent
-                write(6, *) "recordaxe%dimid is ", recordaxe(irq)%dimid
-                write(6, *) "recordaxe%delta is ", recordaxe(irq)%delta
                 call open_ncfile( ncfile, "write", ncid, recordaxe(irq), monthly)
                 call agnc_set_mapgrid (ncid, mapgrid)
             end if
@@ -1601,13 +1586,6 @@ contains
             call close_ncfile(ncid)
         end if
 
-        write(6, *) "================================================"
-        write(6, *) "subroutine swn_outnc_openblockfile (2)"
-        write(6, *) "recordaxe%varid is ", recordaxe(irq)%varid
-        write(6, *) "recordaxe%content is ", recordaxe(irq)%content
-        write(6, *) "recordaxe%ncontent is ", recordaxe(irq)%ncontent
-        write(6, *) "recordaxe%dimid is ", recordaxe(irq)%dimid
-        write(6, *) "recordaxe%delta is ", recordaxe(irq)%delta
         call open_ncfile( ncfile, "write", ncid, recordaxe(irq))
 
         ! set the offset to translate between swan's HIOPEN + IRQ and
@@ -1617,11 +1595,7 @@ contains
         ! if only only record found, set delta to delta specified in command file (or 1 on stationary)
         if ( recordaxe(irq)%ncontent == 1 ) then
             if ( NSTATM > 0 ) then
-                if (DT == 1.E10) then
-                    recordaxe(irq)%delta      = oqr(2)
-                else
-                    recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
-                end if
+                recordaxe(irq)%delta = maxval((/oqr(2), DT/))
             else
                 recordaxe(irq)%delta = 1
             end if

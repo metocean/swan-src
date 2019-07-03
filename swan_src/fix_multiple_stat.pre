@@ -1,0 +1,12 @@
+diff -r -u ftn_stockB/swanpre1.ftn ftn_stockB-fix/swanpre1.ftn
+--- ftn_stockB/swanpre1.ftn	2019-05-08 18:14:39.396497116 +1200
++++ ftn_stockB-fix/swanpre1.ftn	2019-05-08 18:35:24.040167035 +1200
+@@ -861,7 +861,7 @@
+           TIMCO = TINIC                                                   40.00
+ !COH          CALL DTSTTI(ITMOPT,ELTEXT(1:LENCST),COH_TINIC)                  41.61
+ !COH          COH_TFINC = COH_TINIC                                           41.61
+-          DT = 1.E10                                                      40.00
++          DT = 1.                                                         40.00
+           RDTIM = 0.                                                      40.00
+           NSTATC = 0                                                      40.00
+           MTC = 1                                                         40.41

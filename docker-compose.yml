@@ -16,7 +16,7 @@ services:
 
   # Build and install model binaries
   model:
-    image: metocean/swan:model
+    image: metocean/swan:model-multistat
     build:
       context: ./
       dockerfile: Dockerfile-model
