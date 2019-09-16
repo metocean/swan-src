@@ -53,19 +53,19 @@
              nctable(2) / nctable_record("xcur",&
                             "eastward_sea_water_velocity",&
                             "eastward component of current velocity", &                                                 !MSL (changed long name)
-                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
+                            "m s^{-1}", NF90_SHORT, -20., 20., variddum) /, &                                           !MSL (changed units)
              nctable(3) / nctable_record("ycur",&
                             "northward_sea_water_velocity",&
                             "northward component of current velocity", &                                                !MSL (changed long name)
-                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
+                            "m s^{-1}", NF90_SHORT, -20., 20., variddum) /, &                                           !MSL (changed units)
              nctable(4) / nctable_record("xwnd",&
                             "eastward_wind_at_10m_above_ground_level",&                                                 !MSL (specifying vertical level because variable is 2d)
                             "eastward component of wind velocity", &                                                    !MSL (changed long name)
-                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
+                            "m s^{-1}", NF90_SHORT, -100., 100., variddum) /, &                                         !MSL (changed units)
              nctable(5) / nctable_record("ywnd",&
                             "northward_wind_at_10m_above_ground_level",&                                                !MSL (specifying vertical level because variable is 2d)
                             "northward component of wind velocity", &                                                   !MSL (changed long name)
-                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
+                            "m s^{-1}", NF90_SHORT, -100., 100., variddum) /, &                                         !MSL (changed units)
              nctable(6) / nctable_record("astd",&
                             "air_sea_temperature_difference",&                                                          !MSL (added stdname, not in CF list)
                             "air sea temperature difference", &                                                         !MSL (removing unit from name)
@@ -73,7 +73,7 @@
              nctable(7) / nctable_record("ustar",&
                             "sea_surface_wave_friction_velocity",&
                             "friction velocity", &
-                            "m s-1", NF90_SHORT, 0, 20, variddum) /,&
+                            "m s^{-1}", NF90_SHORT, 0, 20, variddum) /,&                                                !MSL (changed units)
              nctable(8) / nctable_record("hs",&
                             "sea_surface_wave_significant_height",&
                             "significant height of wind and swell waves", &                                             !MSL (added long name)
@@ -193,11 +193,11 @@
              nctable(37) / nctable_record("ubot",&
                             "sea_surface_wave_root_mean_square_near_bottom_orbital_velocity_maxima",&                   !MSL (added stdname, not in CF's)
                             "root mean square of the orbital velocity maxima near the bottom", &                        !MSL (updated long name)
-                            "m s-1", NF90_SHORT, 0, 15, variddum) /, &
+                            "m s^{-1}", NF90_SHORT, 0, 15, variddum) /, &                                               !MSL (changed units)
              nctable(38) / nctable_record("urms",&
                             "sea_surface_wave_root_mean_square_near_bottom_orbital_velocity",&                          !MSL (added stdname, not in CF's)
                             "root mean square of the orbital velocity near the bottom", &                               !MSL (updated stdname)
-                            "m s-1", NF90_SHORT, 0, 5, variddum) /, &
+                            "m s^{-1}", NF90_SHORT, 0, 5, variddum) /, &                                                !MSL (changed units)
              nctable(39) / nctable_record("dhs",&
                             "sea_surface_wave_significant_height_difference_between_iterations",&                       !MSL (added stdname, not in CF's)
                             "difference in significant wave height between iterations", &                               !MSL (added long name)
