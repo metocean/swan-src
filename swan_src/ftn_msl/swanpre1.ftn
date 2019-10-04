@@ -312,7 +312,7 @@
 
       CHARACTER*6  QOVSNM                                                 40.87
       CHARACTER*40 QOVLNM                                                 40.87
-      REAL         QR(9)                                                  40.87
+      REAL         QR(10)                                                 MSL 40.87
       REAL*8       DVAL                                                   40.87
 
       TYPE(OBSTDAT), POINTER :: OBSTMP                                    40.31
@@ -2042,6 +2042,7 @@
 !         [fswell]                 {for output quantity HSWELL}           40.03
 !         [fmin]  [fmax]           {for integral parameters}              40.87
 !         PROBLEM/FRAME            {for directions and vectors)           40.03
+!         [noswll]                 {for partition output quantities}      MSL
 !
 ! =============================================================
 !
@@ -2069,6 +2070,7 @@
             CALL INREAL ('FSWELL', QR(6), 'STA', -999.)                   40.87
             CALL INREAL ('FMIN' , QR(8) , 'STA',  999. )                  40.87
             CALL INREAL ('FMAX' , QR(9) , 'STA', -999. )                  40.87
+            CALL INREAL ('NOSWLL' , QR(10) , 'STA', -999. )               MSL
             CALL INKEYW ('STA', ' ')                                      40.87
             IF (KEYWIS('PROBLEM') .OR. KEYWIS('USER')) THEN               40.87
                QR(7) = 0.                                                 40.87
@@ -2103,6 +2105,11 @@
                   IF (QR(5).NE.-999.) OUTPAR(3) = QR(5)                   40.87
                ELSE IF (IVTYPE.EQ.44) THEN
                   IF (QR(6).NE.-999.) OUTPAR(5) = QR(6)                   40.87
+               ELSE IF ((IVTYPE.EQ.100).OR.(IVTYPE.EQ.110).OR.            MSL
+     &                   (IVTYPE.EQ.120).OR.(IVTYPE.EQ.130).OR.           MSL
+     &                   (IVTYPE.EQ.140).OR.(IVTYPE.EQ.150).OR.           MSL
+     &                   (IVTYPE.EQ.160).OR.(IVTYPE.EQ.170) ) THEN        MSL
+                  IF (QR(10).NE.-999.) OUTPAR(51) = QR(10)                MSL
                ENDIF
                IF ( ANY( IVTYPE == IVOTP ) ) THEN                         40.87
                   INDX = MINLOC(IVOTP, IVOTP==IVTYPE)                     40.87
