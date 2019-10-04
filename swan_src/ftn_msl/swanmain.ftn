@@ -2743,7 +2743,7 @@
       OVLLIM(IVTYPE) = 0.                                                 MSL
       OVULIM(IVTYPE) = 100.                                               MSL
       OVLEXP(IVTYPE) = 0.                                                 MSL
-      OVHEXP(IVTYPE) = 100.                                                MSL
+      OVHEXP(IVTYPE) = 100.                                               MSL
       OVEXCV(IVTYPE) = -9.                                                MSL
 !
       IVTYPE = 86                                                         MSL
@@ -3637,6 +3637,8 @@
       OUTPAR(4) = 0.
 !     frequency limit for swell
       OUTPAR(5) = 0.1
+!     number of output partitions
+      OUTPAR(51) = 5.
 !     0=integration over [0,inf], 1=integration over [fmin,fmax]
       OUTPAR(6:20) = 0.                                                   40.87
 !     lower bound of integration range for output parameters
