@@ -4,7 +4,7 @@ services:
 
   # Install ifort and libraries required for static model compilation
   comp:
-    image: metocean/swan:comp
+    image: metocean/swan:comp-v4120.1.0-test
     build:
       context: ./
       dockerfile: Dockerfile
@@ -16,7 +16,7 @@ services:
 
   # Build and install model binaries
   model:
-    image: metocean/swan:model
+    image: metocean/swan:model-v4120.1.0-test
     build:
       context: ./
       dockerfile: Dockerfile-model
@@ -28,24 +28,24 @@ services:
   
   # Build test image
   test:
-    image: metocean/swan:modeltest
+    image: metocean/swan:modeltest-v4120.1.0-test
     build:
       context: ./
       dockerfile: Dockerfile-test
       args:
         ftnref: stock
         default_mode: mpi
-        imp: bass # implementation to be used in tests
+        imp: tinyapp # implementation to be used in tests
     depends_on:
       - model
 
-  test_model: # legacy
-    image: metocean/swan:modeltest
-    command: python /usr/local/bin/run_tinyapp.py
-    
+  # Run tests
   test_src:
-    image: metocean/swan:modeltest
-    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    image: metocean/swan:modeltest-v4120.1.0-test
+    volumes:
+      - /home/metocean:/home/metocean
+      - /source/swan-src:/source/swan-src # to debug
+    command: bash -c "cd /usr/local/bin && cp /source/swan-src/tests/test_src.py . && pytest -v -s test_src.py --models=4120,4120"
 
   test_omp:
     image: metocean/swan:modeltest
