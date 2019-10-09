@@ -4662,18 +4662,17 @@
           CALL SWPART (TRANSPOSE(ACLOC), UABS, UDIR, VOQ(IP,VOQR(4)),     41.62
      &                 WK, SPCSIG, SPCDIR, NP, XPT, DIMXPT)               41.62
 !
-          IF (OQPROC(171)) VOQ(IP,VOQR(171))     = 0.                     41.62
-          IF (OQPROC(100)) VOQ(IP,VOQR(100:109)) = 0.                     41.62
-          IF (OQPROC(110)) VOQ(IP,VOQR(110:119)) = 0.                     41.62
-          IF (OQPROC(120)) VOQ(IP,VOQR(120:129)) = 0.                     41.62
-          IF (OQPROC(130)) VOQ(IP,VOQR(130:139)) = 0.                     41.62
-          IF (OQPROC(140)) VOQ(IP,VOQR(140:149)) = 0.                     41.62
-          IF (OQPROC(150)) VOQ(IP,VOQR(150:159)) = 0.                     41.62
-          IF (OQPROC(160)) VOQ(IP,VOQR(160:169)) = 0.                     41.62
-!
-!         limit number of partitions in output to NOSWLL                  MSL 41.62
+!         requested number of swells
           NOSWLL = INT(OUTPAR(51))                                        MSL
-          NP = MIN(NP, NOSWLL)                                            MSL 41.62
+          IF (OQPROC(171)) VOQ(IP,VOQR(171))     = 0.                     41.62
+          IF (OQPROC(100)) VOQ(IP,VOQR(100:100+NOSWLL)) = 0.              MSL 41.62
+          IF (OQPROC(110)) VOQ(IP,VOQR(110:110+NOSWLL)) = 0.              MSL 41.62
+          IF (OQPROC(120)) VOQ(IP,VOQR(120:120+NOSWLL)) = 0.              MSL 41.62
+          IF (OQPROC(130)) VOQ(IP,VOQR(130:130+NOSWLL)) = 0.              MSL 41.62
+          IF (OQPROC(140)) VOQ(IP,VOQR(140:140+NOSWLL)) = 0.              MSL 41.62
+          IF (OQPROC(150)) VOQ(IP,VOQR(150:150+NOSWLL)) = 0.              MSL 41.62
+          IF (OQPROC(160)) VOQ(IP,VOQR(160:160+NOSWLL)) = 0.              MSL 41.62
+!
           IF (NP.GT.0) THEN                                               41.62
             IF (OQPROC(171)) VOQ(IP,VOQR(171)) = NINT(REAL(NP))           41.62
             IF (OQPROC(100)) THEN                                         41.62
@@ -4682,7 +4681,7 @@
                IF ( (XPT(6,1).GE.WSCUT).AND.(XPT(1,1).GE.0.) ) THEN       MSL
                   VOQ(IP,VOQR(100)) = XPT(1,1)                            MSL
                ELSE                                                       MSL 41.62
-                  VOQ(IP,VOQR(100+IPT)) = 0.                              MSL 41.62
+                  VOQ(IP,VOQR(100)) = 0.                                  MSL 41.62
                ENDIF                                                      MSL 41.62
                ! swell partitions                                         MSL
                DO IPT = 1, NOSWLL                                         MSL 41.62
