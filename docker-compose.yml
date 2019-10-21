@@ -42,10 +42,7 @@ services:
   # Run tests
   test_src:
     image: metocean/swan:modeltest
-    # volumes:
-    #   - /home/metocean:/home/metocean
-    #   - /source/swan-src:/source/swan-src # to debug
-    command: bash -c "cd /usr/local/bin && cp /source/swan-src/tests/test_src.py . && pytest -v -s test_src.py --models=4120,4120"
+    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
 
   # test_omp:
   #   image: metocean/swan:modeltest
