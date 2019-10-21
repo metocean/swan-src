@@ -382,7 +382,6 @@
      &                 SPCDIR              ,NE                  ,         40.31 30.90
      &                 NED                 ,KGRPNT              ,         40.31 30.90
      &                 COMPDA(1,JDP2)      ,CROSS               )         40.86
-
 !
 !         call SWOEXF to compute wave-driven force on regular grid
 !
