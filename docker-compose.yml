@@ -4,7 +4,7 @@ services:
 
   # Install ifort and libraries required for static model compilation
   comp:
-    image: metocean/swan:comp-v4120.1.0-test
+    image: metocean/swan:comp
     build:
       context: ./
       dockerfile: Dockerfile
@@ -16,7 +16,7 @@ services:
 
   # Build and install model binaries
   model:
-    image: metocean/swan:model-v4120.1.0-test
+    image: metocean/swan:model
     build:
       context: ./
       dockerfile: Dockerfile-model
@@ -28,7 +28,7 @@ services:
   
   # Build test image
   test:
-    image: metocean/swan:modeltest-v4120.1.0-test
+    image: metocean/swan:modeltest
     build:
       context: ./
       dockerfile: Dockerfile-test
@@ -41,14 +41,14 @@ services:
 
   # Run tests
   test_src:
-    image: metocean/swan:modeltest-v4120.1.0-test
-    volumes:
-      - /home/metocean:/home/metocean
-      - /source/swan-src:/source/swan-src # to debug
+    image: metocean/swan:modeltest
+    # volumes:
+    #   - /home/metocean:/home/metocean
+    #   - /source/swan-src:/source/swan-src # to debug
     command: bash -c "cd /usr/local/bin && cp /source/swan-src/tests/test_src.py . && pytest -v -s test_src.py --models=4120,4120"
 
-  test_omp:
-    image: metocean/swan:modeltest
-    volumes:
-      - /home/metocean:/home/metocean
-    command: bash -c "cd /usr/local/bin && pytest -s test_omp.py"
+  # test_omp:
+  #   image: metocean/swan:modeltest
+  #   volumes:
+  #     - /home/metocean:/home/metocean
+  #   command: bash -c "cd /usr/local/bin && pytest -s test_omp.py"
