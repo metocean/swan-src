@@ -25,10 +25,10 @@ if [ $FTNREF = "stock" ]; then
 fi
 
 # Setting default binary and cleaning up
-echo "Setting default SWAN binary: swan_$DEFAULT_MODE.exe --> swan.exe"
+echo "Setting default reference SWAN binary: swan_$DEFAULT_MODE-ref.exe --> swan-ref.exe"
 cd /usr/local/bin
 ln -s swan/swan_$DEFAULT_MODE-ref.exe ./swan-ref.exe
-ln -s swan/swanrun ./swanrun
+# ln -s swan/swanrun ./swanrun
 cd /home/metocean
 rm -rf $SWAN_SRC
 
