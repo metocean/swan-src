@@ -1122,7 +1122,7 @@
 !
 !     command reading routines
 !     (all Ocean Pack)
-!ou
+!
       LOGICAL STPNOW                                                      34.01
 !
 !  9. Subroutines calling
