@@ -35,13 +35,17 @@ services:
       args:
         ftnref: stock
         default_mode: mpi
+        imp: tinyapp # implementation to be used in tests
     depends_on:
       - model
 
-  test_model: # legacy
-    image: metocean/swan:modeltest
-    command: python /usr/local/bin/run_tinyapp.py
-    
+  # Run tests
   test_src:
     image: metocean/swan:modeltest
     command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+
+  # test_omp:
+  #   image: metocean/swan:modeltest
+  #   volumes:
+  #     - /home/metocean:/home/metocean
+  #   command: bash -c "cd /usr/local/bin && pytest -s test_omp.py"
