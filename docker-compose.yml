@@ -4,7 +4,7 @@ services:
 
   # Install ifort and libraries required for static model compilation
   comp:
-    image: metocean/swan:comp
+    image: metocean/swan:comp-py3-gf
     build:
       context: ./
       dockerfile: Dockerfile
@@ -16,19 +16,19 @@ services:
 
   # Build and install model binaries
   model:
-    image: metocean/swan:model
+    image: metocean/swan:model-py3-gf
     build:
       context: ./
       dockerfile: Dockerfile-model
       args:
         ftn: msl
-        default_mode: mpi
+        default_mode: omp
     depends_on:
       - comp
   
   # Build test image
   test:
-    image: metocean/swan:modeltest
+    image: metocean/swan:modeltest-py3-gf
     build:
       context: ./
       dockerfile: Dockerfile-test
@@ -41,8 +41,11 @@ services:
 
   # Run tests
   test_src:
-    image: metocean/swan:modeltest
-    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    image: metocean/swan:modeltest-py3-gf
+    command: /bin/bash #-c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    volumes:
+      - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
+      - /tmp:/tmp
 
   # test_omp:
   #   image: metocean/swan:modeltest

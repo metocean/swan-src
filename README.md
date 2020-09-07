@@ -1,4 +1,8 @@
 # swan-src
+## NOTE ##
+This branch model was installed on system gfortran gcc/++ compilers, ser/omp mode only. Mpi had issues and it was a pain
+to solve mpich compilation with intel due to incompatibilities with our old intel icc and gcc.
+
 ## SWAN Model Source Code
 http://swanmodel.sourceforge.net/
 - [ftn_stock](https://github.com/metocean/swan-src/tree/master/swan_src/ftn_stock): original stock code with patch applied and macros.inc defined
