@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 import xarray as xr # issue lots of warnings
 
-# from wavespectra import read_swan #TODO implement tests using wavespectra
+# from wavespectra import read_swan #TODO implement tests using wavespectra for spec comparison
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -36,16 +36,19 @@ class TestSwanSrc(object):
 
     def run_ref(self):
         """run reference src"""
+        # import ipdb; ipdb.set_trace()
         self.logger.info('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/new.log'))
 
         if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
         os.chdir(self.REFDIR)
         os.system('rm -rf out/*')
         if self.ref == self.new:
-            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi-ref.exe '+self.BINDIR+'/swan.exe')
-            jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_'+self.ref+'.swn -mpi 2 &> ref.log'
+            os.system('unlink '+self.BINDIR+'/swan.exe')
+            os.system('ln -s '+self.BINDIR+'/swan/swan_omp-ref.exe '+self.BINDIR+'/swan.exe')
+            jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_'+self.ref+'.swn -omp 2 &> ref.log'
             os.system(jobstr)
-            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi.exe '+self.BINDIR+'/swan.exe')
+            os.system('unlink '+self.BINDIR+'/swan.exe')
+            os.system('ln -s '+self.BINDIR+'/swan/swan_omp.exe '+self.BINDIR+'/swan.exe')
         else:
             jobstr = +self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan-ref.exe par.20180513_00z_'+self.ref+'.swn &> ref.log'
             os.system(jobstr)
@@ -57,7 +60,8 @@ class TestSwanSrc(object):
         if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
         os.chdir(self.NEWDIR)
         os.system('rm -rf out/*')
-        jobstr = self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan.exe par.20180513_00z_'+self.new+'.swn &> new.log'
+        jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_'+self.ref+'.swn -omp 2 &> new.log'
+        # jobstr = self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan.exe par.20180513_00z_'+self.new+'.swn &> new.log'
         os.system(jobstr)
 
     def test_grid(self, models):
@@ -66,10 +70,11 @@ class TestSwanSrc(object):
         self.run_ref()
         self.run_new()
 
+        import ipdb; ipdb.set_trace()
         ncref = glob.glob(self.REFDIR+'/out/*.nc')[0]
         dsref = xr.open_dataset(ncref)
         ncnew = glob.glob(self.NEWDIR+'/out/*.nc')[0]
-        dsnew = xr.open_dataset(ncnew)        
+        dsnew = xr.open_dataset(ncnew)
         # check if rename is necessary
 
         if self.ref != self.new:
@@ -90,9 +95,11 @@ class TestSwanSrc(object):
             rdiff = (parref - parnew)/parref
             if abs(rdiff.max()) > 0.05:
                 errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), abs(rdiff.max().values)*100))
-                self.logger.info(' {} failed :( \n'.format(varname.title()))
+                # self.logger.info(' {} failed :( \n'.format(varname.title()))
+                print(' {} failed :( \n'.format(varname.title()))
             else:
-                self.logger.info(' {} passed :) \n'.format(varname.title()))
+                # self.logger.info(' {} passed :) \n'.format(varname.title()))
+                print(' {} passed :) \n'.format(varname.title()))
 
 
         # assert no error message has been registered, else print messages

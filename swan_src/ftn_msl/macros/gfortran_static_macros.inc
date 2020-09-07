@@ -21,13 +21,13 @@ ifneq ($(NETCDFROOT),)
   LIBS_MPI = -L$(NETCDFROOT)/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
   NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
 else
-  INCS_SER =
-  INCS_OMP =
-  INCS_MPI =
-  LIBS_SER =
-  LIBS_OMP = -static-libgcc
-  LIBS_MPI =
-  NCF_OBJS =
+  INCS_SER = /usr/include
+  INCS_OMP = /usr/include
+  INCS_MPI = /usr/include
+  LIBS_SER = /usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
+  LIBS_OMP = /usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff -static-libgcc
+  LIBS_MPI = /usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
+  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
 endif
 O_DIR = ../work/odir4/
 OUT = -o 

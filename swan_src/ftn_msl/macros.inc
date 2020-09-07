@@ -1,1 +1,1 @@
-macros/ifort_static_macros.inc
+macros/gfortran_static_macros.inc

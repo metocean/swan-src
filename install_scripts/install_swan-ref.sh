@@ -3,15 +3,15 @@
 echo -e
 
 echo "----------------- Building SWAN REFERENCE SRC -----------------" 
-source /opt/intel/bin/iccvars.sh intel64
-source /opt/intel/bin/ifortvars.sh intel64
-source /opt/intel/bin/compilervars.sh intel64
-
 INSTALL_DIR=/usr/local/bin/swan
 echo "SWAN install dir: $INSTALL_DIR"
+rm $SWAN_SRC/ftn_msl/macros.inc
+ln -s $SWAN_SRC/ftn_msl/macros/gfortran_static_macros.inc $SWAN_SRC/ftn_msl/macros.inc
+rm $SWAN_SRC/ftn_stock/macros.inc
+ln -s $SWAN_SRC/ftn_msl/macros/gfortran_static_macros.inc $SWAN_SRC/ftn_stock/macros.inc
 
 # Building MPI and Serial versions (OMP not working for some reason)
-for mode in mpi ser; do
+for mode in omp ser; do
     echo "Building ${FTNREF} version of SWAN in $mode mode"
     cd $SWAN_SRC/ftn_${FTNREF}
     make clobber
@@ -19,16 +19,11 @@ for mode in mpi ser; do
     (make $mode 2>&1) | tee build_$mode.log
     mv swan.exe $INSTALL_DIR/swan_$mode-ref.exe
 done
-if [ $FTNREF = "stock" ]; then 
-    cp swanrun $INSTALL_DIR/
-    chmod +rx $INSTALL_DIR/swanrun
-fi
 
 # Setting default binary and cleaning up
 echo "Setting default reference SWAN binary: swan_$DEFAULT_MODE-ref.exe --> swan-ref.exe"
 cd /usr/local/bin
 ln -s swan/swan_$DEFAULT_MODE-ref.exe ./swan-ref.exe
-# ln -s swan/swanrun ./swanrun
 cd /home/metocean
 rm -rf $SWAN_SRC
 
