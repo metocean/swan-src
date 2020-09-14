@@ -1,4 +1,4 @@
-FROM metocean/swan:model
+FROM metocean/swan:model-v4120.1.1
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG ftnref
@@ -13,6 +13,21 @@ ENV SWAN_TEST="/home/metocean"
 ENV SWAN_SRC="/source/swan-src/swan_src"
 ENV SWAN_IMP=$imp
 
+# needed packages for running test scripts
+RUN yum -y install nco
+RUN pip2 install --upgrade pip
+RUN pip2 install --no-cache-dir setuptools==41.4.0 \
+                                traitlets==4.3.3 \
+                                pygments==2.3.1 \
+                                ipython==5.0.0 \
+                                nco \
+                                numpy==1.16.4 \
+                                pandas==0.24.2 \
+                                xarray==0.11.3 \
+                                pytest==4.6.4
+RUN pip2 install --no-cache-dir netCDF4==1.5.1.2 \
+                                ipdb==0.10.2
+
 # Compile and install model reference src to be compared with
 COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
@@ -25,16 +40,6 @@ RUN sh $INSTALL_SCRIPTS/install_swan-ref.sh &&\
 
 # copy entrypoint
 COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
-
-RUN yum -y install nco
-RUN pip2 install --upgrade --no-cache-dir ipython==5.0.0 \
-                                         nco        \
-                                         numpy==1.16.4 \
-                                         pandas==0.24.2 \
-                                         xarray==0.11.3 \
-                                         pytest==4.6.4 \
-                                         netCDF4==1.5.1.2 \
-                                         ipdb==0.10.2
 
 # copy since mounting does not work with bob
 COPY tests/run_tinyapp.py /usr/local/bin/
