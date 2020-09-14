@@ -1717,6 +1717,12 @@ contains
         STNAMES(133, 1) = 'pdir3'          !MSL (not in official SWAN)
         STNAMES(134, 1) = 'pdir4'          !MSL (not in official SWAN)
         STNAMES(135, 1) = 'pdir5'          !MSL (not in official SWAN)
+        STNAMES(140, 1) = 'pspr0'          !MSL (not in official SWAN)
+        STNAMES(141, 1) = 'pspr1'          !MSL (not in official SWAN)
+        STNAMES(142, 1) = 'pspr2'          !MSL (not in official SWAN)
+        STNAMES(143, 1) = 'pspr3'          !MSL (not in official SWAN)
+        STNAMES(144, 1) = 'pspr4'          !MSL (not in official SWAN)
+        STNAMES(145, 1) = 'pspr5'          !MSL (not in official SWAN)         
         stnames_initialized = .true.
 
     end subroutine stnames_init

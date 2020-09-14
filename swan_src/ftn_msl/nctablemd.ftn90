@@ -44,7 +44,7 @@
         end type nctable_record
 
 
-        type (nctable_record)                        :: nctable(78)
+        type (nctable_record)                        :: nctable(84)
 
         data nctable(1) / nctable_record("depth",&
                             "sea_floor_depth_below_sea_surface",&                                                       !MSL (this should consider tides as well)
@@ -357,7 +357,32 @@
              nctable(78) / nctable_record("pdir5",&                                                                      !MSL (not in official SWAN)
                             "sea_surface_quinary_swell_wave_mean_from_direction",&
                             "sea surface quinary swell wave mean from direction", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &
+             nctable(79) / nctable_record("pspr0",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_wind_wave_directional_spread",&
+                            "sea surface wind wave directional spread", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &
+             nctable(80) / nctable_record("pspr1",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_primary_swell_wave_directional_spread",&
+                            "sea surface primary swell wave directional spread", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &
+             nctable(81) / nctable_record("pspr2",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_secondary_swell_wave_directional_spread",&
+                            "sea surface secondary swell wave directional spread", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &
+             nctable(82) / nctable_record("pspr3",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_tertiary_swell_wave_directional_spread",&
+                            "sea surface tertiary swell wave directional spread", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &
+             nctable(83) / nctable_record("pspr4",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_quaternary_swell_wave_directional_spread",&
+                            "sea surface quaternary swell wave directional spread", &
+                            "degree", NF90_SHORT, 0., 360., variddum) /, &
+             nctable(84) / nctable_record("pspr5",&                                                                      !MSL (not in official SWAN)
+                            "sea_surface_quinary_swell_wave_directional_spread",&
+                            "sea surface quinary swell wave directional spread", &
                             "degree", NF90_SHORT, 0., 360., variddum) /
+
 
     contains
         subroutine get_nctable_record(varname, trecord, found)
