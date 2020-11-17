@@ -1,47 +1,57 @@
-# FROM metocean/ifort:2018
-FROM python:3.8.5-buster
+# FROM metocean/ifort
+FROM python:3.7-buster
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
-# ARG mpich_version
-# ARG hdf5_version
-# ARG netcdf_version
-# ARG netcdf_fortran_version
+ARG mpich_version
+ARG hdf5_version
+ARG netcdf_version
+ARG netcdf_fortran_version
 
 # # copy intel compiler from ifort image
 # COPY --from=0 /opt/intel /opt/intel
 
-# installed a few libraries
-RUN apt-get update && apt-get -y install man sudo vim git &&\
-    apt-get -y install mpich netcdf-bin libnetcdf-dev libnetcdff-dev nco &&\
-	apt-get install -f && apt-get -y autoremove && apt-get autoclean
+ARG USER_ID=1001
+ARG GROUP_ID=1001
+ARG USER_NAME=metocean
 
-# Add metocean user
-RUN useradd -ms /bin/bash metocean
-# Get rid of password need
-RUN echo /etc/sudoers >> "metocean   ALL = NOPASSWD: ALL"
+RUN apt -y update &&\
+    apt install -y vim sudo &&\
+    apt -y upgrade &&\
+    apt -y clean
 
-# Set permissions
-RUN chmod 666 /etc/sudoers &&\
-    echo "metocean ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers &&\
+RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
+    chmod 666 /etc/sudoers &&\
+    echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers &&\
     chmod 440 /etc/sudoers &&\
-    mkdir /config && chown metocean:metocean /config &&\
-    mkdir /data && chown metocean:metocean /data && \
-    mkdir /data_exchange && chown metocean:metocean /data_exchange &&\
-    mkdir /hot && chown metocean:metocean /hot &&\
-    mkdir /prod && chown metocean:metocean /prod &&\
-    mkdir /system && chown metocean:metocean /system &&\
-    mkdir /scratch && chown metocean:metocean /scratch &&\
-    mkdir /archive && chown metocean:metocean /archive &&\
-    mkdir /logs && chown metocean:metocean /logs &&\
-    mkdir /source && chown metocean:metocean /source &&\
-    mkdir /static && chown metocean:metocean /static
+    mkdir /config && chown $USER_ID:$GROUP_ID /config &&\
+    mkdir /data && chown $USER_ID:$GROUP_ID /data && \
+    mkdir /data_exchange && chown $USER_ID:$GROUP_ID /data_exchange &&\
+    mkdir /hot && chown $USER_ID:$GROUP_ID /hot &&\
+    mkdir /prod && chown $USER_ID:$GROUP_ID /prod &&\
+    mkdir /scratch && chown $USER_ID:$GROUP_ID /scratch &&\
+    mkdir /archive && chown $USER_ID:$GROUP_ID /archive &&\
+    mkdir /logs && chown $USER_ID:$GROUP_ID /logs &&\
+    mkdir /source && chown $USER_ID:$GROUP_ID /source &&\
+    mkdir /static && chown $USER_ID:$GROUP_ID /static    
+
+# Set required environment variables
+ENV MPICH_VERSION=$mpich_version
+ENV HDF5_VERSION=$hdf5_version
+ENV NETCDF_VERSION=$netcdf_version
+ENV NETCDF_FORTRAN_VERSION=$netcdf_fortran_version
+
+# no pre-installed mpich/hdf5/netcdf so no need to remove as done previously
+# install gfortran (or pgi) if not using intel
+RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
+    apt install -y gfortran
+
+# # instal a some other libraries (NOT SURE IF NEEDED YET)
+# RUN apt install -y mpich netcdf-bin libnetcdf-dev libnetcdff-dev nco &&\
+# 	apt-get install -f && apt-get -y autoremove && apt-get autoclean
 
 # # Install model requirements
-# ADD install_scripts/install_required.sh /tmp/
-# RUN cd /tmp && sh install_required.sh &&\
-# 	rm -rf /tmp/*
-
-# Get rid of password need
-RUN echo /etc/sudoers >> "metocean   ALL = NOPASSWD: ALL"
+ADD install_scripts/install_required.sh /tmp/
+RUN cd /tmp && sh install_required.sh &&\
+	rm -rf /tmp/*
 
 CMD ["/bin/bash"]

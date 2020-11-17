@@ -2,14 +2,14 @@
 
 set -e
 
-# Set up intel binaries
-source /opt/intel/bin/iccvars.sh intel64
-source /opt/intel/bin/ifortvars.sh intel64
-source /opt/intel/bin/compilervars.sh intel64
-# Set compilers and flags
-export FC=ifort
-export CC=icc
-export CXX=icpc
+# # Set up intel binaries (only if using intel compiler)
+# source /opt/intel/bin/iccvars.sh intel64
+# source /opt/intel/bin/ifortvars.sh intel64
+# source /opt/intel/bin/compilervars.sh intel64
+# # Set compilers and flags
+# export FC=ifort
+# export CC=icc
+# export CXX=icpc
 
 build_output=/home/metocean/build_output
 
@@ -65,6 +65,7 @@ cd ../
 #####################
 ## netcdf4-fortran ##
 #####################
+# it might need to set flags, it is breaking the SWAN compilation
 echo "Installing netcdf4-fortran..."
 logdir=${build_output}/netcdf4-fortran
 mkdir -p ${logdir}
