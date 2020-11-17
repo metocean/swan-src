@@ -307,7 +307,7 @@
       ENDIF
       IF (LREAD) THEN
         IF (INPFIL.NE.'    ') THEN                                        MSL
-          IF (IARGC().GT.0) THEN                                           MSL
+          IF (IARGC().GT.0) THEN                                          MSL
             CALL GETARG(1, INPFIL)                                        MSL
           ENDIF                                                           MSL
           PRINT*, 'Opening ', INPFIL                                      MSL
