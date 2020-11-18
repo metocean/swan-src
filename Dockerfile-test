@@ -1,4 +1,4 @@
-FROM metocean/swan:model-py3-gf
+FROM metocean/swan:model-py3_gf_v1.0
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG ftnref
@@ -32,7 +32,8 @@ RUN pip install --upgrade --no-cache-dir ipython \
                                          xarray \
                                          pytest \
                                          netCDF4 \
-                                         ipdb
+                                         ipdb \
+                                         sh
 
 # copy since mounting does not work with bob
 COPY tests/run_tinyapp.py /usr/local/bin/
