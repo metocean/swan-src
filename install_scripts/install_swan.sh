@@ -14,8 +14,8 @@ echo "SWAN install dir: $INSTALL_DIR"
 rm $SWAN_SRC/ftn_$FTN/macros.inc
 ln -s $SWAN_SRC/ftn_$FTN/macros/gfortran_static_macros.inc $SWAN_SRC/ftn_$FTN/macros.inc
 
-# Building MPI and Serial versions (OMP not working for some reason)
-for mode in ser mpi omp; do
+# Building MPI and Serial versions
+for mode in mpi omp ser; do
     echo "Building $FTN version of SWAN in $mode mode"
     cd $SWAN_SRC/ftn_$FTN
     make clobber
