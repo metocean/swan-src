@@ -43,13 +43,10 @@ ENV NETCDF_FORTRAN_VERSION=$netcdf_fortran_version
 # no pre-installed mpich/hdf5/netcdf so no need to remove as done previously
 # install gfortran (or pgi) if not using intel
 RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
-    apt install -y gfortran
+    apt install -y gfortran &&\
+    apt -y clean
 
-# # instal a some other libraries (NOT SURE IF NEEDED YET)
-# RUN apt install -y mpich netcdf-bin libnetcdf-dev libnetcdff-dev nco &&\
-# 	apt-get install -f && apt-get -y autoremove && apt-get autoclean
-
-# # Install model requirements
+# Install model requirements
 ADD install_scripts/install_required.sh /tmp/
 RUN cd /tmp && sh install_required.sh &&\
 	rm -rf /tmp/*

@@ -28,7 +28,7 @@ services:
   
   # Build test image
   test:
-    image: metocean/swan:modeltest-py3-gf
+    image: metocean/swan:modeltest-py3_gf_v1.0
     build:
       context: ./
       dockerfile: Dockerfile-test
@@ -39,13 +39,13 @@ services:
     depends_on:
       - model
 
-  # Run tests
+  # Run tests (currently not working because os.system inside pytest)
   test_src:
-    image: metocean/swan:modeltest-py3-gf
-    command: /bin/bash #-c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
-    volumes:
-      - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
-      - /tmp:/tmp
+    image: metocean/swan:modeltest-py3_gf_v1.0
+    command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    # volumes: # for dev only
+    #   - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
+    #   - /tmp:/tmp
 
   # test_omp:
   #   image: metocean/swan:modeltest

@@ -1,1 +1,1 @@
-macros/gfortran_static_macros.inc
+swan_src/ftn_msl/macros/gfortran_static_macros.inc
