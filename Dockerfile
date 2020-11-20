@@ -32,7 +32,8 @@ RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
     mkdir /archive && chown $USER_ID:$GROUP_ID /archive &&\
     mkdir /logs && chown $USER_ID:$GROUP_ID /logs &&\
     mkdir /source && chown $USER_ID:$GROUP_ID /source &&\
-    mkdir /static && chown $USER_ID:$GROUP_ID /static    
+    mkdir /source && chown $USER_ID:$GROUP_ID /flush &&\
+    mkdir /static && chown $USER_ID:$GROUP_ID /static
 
 # Set required environment variables
 ENV MPICH_VERSION=$mpich_version
