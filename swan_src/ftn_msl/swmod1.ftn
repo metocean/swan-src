@@ -2423,7 +2423,7 @@
       REAL                SPPARM(MSPPAR),SY0,       U10
       REAL                WDIC,          WDIP,      HSRERR
       REAL                PQUAD(MQUAD)
-      REAL                RCOMPT(5000,5)
+      REAL                RCOMPT(10000,5)
       REAL                PDIFFR(MDIFFR)                                  40.21
 !CTGA 111003:  Full ice implementation.  Parameter read in swanpre1.ftn
       REAL                WBICETH
