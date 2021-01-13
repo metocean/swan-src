@@ -1,18 +1,19 @@
 #!/bin/bash
 
-set -e
+set -e -x
 
-# # Set up intel binaries
-# source /opt/intel/bin/iccvars.sh intel64
-# source /opt/intel/bin/ifortvars.sh intel64
-# source /opt/intel/bin/compilervars.sh intel64
+# set up NVIDIA HPC SDK, copy-and-pasted from the official docs:
+# https://docs.nvidia.com/hpc-sdk/hpc-sdk-install-guide/index.html#install-linux-end-usr-env-settings
+NVARCH=`uname -s`_`uname -m`; export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
+MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/20.11/compilers/man; export MANPATH
+PATH=$NVCOMPILERS/$NVARCH/20.11/compilers/bin:$PATH; export PATH
+
+
 # Set compilers and flags
-# export FC=ifort
-# export CC=icc
-# export CXX=icpc
-# export FC=gfortran
-# export CC=gcc
-# export CXX=g++
+export FC=nvfortran
+export CC=nvc
+export CXX=nvc++
 
 build_output=/home/metocean/build_output
 
