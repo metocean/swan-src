@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e -x
+# plain "set -e" doesn't work for pipes (e.g., errors in the "make | tee" command below could still go unnoticed)
+set -e -x -o pipefail
 
 # # Set up intel binaries
 source /opt/intel/bin/iccvars.sh intel64
