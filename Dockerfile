@@ -1,4 +1,4 @@
-# FROM metocean/ifort
+FROM metocean/ifort:v19-python_3.7-buster
 FROM python:3.7-buster
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
@@ -7,8 +7,8 @@ ARG hdf5_version
 ARG netcdf_version
 ARG netcdf_fortran_version
 
-# # copy intel compiler from ifort image
-# COPY --from=0 /opt/intel /opt/intel
+# copy compiler(s)
+COPY --from=0 /opt/intel /opt/intel
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
@@ -32,7 +32,7 @@ RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
     mkdir /archive && chown $USER_ID:$GROUP_ID /archive &&\
     mkdir /logs && chown $USER_ID:$GROUP_ID /logs &&\
     mkdir /source && chown $USER_ID:$GROUP_ID /source &&\
-    mkdir /source && chown $USER_ID:$GROUP_ID /flush &&\
+    mkdir /flush && chown $USER_ID:$GROUP_ID /flush &&\
     mkdir /static && chown $USER_ID:$GROUP_ID /static
 
 # Set required environment variables
@@ -49,7 +49,8 @@ RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
 
 # Install model requirements
 ADD install_scripts/install_required.sh /tmp/
-RUN cd /tmp && sh install_required.sh &&\
-	rm -rf /tmp/*
+RUN chmod ugo+x /tmp/install_required.sh
+#RUN /tmp/install_required.sh
+#RUN rm -rf /tmp/*
 
 CMD ["/bin/bash"]
