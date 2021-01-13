@@ -48,7 +48,7 @@ RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
     apt -y clean
 
 # Needed to avoid some missing c++ header files issues like 'catastrophic error: cannot open source file "bits/c++config.h"'
-RUN apt-get install gcc-multilib g++-multilib
+RUN apt-get install -y gcc-multilib g++-multilib
 
 # Install model requirements
 ADD install_scripts/install_required.sh /tmp/
