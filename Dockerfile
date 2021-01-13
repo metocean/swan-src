@@ -56,7 +56,8 @@ RUN apt-get install -y man
 # Install model requirements
 ADD install_scripts/install_required.sh /tmp/
 RUN chmod ugo+x /tmp/install_required.sh
-RUN /tmp/install_required.sh
+# workaround to prevent issue with "libfabric/bin/fi_info --version"
+RUN /bin/bash -c "source /opt/intel/bin/iccvars.sh intel64 && source /opt/intel/bin/ifortvars.sh intel64 && source /opt/intel/bin/compilervars.sh intel64 && /tmp/install_required.sh"
 #RUN rm -rf /tmp/*
 
 CMD ["/bin/bash"]
