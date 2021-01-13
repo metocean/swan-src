@@ -1,18 +1,16 @@
 #!/bin/bash
 
-set -e
+set -e -x
 
 # # Set up intel binaries
-# source /opt/intel/bin/iccvars.sh intel64
-# source /opt/intel/bin/ifortvars.sh intel64
-# source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/bin/iccvars.sh intel64
+source /opt/intel/bin/ifortvars.sh intel64
+source /opt/intel/bin/compilervars.sh intel64
 # Set compilers and flags
-# export FC=ifort
-# export CC=icc
-# export CXX=icpc
-# export FC=gfortran
-# export CC=gcc
-# export CXX=g++
+export FC=ifort
+export CC=icc
+export CXX=icpc
+
 
 build_output=/home/metocean/build_output
 
