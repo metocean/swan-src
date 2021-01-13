@@ -50,6 +50,9 @@ RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
 # Needed to avoid some missing c++ header files issues like 'catastrophic error: cannot open source file "bits/c++config.h"'
 RUN apt-get install -y gcc-multilib g++-multilib
 
+# Needed for Intel .sh scripts
+RUN apt-get install -y man
+
 # Install model requirements
 ADD install_scripts/install_required.sh /tmp/
 RUN chmod ugo+x /tmp/install_required.sh
