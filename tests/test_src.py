@@ -41,6 +41,7 @@ class TestSwanSrc(object):
 
         if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
         os.chdir(self.REFDIR)
+        sh.touch("machinefile")
         os.system('rm -rf out/*')
         if self.ref == self.new:
             os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi-ref.exe '+self.BINDIR+'/swan.exe')
@@ -56,6 +57,7 @@ class TestSwanSrc(object):
         print('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
         if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
         os.chdir(self.NEWDIR)
+        sh.touch("machinefile")
         os.system('rm -rf out/*')
         with open("./new.log", "w") as h:
             sh.mpiexec('-n','2',self.BINDIR+'/swan.exe','par.20180513_00z_'+self.new+'.swn',_out=h)
