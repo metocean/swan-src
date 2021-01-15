@@ -9,7 +9,7 @@ FLAGS_MSC = -static -W0 -assume byterecl -traceback -diag-disable 8290 -diag-dis
 FLAGS90_MSC = $(FLAGS_MSC)
 FLAGS_DYN = -fPIC
 FLAGS_SER =
-FLAGS_OMP = -openmp
+FLAGS_OMP = -qopenmp
 FLAGS_MPI = -fc=ifort
 NETCDFROOT = /usr
 ifneq ($(NETCDFROOT),)
