@@ -1,4 +1,4 @@
-# FROM metocean/ifort
+FROM metocean/nvidia:v20-slim
 FROM python:3.7-buster
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
@@ -7,8 +7,8 @@ ARG hdf5_version
 ARG netcdf_version
 ARG netcdf_fortran_version
 
-# # copy intel compiler from ifort image
-# COPY --from=0 /opt/intel /opt/intel
+# copy compiler from image
+COPY --from=0 /opt/nvidia /opt/nvidia
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
@@ -32,7 +32,7 @@ RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
     mkdir /archive && chown $USER_ID:$GROUP_ID /archive &&\
     mkdir /logs && chown $USER_ID:$GROUP_ID /logs &&\
     mkdir /source && chown $USER_ID:$GROUP_ID /source &&\
-    mkdir /source && chown $USER_ID:$GROUP_ID /flush &&\
+    mkdir /flush && chown $USER_ID:$GROUP_ID /flush &&\
     mkdir /static && chown $USER_ID:$GROUP_ID /static
 
 # Set required environment variables

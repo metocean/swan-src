@@ -1,4 +1,4 @@
-FROM metocean/swan:comp-py3_gf_v1.0
+FROM metocean/swan:comp-py3_nvidia
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG ftn
