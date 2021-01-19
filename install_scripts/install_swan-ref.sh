@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# echo commands, and exit on unset variables and (most) errors (incl. parts of pipes, e.g., "| tee")
+set -euxo pipefail
+
 echo -e
 
 echo "----------------- Building SWAN REFERENCE SRC -----------------" 

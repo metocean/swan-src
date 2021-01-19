@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e -x
+# echo commands, and exit on unset variables and (most) errors (incl. parts of pipes, e.g., "| tee")
+set -euxo pipefail
 
 # set up NVIDIA HPC SDK, copy-and-pasted from the official docs:
 # https://docs.nvidia.com/hpc-sdk/hpc-sdk-install-guide/index.html#install-linux-end-usr-env-settings
