@@ -3,19 +3,18 @@
 # echo commands, and exit on unset variables and (most) errors (incl. parts of pipes, e.g., "| tee")
 set -euxo pipefail
 
-echo -e
+# set up NVIDIA HPC SDK, copy-and-pasted from the official docs:
+# https://docs.nvidia.com/hpc-sdk/hpc-sdk-install-guide/index.html#install-linux-end-usr-env-settings
+NVARCH=`uname -s`_`uname -m`; export NVARCH
+NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
+MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/20.11/compilers/man; export MANPATH
+PATH=$NVCOMPILERS/$NVARCH/20.11/compilers/bin:$PATH; export PATH
 
-echo "----------------- Building SWAN -----------------" 
-# # below if compiling with ifort
-# source /opt/intel/bin/iccvars.sh intel64
-# source /opt/intel/bin/ifortvars.sh intel64
-# source /opt/intel/bin/compilervars.sh intel64
 
+echo "----------------- Building SWAN -----------------"
 INSTALL_DIR=/usr/local/bin/swan
-mkdir $INSTALL_DIR
+mkdir -p $INSTALL_DIR
 echo "SWAN install dir: $INSTALL_DIR"
-rm $SWAN_SRC/ftn_$FTN/macros.inc
-ln -s $SWAN_SRC/ftn_$FTN/macros/gfortran_static_macros.inc $SWAN_SRC/ftn_$FTN/macros.inc
 
 # Building MPI and Serial versions
 for mode in mpi omp ser; do

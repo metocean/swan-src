@@ -10,8 +10,7 @@ NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
 MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/20.11/compilers/man; export MANPATH
 PATH=$NVCOMPILERS/$NVARCH/20.11/compilers/bin:$PATH; export PATH
 
-
-# Set compilers and flags
+# Use NVIDIA compilers by default
 export FC=nvfortran
 export CC=nvc
 export CXX=nvc++
