@@ -48,8 +48,6 @@ RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
     apt -y clean
 
 # Install model requirements
-ADD install_scripts/install_required.sh /tmp/
-RUN cd /tmp && sh install_required.sh &&\
-	rm -rf /tmp/*
+RUN apt-get install -y libmpich-dev libhdf5-mpich-dev libnetcdf-dev libnetcdff-dev
 
 CMD ["/bin/bash"]

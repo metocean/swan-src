@@ -7,7 +7,7 @@ set -euxo pipefail
 # https://docs.nvidia.com/hpc-sdk/hpc-sdk-install-guide/index.html#install-linux-end-usr-env-settings
 NVARCH=`uname -s`_`uname -m`; export NVARCH
 NVCOMPILERS=/opt/nvidia/hpc_sdk; export NVCOMPILERS
-MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/20.11/compilers/man; export MANPATH
+#MANPATH=$MANPATH:$NVCOMPILERS/$NVARCH/20.11/compilers/man; export MANPATH
 PATH=$NVCOMPILERS/$NVARCH/20.11/compilers/bin:$PATH; export PATH
 
 # Use NVIDIA compilers by default
@@ -23,10 +23,10 @@ build_output=/home/metocean/build_output
 echo "Installing mpich..."
 logdir=${build_output}/mpich
 mkdir -p ${logdir}
-wget http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
+wget -nv http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
 tar zxvf mpich-$MPICH_VERSION.tar.gz
 cd mpich-$MPICH_VERSION
-./configure 2>&1 | tee ${logdir}/configure.log
+./configure --with-device=ch4:ofi --disable-cxx 2>&1 | tee ${logdir}/configure.log
 make 2>&1 | tee ${logdir}/make.log
 make install 2>&1 | tee ${logdir}/make_install.log
 ldconfig /usr/local/lib
@@ -41,7 +41,7 @@ ${HDF5_VERSION}
 EOF
 logdir=${build_output}/hdf5
 mkdir -p ${logdir}
-wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-$major.$minor/hdf5-$HDF5_VERSION/src/hdf5-$HDF5_VERSION.tar.gz
+wget -nv https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-$major.$minor/hdf5-$HDF5_VERSION/src/hdf5-$HDF5_VERSION.tar.gz
 tar zxvf hdf5-$HDF5_VERSION.tar.gz
 cd hdf5-$HDF5_VERSION
 ./configure --prefix=/usr/local --enable-fortran --enable-cxx --enable-hl --disable-dap --disable-shared 2>&1 | tee ${logdir}/configure.log
@@ -59,7 +59,7 @@ cd ../
 echo "Installing netcdf4..."
 logdir=${build_output}/netcdf4
 mkdir -p ${logdir}
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$NETCDF_VERSION.tar.gz
+wget -nv ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-$NETCDF_VERSION.tar.gz
 tar zxvf netcdf-$NETCDF_VERSION.tar.gz
 cd netcdf-$NETCDF_VERSION
 ./configure --disable-dap --disable-shared --enable-static --disable-v2 2>&1 | tee ${logdir}/configure.log
@@ -81,7 +81,7 @@ cd ../
 echo "Installing netcdf4-fortran..."
 logdir=${build_output}/netcdf4-fortran
 mkdir -p ${logdir}
-wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-${NETCDF_FORTRAN_VERSION}.tar.gz
+wget -nv ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-${NETCDF_FORTRAN_VERSION}.tar.gz
 tar zxvf netcdf-fortran-${NETCDF_FORTRAN_VERSION}.tar.gz
 cd netcdf-fortran-${NETCDF_FORTRAN_VERSION}
 ./configure --disable-dap --disable-shared --enable-static --disable-v2 2>&1 | tee ${logdir}/configure.log

@@ -13,20 +13,20 @@ FLAGS_OMP = -openmp
 FLAGS_MPI =
 NETCDFROOT = /usr
 ifneq ($(NETCDFROOT),)
-  INCS_SER = -I$(NETCDFROOT)/include
-  INCS_OMP = -I$(NETCDFROOT)/include
-  INCS_MPI = -I$(NETCDFROOT)/include
-  LIBS_SER = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
-  LIBS_OMP = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
-  LIBS_MPI = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
+  INCS_SER = -I$(NETCDFROOT)/include -I/usr/include/x86_64-linux-gnu/mpich
+  INCS_OMP = -I$(NETCDFROOT)/include -I/usr/include/x86_64-linux-gnu/mpich
+  INCS_MPI = -I$(NETCDFROOT)/include -I/usr/include/x86_64-linux-gnu/mpich
+  LIBS_SER = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_mpichhl_fortran -lhdf5_mpich_fortran -lhdf5_mpich -lmpif90 -lm -lz
+  LIBS_OMP = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_mpichhl_fortran -lhdf5_mpich_fortran -lhdf5_mpich -lmpif90 -lm -lz
+  LIBS_MPI = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_mpichhl_fortran -lhdf5_mpich_fortran -lhdf5_mpich -lmpif90 -lm -lz
   NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
 else
-  INCS_SER = -I/usr/include
-  INCS_OMP = -I/usr/include
-  INCS_MPI = -I/usr/include
-  LIBS_SER = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
-  LIBS_OMP = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
-  LIBS_MPI = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
+  INCS_SER = -I/usr/include -I/usr/include/x86_64-linux-gnu/mpich
+  INCS_OMP = -I/usr/include -I/usr/include/x86_64-linux-gnu/mpich
+  INCS_MPI = -I/usr/include -I/usr/include/x86_64-linux-gnu/mpich
+  LIBS_SER = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_mpichhl_fortran -lhdf5_mpich_fortran -lhdf5_mpich -lmpif90 -lm -lz
+  LIBS_OMP = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_mpichhl_fortran -lhdf5_mpich_fortran -lhdf5_mpich -lmpif90 -lm -lz
+  LIBS_MPI = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_mpichhl_fortran -lhdf5_mpich_fortran -lhdf5_mpich -lmpif90 -lm -lz
   NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
 endif
 O_DIR = ../work/odir4/

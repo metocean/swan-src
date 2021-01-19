@@ -4,7 +4,7 @@ services:
 
   # Install ifort and libraries required for static model compilation
   comp:
-    image: metocean/swan:comp-py3_nvidia
+    image: metocean/swan:comp-${SWAN_BUILD_CONFIG}
     build:
       context: ./
       dockerfile: Dockerfile
@@ -16,7 +16,7 @@ services:
 
   # Build and install model binaries
   model:
-    image: metocean/swan:model-py3_nvidia
+    image: metocean/swan:model-${SWAN_BUILD_CONFIG}
     build:
       context: ./
       dockerfile: Dockerfile-model
@@ -28,7 +28,7 @@ services:
   
   # Build test image
   test:
-    image: metocean/swan:modeltest-py3_nvidia
+    image: metocean/swan:modeltest-${SWAN_BUILD_CONFIG}
     build:
       context: ./
       dockerfile: Dockerfile-test
@@ -41,7 +41,7 @@ services:
 
   # Run tests (currently not working because os.system inside pytest)
   test_src:
-    image: metocean/swan:modeltest-py3_nvidia
+    image: metocean/swan:modeltest-${SWAN_BUILD_CONFIG}
     command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
     # volumes: # for dev only
     #   - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
