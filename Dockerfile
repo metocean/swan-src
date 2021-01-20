@@ -42,19 +42,19 @@ ENV NETCDF_VERSION=$netcdf_version
 ENV NETCDF_FORTRAN_VERSION=$netcdf_fortran_version
 
 # no pre-installed mpich/hdf5/netcdf so no need to remove as done previously
-# install gfortran (or pgi) if not using intel
+# install gfortran (or pgi) if not using intel (needed here?)
 RUN apt install -y build-essential manpages-dev zlib1g zlib1g-dev m4 &&\
-    apt install -y gfortran &&\
+    # apt install -y gfortran &&\ 
     apt -y clean
 
 # Needed to avoid some missing c++ header files issues like 'catastrophic error: cannot open source file "bits/c++config.h"'
 RUN apt-get install -y gcc-multilib g++-multilib
 
-# Needed for Intel .sh scripts
-RUN apt-get install -y man
+# # Needed for Intel .sh scripts  (probably can remove)
+# RUN apt-get install -y man
 
-# needed for some script called from compilervars.sh for Intel's MPI (which we don't actually use since we build MPICH)
-RUN apt-get install -y libfabric1
+# # needed for some script called from compilervars.sh for Intel's MPI (probably can remove) (which we don't actually use since we build MPICH)
+# RUN apt-get install -y libfabric1
 
 # Handy for debugging
 RUN apt-get install less
