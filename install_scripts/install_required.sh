@@ -1,17 +1,16 @@
 #!/bin/bash
 
+# Set up intel binaries
+source /opt/intel/bin/compilervars.sh intel64
+
 # plain "set -e" doesn't work for pipes (e.g., errors in the "make | tee" command below could still go unnoticed)
+# setting -e before compilervars.sh has sometimes caused problems
 set -e -x -o pipefail
 
-# # Set up intel binaries
-source /opt/intel/bin/iccvars.sh intel64
-source /opt/intel/bin/ifortvars.sh intel64
-source /opt/intel/bin/compilervars.sh intel64
 # Set compilers and flags
 export FC=ifort
 export CC=icc
 export CXX=icpc
-
 
 build_output=/home/metocean/build_output
 
