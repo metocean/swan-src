@@ -1,5 +1,5 @@
 FROM metocean/ifort:v19-python_3.7-buster
-FROM python:3.7-buster
+FROM python:3.7-slim-buster
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG mpich_version
@@ -58,11 +58,6 @@ RUN apt-get install -y gcc-multilib g++-multilib
 
 # Handy for debugging
 RUN apt-get install less
-
-ENV FC=ifort
-ENV CC=icc
-ENV CXX=icpc
-ENV build_output=/home/metocean/build_output
 
 ADD install_scripts/install_required.sh /tmp/
 RUN cd /tmp && ./install_required.sh &&\
