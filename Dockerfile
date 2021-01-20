@@ -62,7 +62,7 @@ ENV CXX=icpc
 ENV build_output=/home/metocean/build_output
 
 ADD install_scripts/install_required.sh /tmp/
-RUN cd /tmp && sh ./install_required.sh &&\
+RUN cd /tmp && ./install_required.sh &&\
     rm -rf /tmp/*
 
 CMD ["/bin/bash"]
