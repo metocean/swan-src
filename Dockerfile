@@ -15,7 +15,7 @@ ARG GROUP_ID=1001
 ARG USER_NAME=metocean
 
 RUN apt -y update &&\
-    apt install -y vim sudo &&\
+    apt install -y vim sudo wget &&\
     apt -y upgrade &&\
     apt -y clean
 
