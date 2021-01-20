@@ -53,6 +53,9 @@ RUN apt-get install -y gcc-multilib g++-multilib
 # Needed for Intel .sh scripts
 RUN apt-get install -y man
 
+# needed for some script called from compilervars.sh for Intel's MPI (which we don't actually use since we build MPICH)
+RUN apt-get install -y libfabric1
+
 # Handy for debugging
 RUN apt-get install less
 
