@@ -1,18 +1,16 @@
 #!/bin/bash
 
-echo -e
-
-echo "----------------- Building SWAN -----------------" 
-# # below if compiling with ifort
-# source /opt/intel/bin/iccvars.sh intel64
-# source /opt/intel/bin/ifortvars.sh intel64
+# This script needs to be source'd before calling any Intel compilers
 source /opt/intel/bin/compilervars.sh intel64
 
+# plain "set -e" doesn't work for pipes (e.g., errors in the "make | tee" command below could still go unnoticed)
+# setting -e before compilervars.sh has sometimes caused problems
+set -e -u -x -o pipefail
+
+echo "----------------- Building SWAN -----------------"
 INSTALL_DIR=/usr/local/bin/swan
 mkdir $INSTALL_DIR
 echo "SWAN install dir: $INSTALL_DIR"
-#rm $SWAN_SRC/ftn_$FTN/macros.inc
-#ln -s $SWAN_SRC/ftn_$FTN/macros/gfortran_static_macros.inc $SWAN_SRC/ftn_$FTN/macros.inc
 
 # Building MPI and Serial versions
 for mode in mpi omp ser; do
