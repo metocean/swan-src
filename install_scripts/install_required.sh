@@ -21,7 +21,7 @@ build_output=/home/metocean/build_output
 echo "Installing mpich..."
 logdir=${build_output}/mpich
 mkdir -p ${logdir}
-wget -nw http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
+wget -nv http://www.mpich.org/static/downloads/$MPICH_VERSION/mpich-$MPICH_VERSION.tar.gz
 tar zxf mpich-$MPICH_VERSION.tar.gz
 cd mpich-$MPICH_VERSION
 ./configure --disable-cxx 2>&1 | tee ${logdir}/configure.log
