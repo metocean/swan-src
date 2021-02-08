@@ -1,5 +1,5 @@
 FROM metocean/ifort
-FROM metocean/ops-bare:ops-bare-v1.5.3
+FROM metocean/ops-bare:ops-bare-v1.7.0
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG mpich_version
