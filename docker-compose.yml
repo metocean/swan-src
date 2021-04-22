@@ -41,10 +41,13 @@ services:
     depends_on:
       - model
 
-  # Run tests
+  # Run tests (currently not working because os.system inside pytest)
   test_src:
     image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
-    command: bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    #volumes: # for dev only
+    #  - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
+    #  - /tmp:/tmp
 
   # test_omp:
   #   image: metocean/swan:modeltest
