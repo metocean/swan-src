@@ -15,7 +15,7 @@ ENV SWAN_SRC="/source/swan-src/swan_src"
 # Compile and install model
 COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan.sh $INSTALL_SCRIPTS/
-RUN sh $INSTALL_SCRIPTS/install_swan.sh &&\
+RUN ./$INSTALL_SCRIPTS/install_swan.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan.sh
 
 # copy entrypoint

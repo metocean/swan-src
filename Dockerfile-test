@@ -34,13 +34,22 @@ COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
 COPY swan_src/patch/netcdf_multiple_compute3.patch $SWAN_SRC/ftn_${FTNREF}
 
-RUN yum -y install patch
 # uncomment below for src version test
-RUN sh $INSTALL_SCRIPTS/install_swan-ref.sh &&\
+RUN ./$INSTALL_SCRIPTS/install_swan-ref.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan-ref.sh
 
 # copy entrypoint
 COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
+
+RUN pip install --upgrade --no-cache-dir ipython \
+                                         nco        \
+                                         numpy \
+                                         pandas \
+                                         xarray \
+                                         pytest \
+                                         netCDF4 \
+                                         ipdb \
+                                         sh
 
 # copy since mounting does not work with bob
 COPY tests/run_tinyapp.py /usr/local/bin/
@@ -48,8 +57,3 @@ COPY tests/${SWAN_IMP}.tar.gz /home/metocean
 COPY tests/test_src.py /usr/local/bin/
 COPY tests/conftest.py /usr/local/bin/
 COPY tests/test_omp.py /usr/local/bin/
-
-# install gfrotran to compile wavespectra (spec test not configured yet)
-#RUN yum -y install gcc-gfortran
-# install wavespectra for model comparison
-#RUN pip install --upgrade --no-cache-dir wavespectra[extra]==0.2.1
