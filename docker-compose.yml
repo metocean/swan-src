@@ -50,7 +50,5 @@ services:
     #  - /tmp:/tmp
 
   # test_omp:
-  #   image: metocean/swan:modeltest
-  #   volumes:
-  #     - /home/metocean:/home/metocean
+  #   image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
   #   command: bash -c "cd /usr/local/bin && pytest -s test_omp.py"
