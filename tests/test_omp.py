@@ -21,7 +21,7 @@ class TestOMP(object):
     def setup_test(self, models):
         self.logger = logging
 
-        imp = 'bass' # couldn't parse in a different conftest, maybe is an internal pytest configuration?
+        imp = 'socean' # couldn't parse in a different conftest, maybe is an internal pytest configuration?
 
         self.logger.info('  Running test for '+imp+' SWAN implementation\n')
 
