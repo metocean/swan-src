@@ -1,4 +1,5 @@
 import os
+import sh
 import subprocess
 import shutil
 import pytest
@@ -10,7 +11,7 @@ import xarray as xr # issue lots of warnings
 
 # from wavespectra import read_swan #TODO implement tests using wavespectra
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG) # for some reason is doing nothing...
 
 errors = []
 
@@ -31,34 +32,35 @@ class TestSwanSrc(object):
         self.TARBALL = os.path.join(self.BASEDIR, 'tinyapp.tar.gz')
         self.CTLDIR  = os.path.join(self.BASEDIR, 'tinyapp')
         self.BINDIR  = os.path.join('/usr/local/bin')
-        self.logger.info('  Uncompressing test files\n')
+        print('  Uncompressing test files\n')
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
 
     def run_ref(self):
         """run reference src"""
-        self.logger.info('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/new.log'))
+        print('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/ref.log'))
 
         if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
         os.chdir(self.REFDIR)
+        sh.touch("machinefile")
         os.system('rm -rf out/*')
         if self.ref == self.new:
             os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi-ref.exe '+self.BINDIR+'/swan.exe')
-            jobstr = self.BINDIR+'/swanrun -input par.20180513_00z_'+self.ref+'.swn -mpi 2 &> ref.log'
-            os.system(jobstr)
+            with open("./ref.log", "w") as h:
+                sh.swanrun('-input','par.20180513_00z_'+self.ref+'.swn','-mpi','2',_out=h)
             os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi.exe '+self.BINDIR+'/swan.exe')
         else:
-            jobstr = +self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan-ref.exe par.20180513_00z_'+self.ref+'.swn &> ref.log'
-            os.system(jobstr)
+            with open("./ref.log", "w") as h:
+                sh.mpiexec('-n','2',self.BINDIR+'/swan-ref.exe','par.20180513_00z_'+self.ref+'.swn',_out=h)            
        
     def run_new(self):
         """run new src"""
-        self.logger.info('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
-
+        print('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
         if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
         os.chdir(self.NEWDIR)
+        sh.touch("machinefile")
         os.system('rm -rf out/*')
-        jobstr = self.BINDIR+'/mpiexec -n 2 '+self.BINDIR+'/swan.exe par.20180513_00z_'+self.new+'.swn &> new.log'
-        os.system(jobstr)
+        with open("./new.log", "w") as h:
+            sh.mpiexec('-n','2',self.BINDIR+'/swan.exe','par.20180513_00z_'+self.new+'.swn',_out=h)
 
     def test_grid(self, models):
         # first test runs both models
@@ -69,7 +71,7 @@ class TestSwanSrc(object):
         ncref = glob.glob(self.REFDIR+'/out/*.nc')[0]
         dsref = xr.open_dataset(ncref)
         ncnew = glob.glob(self.NEWDIR+'/out/*.nc')[0]
-        dsnew = xr.open_dataset(ncnew)        
+        dsnew = xr.open_dataset(ncnew)
         # check if rename is necessary
 
         if self.ref != self.new:
@@ -90,10 +92,9 @@ class TestSwanSrc(object):
             rdiff = (parref - parnew)/parref
             if abs(rdiff.max()) > 0.05:
                 errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), abs(rdiff.max().values)*100))
-                self.logger.info(' {} failed :( \n'.format(varname.title()))
+                print(' {} failed :( \n'.format(varname.title()))
             else:
-                self.logger.info(' {} passed :) \n'.format(varname.title()))
-
+                print(' {} passed :) \n'.format(varname.title()))
 
         # assert no error message has been registered, else print messages
         assert not errors, "grid test - following errors occured:\n{}".format("\n".join(errors))    

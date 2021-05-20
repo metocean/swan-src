@@ -5,7 +5,7 @@ http://swanmodel.sourceforge.net/
 - [ftn_msl](https://github.com/metocean/swan-src/tree/master/swan_src/ftn_msl): code with MSL modifications
 
 # Images
-1. ## **comp**
+## 1. **comp**
 ### Dockerfile:
 - Dockerfile
 ### Args:
@@ -22,7 +22,7 @@ http://swanmodel.sourceforge.net/
 - Download and install `netcdf4` ([Version 4.4.1](ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.4.1.tar.gz))
 - Download and install `netcdf4-fortran` ([Version 4.4.4](ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-fortran-4.4.4.tar.gz))
 
-2. ## **model**
+## 2. **model**
 ### Dockerfile:
 - Dockerfile-model
 ### Args:
