@@ -12,7 +12,7 @@ INSTALL_DIR=/usr/local/bin/swan
 echo "SWAN install dir: $INSTALL_DIR"
 
 # Building MPI and Serial versions (OMP not working for some reason)
-for mode in mpi ser; do
+for mode in mpi omp; do
     printf "\nBuilding ${FTNREF} version of SWAN in $mode mode\n"
     cd $SWAN_SRC/ftn_${FTNREF}
     make clobber
