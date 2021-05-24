@@ -1,17 +1,14 @@
+import logging
 import os
 import sh
-import subprocess
 import shutil
 import pytest
 import glob
 from collections import OrderedDict
-import logging
 from datetime import datetime
 import xarray as xr # issue lots of warnings
 
 # from wavespectra import read_swan #TODO implement tests using wavespectra
-
-logging.basicConfig(level=logging.DEBUG) # for some reason is doing nothing...
 
 errors = []
 
@@ -20,11 +17,12 @@ class TestSwanSrc(object):
 
     @classmethod
     def setup_test(self, models):
+        self.logger = logging
+
         # model versions (parsed from command line)
         self.ref = models[0]
         self.new = models[1]
 
-        self.logger = logging
 
         self.BASEDIR = '/home/metocean'
         self.NEWDIR  = os.path.join(self.BASEDIR, 'swan-new')
@@ -32,12 +30,12 @@ class TestSwanSrc(object):
         self.TARBALL = os.path.join(self.BASEDIR, 'tinyapp.tar.gz')
         self.CTLDIR  = os.path.join(self.BASEDIR, 'tinyapp')
         self.BINDIR  = os.path.join('/usr/local/bin')
-        print('  Uncompressing test files\n')
+        self.logger.info('  Uncompressing test files\n')
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
 
     def run_ref(self):
         """run reference src"""
-        print('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/ref.log'))
+        self.logger.info('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/ref.log'))
 
         if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
         os.chdir(self.REFDIR)
@@ -54,7 +52,7 @@ class TestSwanSrc(object):
        
     def run_new(self):
         """run new src"""
-        print('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
+        self.logger.info('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
         if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
         os.chdir(self.NEWDIR)
         sh.touch("machinefile")
@@ -86,15 +84,15 @@ class TestSwanSrc(object):
         varnames = ['hs','tm01','tm02','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
         self.logger.info(' Performing grid test for {}: \n'.format([dispvar.title() for dispvar in varnames]))
         for varname in varnames:
-            # print('...checking grid for: {}'.format(varname.title()))
+            # self.logger.info('...checking grid for: {}'.format(varname.title()))
 
             parref = dsref[varname]; parnew = dsnew[varname]
             rdiff = (parref - parnew)/parref
             if abs(rdiff.max()) > 0.05:
                 errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), abs(rdiff.max().values)*100))
-                print(' {} failed :( \n'.format(varname.title()))
+                self.logger.error(' {} failed :( \n'.format(varname.title()))
             else:
-                print(' {} passed :) \n'.format(varname.title()))
+                self.logger.info(' {} passed :) \n'.format(varname.title()))
 
         # assert no error message has been registered, else print messages
         assert not errors, "grid test - following errors occured:\n{}".format("\n".join(errors))    

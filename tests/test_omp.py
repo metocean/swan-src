@@ -1,5 +1,5 @@
 import os
-import subprocess
+import sh
 import shutil
 import pytest
 import glob
@@ -10,20 +10,18 @@ import xarray as xr # issue lots of warnings
 
 # from wavespectra import read_swan #TODO implement tests using wavespectra
 
-logging.basicConfig(level=logging.DEBUG)
-
 errors = []
 
 class TestOMP(object):
     """Compile new swan-src code and compare to reference Delft version """
 
     @classmethod
-    def setup_test(self, models):
+    def setup_test(self, imp):
         self.logger = logging
 
-        imp = 'socean' # couldn't parse in a different conftest, maybe is an internal pytest configuration?
+        imp = imp
 
-        self.logger.info('  Running test for '+imp+' SWAN implementation\n')
+        self.logger.info(' Running OMP vs MPI test for SWAN implementation '+imp+'\n')
 
         self.BASEDIR = '/home/metocean'
         self.MPIDIR  = os.path.join(self.BASEDIR, imp+'-mpi')
@@ -36,7 +34,7 @@ class TestOMP(object):
 
     def run_mpi(self):
         """run new src"""
-        self.logger.info('  Running model in mpi (reference): see run log in {}\n'.format(self.MPIDIR+'/mpi.log'))
+        self.logger.info(' Running model in mpi (reference): see run log in {}\n'.format(self.MPIDIR+'/mpi.log'))
 
         os.chdir(self.BINDIR)
         os.system('unlink ./swan.exe') # unlink swan.exe
@@ -47,9 +45,9 @@ class TestOMP(object):
         os.system('rm -rf out/*')
 
         swnfile = glob.glob('*.swn')[0]
-        jobstr = '{}/mpiexec -n 4 {}/swan.exe {} &> mpi.log'.format(self.BINDIR,self.BINDIR,swnfile)
-        os.system(jobstr)
-        
+        with open("./mpi.log", "w") as h:
+            sh.mpiexec('-n','2',self.BINDIR+'/swan.exe',swnfile,_out=h)
+
         self.logger.info('  obtaining running time for mpi simmulation\n')
         fid = open('PRINT-001', 'r')
         timerow = fid.read().splitlines()[2] # row in PRINT file with start time
@@ -74,8 +72,8 @@ class TestOMP(object):
         os.system('rm -rf out/*')
 
         swnfile = glob.glob('*.swn')[0]
-        jobstr = '{}/swanrun -input {} -omp 4 &> omp.log'.format(self.BINDIR,swnfile)
-        os.system(jobstr)
+        with open("./omp.log", "w") as h:
+            sh.swanrun('-input',swnfile,'-omp','2',_out=h)
 
         self.logger.info('  obtaining running time for omp simmulation\n')
         fid = open(swnfile.split('.swn')[0]+'.prt', 'r')
@@ -88,9 +86,8 @@ class TestOMP(object):
 
         self.logger.info(' Running time for omp is: {} minutes \n'.format(runtime.seconds/60.))
 
-    def test_grid(self, models):
-        # first test runs both models
-        self.setup_test(models)
+    def test_grid(self, imp):
+        self.setup_test(imp)
         self.run_mpi()
         self.run_omp()
 
@@ -102,16 +99,15 @@ class TestOMP(object):
         varnames = ['hs','tm01','tm02','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
         self.logger.info(' Performing grid test for {}: \n'.format([dispvar.title() for dispvar in varnames]))
         for varname in varnames:
-            # print('...checking grid for: {}'.format(varname.title()))
+            # self.logger.info('...checking grid for: {}'.format(varname.title()))
 
             parmpi = dsmpi[varname]; paromp = dsomp[varname]
             rdiff = (parmpi - paromp)/parmpi
             if abs(rdiff.max()) > 0.01:
                 errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), abs(rdiff.max().values)*100))
-                self.logger.info(' {} failed :( \n'.format(varname.title()))
+                self.logger.error(' {} failed :( \n'.format(varname.title()))
             else:
                 self.logger.info(' {} passed :) \n'.format(varname.title()))
-
 
         # assert no error message has been registered, else print messages
         assert not errors, "grid test - following errors occured:\n{}".format("\n".join(errors))    

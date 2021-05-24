@@ -36,7 +36,7 @@ services:
       args:
         ftnref: stock
         default_mode: mpi
-        imp: tinyapp # implementation to be used in tests
+        imp: tinyapp # imp to be used in tests
         SWAN_IMAGE_TAG_SUFFIX: ${SWAN_IMAGE_TAG_SUFFIX}
     depends_on:
       - model
@@ -44,11 +44,14 @@ services:
   # Run tests (currently not working because os.system inside pytest)
   test_src:
     image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
-    command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120"
+    command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120 --log-cli-level=INFO"
     #volumes: # for dev only
     #  - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
     #  - /tmp:/tmp
 
-  # test_omp:
-  #   image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
-  #   command: bash -c "cd /usr/local/bin && pytest -s test_omp.py"
+  test_omp:
+    image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
+    command: bash -c "cd /usr/local/bin && pytest -s test_omp.py --imp=socean --log-cli-level=INFO"
+    volumes:
+     - /source/swan-src/tests/test_omp.py:/usr/local/bin/test_omp.py
+     - /source/swan-src/tests/socean.tar.gz:/home/metocean/socean.tar.gz # set as needed
