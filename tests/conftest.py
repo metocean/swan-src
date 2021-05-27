@@ -8,6 +8,9 @@ def pytest_addoption(parser):
     parser.addoption(
         "--imp", action="store", default="tinyapp", help="implementation to be tested"
     )
+    parser.addoption(
+        "--ncores", action="store", default="2", help="number of cores to be tested"
+    )
 
 @pytest.fixture
 def models(request):
@@ -16,3 +19,7 @@ def models(request):
 @pytest.fixture
 def imp(request):
     return request.config.getoption("--imp")
+
+@pytest.fixture
+def ncores(request):
+    return request.config.getoption("--ncores") 

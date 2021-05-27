@@ -16,7 +16,7 @@ class TestOMP(object):
     """Compile new swan-src code and compare to reference Delft version """
 
     @classmethod
-    def setup_test(self, imp):
+    def setup_test(self, imp, ncores):
         self.logger = logging
 
         imp = imp
@@ -30,6 +30,7 @@ class TestOMP(object):
         self.CTLDIR  = os.path.join(self.BASEDIR, imp)
         self.BINDIR  = os.path.join('/usr/local/bin')
         self.logger.info('  Uncompressing test files\n')
+        self.ncores  = ncores
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
 
     def run_mpi(self):
@@ -46,7 +47,7 @@ class TestOMP(object):
 
         swnfile = glob.glob('*.swn')[0]
         with open("./mpi.log", "w") as h:
-            sh.mpiexec('-n','2',self.BINDIR+'/swan.exe',swnfile,_out=h)
+            sh.mpiexec('-n',self.ncores,self.BINDIR+'/swan.exe',swnfile,_out=h)
 
         self.logger.info('  obtaining running time for mpi simmulation\n')
         fid = open('PRINT-001', 'r')
@@ -73,7 +74,7 @@ class TestOMP(object):
 
         swnfile = glob.glob('*.swn')[0]
         with open("./omp.log", "w") as h:
-            sh.swanrun('-input',swnfile,'-omp','2',_out=h)
+            sh.swanrun('-input',swnfile,'-omp',self.ncores,_out=h)
 
         self.logger.info('  obtaining running time for omp simmulation\n')
         fid = open(swnfile.split('.swn')[0]+'.prt', 'r')
@@ -86,8 +87,8 @@ class TestOMP(object):
 
         self.logger.info(' Running time for omp is: {} minutes \n'.format(runtime.seconds/60.))
 
-    def test_grid(self, imp):
-        self.setup_test(imp)
+    def test_grid(self, imp, ncores):
+        self.setup_test(imp, ncores)
         self.run_mpi()
         self.run_omp()
 
