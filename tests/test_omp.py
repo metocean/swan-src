@@ -24,8 +24,8 @@ class TestOMP(object):
         self.logger.info(' Running OMP vs MPI test for SWAN implementation '+imp+'\n')
 
         self.BASEDIR = '/home/metocean'
-        self.MPIDIR  = os.path.join(self.BASEDIR, imp+'-mpi')
-        self.OMPDIR  = os.path.join(self.BASEDIR, imp+'-omp')
+        self.MPIDIR  = os.path.join(self.BASEDIR, imp+'-mpi-'+'ncores-'+ncores)
+        self.OMPDIR  = os.path.join(self.BASEDIR, imp+'-omp-'+'ncores-'+ncores)
         self.TARBALL = os.path.join(self.BASEDIR, imp+'.tar.gz')
         self.CTLDIR  = os.path.join(self.BASEDIR, imp)
         self.BINDIR  = os.path.join('/usr/local/bin')
