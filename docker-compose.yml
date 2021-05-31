@@ -56,3 +56,4 @@ services:
      - /source/swan-src/tests/test_omp.py:/usr/local/bin/test_omp.py
      - /source/swan-src/tests/conftest.py:/usr/local/bin/conftest.py
      - /source/swan-src/tests/socean.tar.gz:/home/metocean/socean.tar.gz # set as needed
+     - /home/metocean:/home/metocean
