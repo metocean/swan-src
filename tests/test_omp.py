@@ -17,13 +17,17 @@ class TestOMP(object):
 
     @classmethod
     def setup_test(self, imp, ncores):
-        self.logger = logging
+        self.logger = logging.getLogger('swan_test')
+        self.logger.setLevel(logging.DEBUG)
 
         imp = imp
 
         self.logger.info(' Running OMP vs MPI test for SWAN implementation '+imp+'\n')
 
         self.BASEDIR = '/home/metocean'
+        fh = logging.FileHandler(self.BASEDIR+'/test_swn_loginfo_imp_'+imp+'_ncores-'+ncores+'.log')
+        fh.setLevel(logging.DEBUG)      
+        self.logger.addHandler(fh)
         self.MPIDIR  = os.path.join(self.BASEDIR, imp+'-mpi-'+'ncores-'+ncores)
         self.OMPDIR  = os.path.join(self.BASEDIR, imp+'-omp-'+'ncores-'+ncores)
         self.TARBALL = os.path.join(self.BASEDIR, imp+'.tar.gz')
@@ -32,7 +36,6 @@ class TestOMP(object):
         self.logger.info('  Uncompressing test files\n')
         self.ncores  = ncores
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
-        self.logger.basicConfig(filename=os.path.join(self.BASEDIR, imp+'-mpi-'+'ncores-'+ncores,'swn_logger.log'),level=logging.DEBUG)
 
     def run_mpi(self):
         """run new src"""
