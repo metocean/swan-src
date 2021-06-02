@@ -32,6 +32,7 @@ class TestOMP(object):
         self.logger.info('  Uncompressing test files\n')
         self.ncores  = ncores
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
+        self.logger.basicConfig(filename=os.path.join(self.BASEDIR, imp+'-mpi-'+'ncores-'+ncores,'swn_logger.log'),level=logging.DEBUG)
 
     def run_mpi(self):
         """run new src"""
