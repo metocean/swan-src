@@ -36,6 +36,7 @@ class TestOMP(object):
         self.logger.info('  Uncompressing test files\n')
         self.ncores  = ncores
         os.system('tar -xzvf {} -C {}'.format(self.TARBALL, self.BASEDIR))
+        os.system('ls {}/*.tar.gz'.format(self.BASEDIR))
 
     def run_mpi(self):
         """run new src"""
@@ -50,6 +51,7 @@ class TestOMP(object):
         os.system('rm -rf out/*')
 
         swnfile = glob.glob('*.swn')[0]
+        os.system('cat {}'.format(swnfile))
         with open("./mpi.log", "w") as h:
             sh.mpiexec('-n',self.ncores,self.BINDIR+'/swan.exe',swnfile,_out=h)
 

@@ -51,9 +51,9 @@ services:
 
   test_omp:
     image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
-    command: bash -c "cd /usr/local/bin && pytest -s test_omp.py --imp=socean --ncores=4 --log-cli-level=INFO"
+    command: bash -c "cd /usr/local/bin && pytest -s test_omp.py --imp=braes --ncores=2 --log-cli-level=INFO"
     volumes:
      - /source/swan-src/tests/test_omp.py:/usr/local/bin/test_omp.py
      - /source/swan-src/tests/conftest.py:/usr/local/bin/conftest.py
-     - /source/swan-src/tests/socean.tar.gz:/home/metocean/socean.tar.gz # set as needed
+     - /source/swan-src/tests/braes.tar.gz:/home/metocean/braes.tar.gz # set as needed
      - /home/metocean:/home/metocean
