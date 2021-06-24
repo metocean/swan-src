@@ -7896,9 +7896,8 @@
 !           results appear in array BAUX2(MDC,NFRE)
 !
         DO IFRE = 1, NFRE                                                 40.05
-            WRITE(*,*)'X1 BEFORE CALLING CHGBAS':
-            WRITE(*,*)X1
-            (X1, X2, PERIOD, Y1, Y2, N1, N2,ITEST, PRTEST)
+          WRITE(*,*)'X1 BEFORE CALLING CHGBAS':
+          WRITE(*,*)X1
           CALL CHGBAS (BSPDIR, SPCDIR, PI2, BAUX1(1,IFRE),
      &                 BAUX2(1,IFRE), NANG, MDC, ITEST, PRTEST)
         END DO                                                            40.05
