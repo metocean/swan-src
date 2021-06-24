@@ -7897,7 +7897,7 @@
 !
         DO IFRE = 1, NFRE                                                 40.05
           WRITE(*,*)'X1 BEFORE CALLING CHGBAS:'
-          WRITE(*,*) BSPDIR
+          WRITE(*,*) BSPDIR(1:36)
           CALL CHGBAS (BSPDIR, SPCDIR, PI2, BAUX1(1,IFRE),
      &                 BAUX2(1,IFRE), NANG, MDC, ITEST, PRTEST)
         END DO                                                            40.05
