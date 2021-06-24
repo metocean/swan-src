@@ -3942,6 +3942,8 @@
 !       number of spectral directions
         IF (EQCSTR(HEDLIN(2:4),'DIR')) THEN                               40.03
           READ (NDSD, *) NANG
+          ! Henrique
+          WRITE(*,*)'NANG (number of direcs read from file):',NANG
           ALLOCATE(BSPFIL%BSPDIR(NANG))                                   40.31
           DO IANG = 1, NANG
 !           read direction in degr and convert to radians
@@ -3957,6 +3959,8 @@
               IF (DIRRAD.LT.DIRRD1) THEN
                 DORDER = -1
                 BSPFIL%BSPDIR(NANG) = DIRRD1                              40.31
+                ! Henrique
+                WRITE(*,*)'Reading DIRRD1 (dir from file):',DIRRD1
               ELSE
                 DORDER = 1
               ENDIF
@@ -3972,8 +3976,12 @@
               DIRRD1 = DIRRAD
             ENDIF
             IF (DORDER.LT.0) THEN
+              ! Henrique
+              WRITE(*,*)'Reading DIRRAD (inverse):',DIRRAD
               BSPFIL%BSPDIR(NANG+1-IANG) = DIRRAD                         40.31
             ELSE
+              ! Henrique
+              WRITE(*,*)'Reading DIRRAD (inverse):',DIRRAD
               BSPFIL%BSPDIR(IANG) = DIRRAD                                40.31
             ENDIF
           ENDDO
