@@ -3950,6 +3950,8 @@
               DIRDEG = 180. + DNORTH - DIRDEG
             ENDIF
             DIRRAD = DIRDEG * PI / 180.
+            ! Henrique
+            WRITE(*,*)'READ DIRECTION (IN RADIANS)',DIRRAD
 !           reverse order if second direction is smaller than first
             IF (IANG.EQ.1) THEN
               DIRRD1 = DIRRAD

@@ -35,7 +35,7 @@ RUN apt install -y build-essential zlib1g zlib1g-dev m4 &&\
     apt -y clean
 
 # for debugging
-RUN apt-get install gdb less
+RUN apt-get install -y gdb less
 
 ADD install_scripts/install_required.sh /tmp/
 RUN cd /tmp && ./install_required.sh &&\
