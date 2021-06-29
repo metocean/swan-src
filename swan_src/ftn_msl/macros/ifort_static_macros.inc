@@ -4,7 +4,7 @@
 F90_SER = ifort
 F90_OMP = ifort
 F90_MPI = mpif90
-FLAGS_OPT = -O2 -prec-div -prec-sqrt -fimf-arch-consistency=true
+FLAGS_OPT = -O2 -prec-div -prec-sqrt -fimf-arch-consistency=true -g
 FLAGS_MSC = -static -W0 -assume byterecl -traceback -diag-disable 8290 -diag-disable 8291 -diag-disable 8293
 FLAGS90_MSC = $(FLAGS_MSC)
 FLAGS_DYN = -fPIC
