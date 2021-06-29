@@ -5672,19 +5672,9 @@
             GOTO 60
           ENDIF
   70      IF (X1A.LT.X2LO) THEN
-            WRITE(*,*)'N1:',N1
-            WRITE(*,*)'N2:',N2
-            WRITE(*,*)'PERIOD:',PERIOD
-            WRITE(*,*)'X1A:',X1A
-            WRITE(*,*)'X1B:',X1B
-            WRITE(*,*)'X2LO:',X2LO
-            WRITE(*,*)'X2HI:',X2HI
             X1A = X1A + PERIOD
             X1B = X1B + PERIOD
             IADD = IADD + 1
-            WRITE(*,*)'X1A=X1A+PERIOD:',X1A
-            WRITE(*,*)'X1B=X1B+PERIOD:',X1B
-            WRITE(*,*)'IADD:',IADD
             IF (IADD.GT.99)
      &           CALL MSGERR (2, 'endless loop in CHGBAS')
             GOTO 70

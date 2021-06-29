@@ -6500,8 +6500,6 @@
          DO IBFILE = 1, NBFILS
 
 !          --- read values from boundary file, and interpolate in time
-           WRITE(*,*)'X1 BEFORE CALLING RBFILE:'
-           WRITE(*,*) CURBFL%BSPDIR(1:36)
            CALL RBFILE ( SPCSIG, SPCDIR,                                  40.31
      &                   CURBFL%BFILED, CURBFL%BSPLOC,                    40.31
      &                   CURBFL%BSPDIR, CURBFL%BSPFRQ,                    40.31
@@ -7413,8 +7411,6 @@
 !
 !         call RESPEC subroutine to read the spectum of the bound. files
 !
-             WRITE(*,*)'X1 BEFORE CALLING RESPEC:'
-             WRITE(*,*) BSPDIR(1:36)
              CALL RESPEC (BTYPE, NDSD, BFILED, UNFORM, DORDER,            40.00
      &           SPCSIG, SPCDIR, BSPFRQ, BSPDIR, BSPECS(1,1,IBSPEC,2),    40.31 30.90
      &           UFAC, IERR)
@@ -7899,8 +7895,6 @@
 !           results appear in array BAUX2(MDC,NFRE)
 !
         DO IFRE = 1, NFRE                                                 40.05
-          WRITE(*,*)'X1 BEFORE CALLING CHGBAS:'
-          WRITE(*,*) BSPDIR(1:36)
           CALL CHGBAS (BSPDIR, SPCDIR, PI2, BAUX1(1,IFRE),
      &                 BAUX2(1,IFRE), NANG, MDC, ITEST, PRTEST)
         END DO                                                            40.05
