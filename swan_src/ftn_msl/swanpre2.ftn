@@ -3727,6 +3727,7 @@
       INTEGER :: IENT,IOPTT
       INTEGER :: NHEDF, NHEDT, NHEDS, IFRE , IANG
       INTEGER :: NQUANT, IQUANT, IBC, II, NBGRPT_PREV,IIPT2
+      INTEGER :: pid
       REAL    :: XP, YP, XP2, YP2
       REAL    :: FREQHZ, DIRDEG, DIRRD1,DIRRAD, EXCV
       CHARACTER BTYPE *4, HEDLIN *80
@@ -3951,7 +3952,7 @@
             ENDIF
             DIRRAD = DIRDEG * PI / 180.
             ! Henrique
-            WRITE(*,*)'READ DIRECTION (IN RADIANS)',DIRRAD
+            WRITE(*,*)'FIRST READ OF DIR (RAD):',DIRRAD
 !           reverse order if second direction is smaller than first
             IF (IANG.EQ.1) THEN
               DIRRD1 = DIRRAD
@@ -3974,7 +3975,10 @@
               DIRRD1 = DIRRAD
             ENDIF
             IF (DORDER.LT.0) THEN
+              ! Henrique
+              WRITE(*,*)'DIR (RAD) BEFORE BSPDIR',DIRRAD
               BSPFIL%BSPDIR(NANG+1-IANG) = DIRRAD                         40.31
+              WRITE(*,*)'BSPDIR ALLOC VALUE:',BSPFIL%BSPDIR(NANG+1-IANG)
             ELSE
               BSPFIL%BSPDIR(IANG) = DIRRAD                                40.31
             ENDIF
