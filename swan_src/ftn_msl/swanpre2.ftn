@@ -2791,6 +2791,8 @@
         CALL BCFILE (FILENM, 'NEST', BFLTMP, LBGP,                        40.31
      &               XCGRID, YCGRID, KGRPNT, XYTST,  KGRBND,              40.31
      &               DONALL)                                              40.05
+        ! Henrique
+        WRITE(*,*)'DIRS AFTER BCFILE 1:',BFLTMP%BSPDIR(1:36)
         IF (STPNOW()) RETURN                                              34.01
         NULLIFY(BFLTMP%NEXTBSPC)                                          40.31
         IF ( .NOT.LBFILS ) THEN                                           40.31
@@ -3408,6 +3410,8 @@
             CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL)                                          40.05
+            ! Henrique
+            WRITE(*,*)'DIRS AFTER BCFILE 2:',BFLTMP%BSPDIR(1:36)
             IF (STPNOW()) RETURN                                          34.01
             NULLIFY(BFLTMP%NEXTBSPC)                                      40.31
             IF ( .NOT.LBFILS ) THEN                                       40.31
@@ -3532,6 +3536,8 @@
                   CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,              40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL)                                          40.05
+                 ! Henrique
+                 WRITE(*,*)'DIRS AFTER BCFILE 3:',BFLTMP%BSPDIR(1:36)
                   IF (STPNOW()) RETURN                                    34.01
                   NULLIFY(BFLTMP%NEXTBSPC)                                40.31
                   IF ( .NOT.LBFILS ) THEN                                 40.31
@@ -3951,8 +3957,6 @@
               DIRDEG = 180. + DNORTH - DIRDEG
             ENDIF
             DIRRAD = DIRDEG * PI / 180.
-            ! Henrique
-            WRITE(*,*)'FIRST READ OF DIR (RAD):',DIRRAD
 !           reverse order if second direction is smaller than first
             IF (IANG.EQ.1) THEN
               DIRRD1 = DIRRAD
@@ -3975,14 +3979,13 @@
               DIRRD1 = DIRRAD
             ENDIF
             IF (DORDER.LT.0) THEN
-              ! Henrique
-              WRITE(*,*)'DIR (RAD) BEFORE BSPDIR',DIRRAD
               BSPFIL%BSPDIR(NANG+1-IANG) = DIRRAD                         40.31
-              WRITE(*,*)'BSPDIR ALLOC VALUE:',BSPFIL%BSPDIR(NANG+1-IANG)
             ELSE
               BSPFIL%BSPDIR(IANG) = DIRRAD                                40.31
             ENDIF
           ENDDO
+          ! Henrique
+          WRITE(*,*)'READ DIRS IN BCFILE:',BSPFIL%BSPDIR(1:36)
           READ (NDSD, '(A)') HEDLIN
           IF (ITEST.GE.60) WRITE (PRTEST,11) HEDLIN
           NHEDF = NHEDF + 2 + NANG
