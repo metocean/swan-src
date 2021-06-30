@@ -3410,8 +3410,6 @@
             CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,                    40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL)                                          40.05
-            ! Henrique
-            WRITE(*,*)'DIRS AFTER BCFILE 2:',BFLTMP%BSPDIR(1:36)
             IF (STPNOW()) RETURN                                          34.01
             NULLIFY(BFLTMP%NEXTBSPC)                                      40.31
             IF ( .NOT.LBFILS ) THEN                                       40.31
@@ -3536,8 +3534,6 @@
                   CALL BCFILE (FILENM, 'PNTS', BFLTMP, LBGP,              40.31
      &                   XCGRID, YCGRID, KGRPNT, XYTST, KGRBND,           40.31
      &                   DONALL)                                          40.05
-                 ! Henrique
-                 WRITE(*,*)'DIRS AFTER BCFILE 3:',BFLTMP%BSPDIR(1:36)
                   IF (STPNOW()) RETURN                                    34.01
                   NULLIFY(BFLTMP%NEXTBSPC)                                40.31
                   IF ( .NOT.LBFILS ) THEN                                 40.31
