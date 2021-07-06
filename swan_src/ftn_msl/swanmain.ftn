@@ -6499,6 +6499,7 @@
          CURBFL => FBNDFIL
          DO IBFILE = 1, NBFILS
 
+
 !          --- read values from boundary file, and interpolate in time
            CALL RBFILE ( SPCSIG, SPCDIR,                                  40.31
      &                   CURBFL%BFILED, CURBFL%BSPLOC,                    40.31
