@@ -34,8 +34,8 @@ ENV NETCDF_FORTRAN_VERSION=$netcdf_fortran_version
 RUN apt install -y build-essential zlib1g zlib1g-dev m4 &&\
     apt -y clean
 
-# Handy for debugging
-RUN apt-get install less
+# for debugging
+RUN apt-get install -y gdb less
 
 ADD install_scripts/install_required.sh /tmp/
 RUN cd /tmp && ./install_required.sh &&\

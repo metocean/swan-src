@@ -3977,6 +3977,13 @@
               BSPFIL%BSPDIR(IANG) = DIRRAD                                40.31
             ENDIF
           ENDDO
+          ! MSL: weirdly the addition of WRITE below stops the
+          ! issue with 1st wave direc value (model breaks in swanser
+          ! at enless loop in CHGBAS). From inspection direction
+          ! is read correctly from file, problem may be somewhere
+          ! when it copies to FBDNFIL variable l2797 or when creates
+          ! CURBFLpointer in swanmain l6411 or a call of BCFILE
+          WRITE(PRTEST,*)'READ DIRS IN BCFILE:',BSPFIL%BSPDIR(1:36)       MSL
           READ (NDSD, '(A)') HEDLIN
           IF (ITEST.GE.60) WRITE (PRTEST,11) HEDLIN
           NHEDF = NHEDF + 2 + NANG
