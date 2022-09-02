@@ -44,7 +44,7 @@ services:
   # Run tests (currently not working because os.system inside pytest)
   test_src:
     image: metocean/swan:modeltest-${SWAN_IMAGE_TAG_SUFFIX}
-    command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4120,4120 --log-cli-level=INFO"
+    command: /bin/bash -c "cd /usr/local/bin && pytest -v -s test_src.py --models=4141,4141 --log-cli-level=INFO"
     # volumes: # for dev only
     # #  - /source/swan-src/tests/test_src.py:/usr/local/bin/test_src.py
     # #  - /tmp:/tmp
