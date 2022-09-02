@@ -40,7 +40,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -49,22 +49,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -131,7 +129,7 @@
 
 !     --- start SWAN run
 
-!     the main SWAN routine is called from the ADCIRC driver
+!ADC!     the main SWAN routine is called from the ADCIRC driver
 !NADC      CALL SWMAIN                                                         40.31 34.01
 
 999   CONTINUE
@@ -162,6 +160,9 @@
       USE OUTP_DATA                                                       40.51
       USE M_GENARR                                                        40.31
       USE M_PARALL                                                        40.31
+      USE SwanIEM                                                         41.85
+      USE SwanBraggScat                                                   41.80
+      USE SwanQCM                                                         41.90
       USE SwanGriddata                                                    40.80
 !PUN      USE MESSENGER                                                       40.95
 !ADC      USE Couple2Adcirc                                                   41.20
@@ -177,7 +178,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -186,22 +187,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -227,6 +226,11 @@
 !     40.95: Marcel Zijlema
 !     41.20: Casey Dietrich
 !     41.36: Marcel Zijlema
+!     41.75: Erick Rogers
+!     41.80: Dirk Rijnsdorp and Ad Reniers
+!     41.85: Ad Reniers
+!     41.90: Gal Akrish, Pieter Smit and Marcel Zijlema
+!     41.95: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -268,6 +272,11 @@
 !     40.95, Jun. 08: parallelization of unSWAN using MESSENGER of ADCIRC
 !     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
 !     41.36, Jun. 12: collecting data for PunSWAN
+!     41.75, Jan. 19: adding sea ice
+!     41.80, Sep. 21: adding Bragg scattering
+!     41.85, Feb. 19: implementation of IEM (surfbeat model)
+!     41.90, Jun. 21: adding quasi-coherent modelling
+!     41.95, Jul. 22: extension to write block output to VTK files
 !
 !  2. Purpose
 !
@@ -308,6 +317,7 @@
 !NADC      CHARACTER*20 NUMSTR, CHARS(1)                                       40.41
 !NADC      CHARACTER*80 MSGSTR                                                 40.41
 !NADC      LOGICAL   LOPEN                                                     34.01
+      INTEGER   IRQ, UPVD                                                 41.95
 !ADC!     some variables and arrays have been moved to the                    41.20
 !ADC!     Couple2Adcirc module so that they will persist in memory            41.20
 !ADC      CHARACTER DTTIWR*18                                                 41.20
@@ -454,6 +464,7 @@
       IF (STPNOW()) RETURN                                                34.01
 !
       COMPUT = '    '
+      RUNMADE=.FALSE.                                                     41.79
 
 !     --- repeat
 
@@ -476,6 +487,10 @@
           WRITE (IUNIT, *) ' Normal end of run ', PROJNR                  40.13
           GOTO 900                                                        40.13
         ENDIF                                                             40.13
+!
+!       --- surfbeat: initialize variables and arrays for 2nd COMPUTE     41.85
+!
+        IF ( ntf.GT.0 ) CALL SwanIEMinitig
 
 !       --- allocate some arrays meant for computation                    40.31
 
@@ -509,6 +524,11 @@
         CALL ERRCHK                                                       30.60
         IF (STPNOW()) RETURN                                              34.01
 
+!       --- compute mean depths and bottom spectra                        41.80
+!           in case of Bragg scattering
+        IF ( IBRAG.NE.0 ) CALL SWBRBOT                                    41.80
+        IF (STPNOW()) RETURN                                              41.80
+
 !       --- initialisation of necessary grids for depth,
 !           current, wind and friction
 
@@ -530,6 +550,18 @@
 !TIMG        CALL SWTSTA(5)                                                    40.23
         CALL SWRBC(COMPDA)                                                40.31
 !TIMG        CALL SWTSTO(5)                                                    40.23
+
+        IF ( IBRAG.NE.0 ) THEN                                            41.80
+!          arrays dpmean and botspc are temporary, can be de-allocated
+           IF (ALLOCATED(dpmean)) DEALLOCATE(dpmean)                      41.80
+           IF (ALLOCATED(botspc)) DEALLOCATE(botspc)                      41.80
+
+!          --- compute bed elevation spectrum at wave number difference   41.80
+!              for the whole computational grid                           41.80
+           IF (IBRAG.EQ.1) CALL SWFBXY(COMPDA(1,JDP2), COMPDA(1,JMUDL2),  41.80
+     &                                 SPCSIG        , SPCDIR          )
+           IF (STPNOW()) RETURN
+        ENDIF
 
 !       --- setup a vertex list
 
@@ -703,10 +735,18 @@
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
      &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
+     &                    AICEF , HICEF , HSSF  , TSSF  ,                 41.82 41.75
 !NCOH     &                    WYI   )
 !COH     &                    WYI   , z2w   , uv2w  )                         41.61
 !TIMG            CALL SWTSTO(7)                                                40.23
             IF (STPNOW()) RETURN                                          34.01
+!
+!           --- initialize quasi-coherent modelling framework             41.90
+!               note: data of incident spectrum is required
+
+            IF ( IQCM.NE.0 .AND. IT.EQ.IT0 )                              41.90
+     &                                  CALL SWQCINIT ( BGRIDP, COMPDA )  41.90
+            IF (STPNOW()) RETURN                                          41.90
 !
 !           --- synchronize nodes
 
@@ -746,6 +786,20 @@
               IF ( BNDCHK ) THEN                                          32.01
                 CALL HSOBND ( AC2, SPCSIG, COMPDA(1,JHSIBC), KGRPNT )     40.31
               ENDIF                                                       32.01
+!
+!             --- compute surfbeat based on IEM, if appropriate           41.85
+!
+              IF ( LSRFB .AND. ntf.LT.0 ) THEN                            41.85
+                 !
+                 CALL SwanIEMmeanwav ( AC2, COMPDA(1,JHSIBC), SPCSIG,
+     &                                 KGRPNT, COMPDA(1,JHS) )
+                 CALL SwanIEMncalc
+                 IF ( STPNOW() ) RETURN
+                 CALL SwanIEMsrfbeat ( COMPDA(1,JHS ), AC2,
+     &                                 COMPDA(1,JDP2),
+     &                                 SPCDIR, SPCSIG, KGRPNT )
+                 !
+              ENDIF
 !
               ITEST = SAVITE                                              30.21
 
@@ -892,9 +946,20 @@
 !ADC!
 !ADC      IF ( IT.EQ.MTC ) THEN                                               41.20
 !
+!     finalize PVD collection files
+!
+      DO IRQ = 1, MAX_OUTP_REQ                                            41.95
+         UPVD=UPVDF(IRQ)                                                  41.95
+         IF (UPVD.GT.0) THEN                                              41.95
+            WRITE(UPVD,'(A)') TRIM(PVDLIN3)                               41.95
+            WRITE(UPVD,'(A)') TRIM(PVDLIN4)                               41.95
+         ENDIF                                                            41.95
+      ENDDO                                                               41.95
+!
       DO IUNIT=1,HIOPEN                                                   34.01
-        INQUIRE(UNIT=IUNIT,OPENED=LOPEN)                                  34.01
-        IF (LOPEN.AND.IUNIT.NE.PRINTF) CLOSE(IUNIT)                       40.30
+         INQUIRE ( UNIT=IUNIT, OPENED=LOPEN, NAME=FILENM )                41.79 34.01
+         IF (LOPEN.AND.IUNIT.NE.PRINTF.AND.
+     &       FILENM.NE.'CONOUT$'.AND.FILENM.NE.'CONIN$') CLOSE(IUNIT)     41.79 40.30
       END DO                                                              34.01
 
 !COH!=======================================================================
@@ -991,15 +1056,18 @@
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE TIMECOMM                                                        40.41
+      USE OUTP_DATA, ONLY: NREOQ, LBV, LOPS, LORQ, UPVDF                  41.95 41.79
       USE M_SNL4                                                          40.17
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
       USE SwanGriddata                                                    40.80
+      USE SwanIEM, only: sflog                                            41.85
+      USE SwanQCM                                                         41.90
 !
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -1008,22 +1076,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -1056,6 +1122,7 @@
 !     40.80: Marcel Zijlema
 !     41.13: Nico Booij
 !     41.62: Andre van der Westhuysen
+!     41.75 : Erick Rogers
 !
 !  1. Updates
 !
@@ -1118,6 +1185,7 @@
 !     41.12, Apr. 10: output quantity NPL added
 !     41.13, Jul. 10: LWDATE introduced in view of nesting in WAM
 !     41.62, Nov. 15: included output quantities for wave partitioning
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -1167,10 +1235,10 @@
 ! 13. Source text
 !
       VERTXT = BLANK                                                      40.03
-      VERNUM = 41.20
+      VERNUM = 41.41
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
-      CALL BUGFIX ('A')
-!      CALL BUGFIX ('B')
+      !CALL BUGFIX ('A')
+      !CALL BUGFIX ('B')
 !
       CALL OCPINI ('swaninit', .TRUE.,INERR)                              34.01
       IF (INERR.GT.0) RETURN                                              34.01
@@ -1319,13 +1387,21 @@
       IMUD   = 0                                                          40.59
       IVEG   = 0                                                          40.55
       ITURBV = 0                                                          40.35
+      IICE   = 0                                                          41.75
+      ICEWIND= 0.                                                         41.75
+      IBRAG  = 0                                                          41.80
+      IQCM   = 0                                                          41.90
       VARWI  = .FALSE.
       VARFR  = .FALSE.
       VARWLV = .FALSE.                                                    20.38
       VARAST = .FALSE.       ! True means spatially variable air-sea t.d. 40.03
       VARMUD = .FALSE.                                                    40.59
+      VARAICE= .FALSE.                                                    41.75
+      VARHICE= .FALSE.                                                    41.75
       VARNPL = .FALSE.                                                    40.55
       VARTUR = .FALSE.                                                    40.35
+      VARHSS = .FALSE.                                                    41.82
+      VARTSS = .FALSE.                                                    41.82
       U10    = 0.
       WDIP   = 0.
       INRHOG = 0                                                          30.20
@@ -1340,6 +1416,8 @@
       MXOUTAR = 0
 !
       FBS%NBS = -999                                                      40.31
+      LOPS    = .FALSE.                                                   41.79
+      LORQ    = .FALSE.                                                   41.79
 !
 !     Set the defaults for the MDIA:                                      40.17
 
@@ -1385,6 +1463,12 @@
 !
       CSETUP = .TRUE.                                                     30.82
 !
+!     PSETUP(1) is currently unused, but can be used as setup nesting flag
+!     PSETUP(2) is the user defined correction for the level of the setup
+!
+      PSETUP(1) = 0.0                                                     30.82
+      PSETUP(2) = 0.0                                                     30.82
+!
 !     flag for frequency dependent surf breaking                          41.06
 !
       IFRSRF = 0                                                          41.06
@@ -1393,18 +1477,17 @@
 !
       IDISRF = 0                                                          41.47
 !
-!     PSETUP(1) is currently unused, but can be used as setup nesting flag
-!     PSETUP(2) is the user defined correction for the level of the setup
+!     surfbeat model
 !
-      PSETUP(1) = 0.0                                                     30.82
-      PSETUP(2) = 0.0                                                     30.82
+      LSRFB = .FALSE.                                                     41.85
+      sflog = .FALSE.                                                     41.85
 !
 !     *** ACCURACY criterion ***
 !
 !     *** relative error in significant wave height and mean period ***
       PNUMS(1)  = 0.01                                                    30.82
 !     *** absolute error in significant wave heigth (m) ***
-      PNUMS(2)  = 0.005
+      PNUMS(2)  = -1.
 !     *** absolute error in mean wave period (s) ***
 !      PNUMS(3)  = 0.3
       PNUMS(3)  = 1000.
@@ -1420,7 +1503,7 @@
       PNUMS(7)  = 0.5                                                     20.78
 !     *** Explicit or implicit scheme in frequency space ***
 !     *** default = implicit : PNUMS(8) = 1              ***
-      PNUMS(8) = 1.
+      PNUMS(8) = -999.
 !     *** diffusion coefficient for explicit scheme ***
       PNUMS(9) = 0.01
 !
@@ -1481,7 +1564,7 @@
 !     coefficient for limitation of Ctheta                                30.80
 !     default no limitation on refraction                                 40.02
 !
-      PNUMS(17) = -1.                                                     40.02
+      PNUMS(17) = -999.                                                   40.02
 !
 !     Limitation on Froude number; current velocity is reduced if greater
 !     than Pnums(18)*Sqrt(grav*depth)
@@ -1578,8 +1661,32 @@
       PMUD(4)   = RHO                                                     40.59
       PMUD(5)   = 1.3E-6                                                  40.59
 !
+!     parameters for Bragg scattering                                     41.80
+      PBRAG = 0.                                                          41.80
+      PBRAG(2) = 5.                                                       41.80
+!
+!     parameters for QC scattering                                        41.90
+      PSCAT = 0.                                                          41.90
+      PSCAT(1) = 1.                                                       41.90
+      PSCAT(2) = 99999.                                                   41.90
+      PSCAT(7) = 1.                                                       41.90
+!
+!     work arrays for QC scattering
+      ncoz   = 0                                                          41.90
+      lenwft = 0                                                          41.90
+      lensav = 0                                                          41.90
+!
+!     wave number space is initially void
+      mkxc = -1                                                           41.90
+      mkyc = -1                                                           41.90
+!
+!     parameters for dissipation by sea ice: all values (1:8) set to zero
+      PSICE    = 0.                                                       41.81
+!     parameters for uniform ice fields all values (1:2) set to zero
+      PICE    = 0.                                                        41.81
+!
 !     triad interactions
-      PTRIAD(1)  = 0.8                                                    41.44 40.61 30.82
+      PTRIAD(1)  = 0.05                                                   41.76 41.44 40.61 30.82
       PTRIAD(2)  = 2.5                                                    40.61 40.56 30.82
       PTRIAD(3)  = 10.                                                    40.23
       PTRIAD(4)  = 0.2                                                    40.13
@@ -1692,10 +1799,22 @@
       JGAMMA = 1                                                          41.38
       JRESPL = 1                                                          41.38
 !
+!     added for ice input fields                                          41.75
+      JAICE2= 1                                                           41.75
+      JAICE3= 1                                                           41.75
+      JHICE2= 1                                                           41.75
+      JHICE3= 1                                                           41.75
+!
 !     *** added for wave setup ***                                        32.01
 !
       JSETUP = 1                                                          32.02
       JDPSAV = 1                                                          32.02
+!
+!     added for sea-swell wave input fields                               41.82
+      JHSS2= 1                                                            41.82
+      JHSS3= 1                                                            41.82
+      JTSS2= 1                                                            41.82
+      JTSS3= 1                                                            41.82
 !
 !     --- added for output purposes                                       40.65
 !
@@ -1706,12 +1825,15 @@
       JDSXM  = 1                                                          40.65 40.61
       JDSXV  = 1                                                          40.65 40.61
       JDSXT  = 1                                                          40.35
+      JDSXI  = 1                                                          41.75
       JDSXL  = 1                                                          40.88
       JGENR  = 1                                                          40.85
       JGSXW  = 1                                                          40.85
       JREDS  = 1                                                          40.85
       JRSXQ  = 1                                                          40.85
       JRSXT  = 1                                                          40.85
+      JRSXB  = 1                                                          41.80
+      JRSXC  = 1                                                          41.90
       JTRAN  = 1                                                          40.85
       JTSXG  = 1                                                          40.85
       JTSXT  = 1                                                          40.85
@@ -1731,7 +1853,10 @@
       JPVEGT = 9                                                          40.55
       JPTURB = 10                                                         40.35
       JPMUD  = 11                                                         40.59
-      MTSVAR = 11
+      JPICE  = 13                                                         41.75
+      JPBRAG = 14                                                         41.80
+      JPQCS  = 15
+      MTSVAR = 15
       JPSWEL = 1                                                          40.88
 !
 !     ***** test output control *****
@@ -1754,6 +1879,9 @@
       NUMOBS = 0                                                          40.13
 !     ***** output *****
       IUBOTR = 0
+      NREOQ  = 0                                                          41.79
+      LBV    = .FALSE.                                                    41.79
+      UPVDF  = 0                                                          41.95
 !     ***** plot output *****
 !
       DO IVT = 1, NMOVAR
@@ -2672,9 +2800,81 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
-!     IVTYPE 80-99 RESERVED FOR MSL OUTPUT
+      IVTYPE = 76                                                         41.75
+      OVKEYW(IVTYPE)  = 'DISI'
+      OVSNAM(IVTYPE)  = 'Sice'
+      OVLNAM(IVTYPE)  = 'Sea ice dissipation'
+      OVUNIT(IVTYPE)  = 'm2/s'
+      OVSVTY(IVTYPE)  = 1
+      OVLLIM(IVTYPE)  = 0.
+      OVULIM(IVTYPE)  = 1000.
+      OVLEXP(IVTYPE)  = 0.
+      OVHEXP(IVTYPE)  = 0.1
+      OVEXCV(IVTYPE)  = -9.
 !
-      IVTYPE = 80                                                         MSL
+      IVTYPE = 77                                                         41.75
+      OVKEYW(IVTYPE)  = 'AICE'
+      OVSNAM(IVTYPE)  = 'aice'
+      OVLNAM(IVTYPE)  = 'ice concentration (fraction)'
+      OVUNIT(IVTYPE)  = ' '
+      OVSVTY(IVTYPE)  = 1
+      OVLLIM(IVTYPE)  = 0.
+      OVULIM(IVTYPE)  = 1.0
+      OVLEXP(IVTYPE)  = 0.
+      OVHEXP(IVTYPE)  = 1.0
+      OVEXCV(IVTYPE)  = -9.
+!
+      IVTYPE = 78                                                         41.75
+      OVKEYW(IVTYPE)  = 'HICE'
+      OVSNAM(IVTYPE)  = 'hice'
+      OVLNAM(IVTYPE)  = 'ice thickness'
+      OVUNIT(IVTYPE)  = 'm'
+      OVSVTY(IVTYPE)  = 1
+      OVLLIM(IVTYPE)  = 0.
+      OVULIM(IVTYPE)  = 100.
+      OVLEXP(IVTYPE)  = 0.
+      OVHEXP(IVTYPE)  = 10.
+      OVEXCV(IVTYPE)  = -9.
+!
+      IVTYPE = 79
+      OVKEYW(IVTYPE) = 'REDB'                                             41.80
+      OVSNAM(IVTYPE) = 'Sbragg'
+      OVLNAM(IVTYPE) = 'Total absolute Bragg scattering'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 80
+      OVKEYW(IVTYPE) = 'REDC'                                             41.90
+      OVSNAM(IVTYPE) = 'Sqc'
+      OVLNAM(IVTYPE) = 'Total absolute QC scattering'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1000.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 0.1
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 81
+      OVKEYW(IVTYPE) = 'HBIG'                                             41.85
+      OVSNAM(IVTYPE) = 'HBig'
+      OVLNAM(IVTYPE) = 'Bound ig wave height'
+      OVUNIT(IVTYPE) = UH
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 10.
+      OVEXCV(IVTYPE) = -9.
+!
+!     IVTYPE 85-99 RESERVED FOR MSL OUTPUT
+!
+      IVTYPE = 85                                                         MSL
       OVKEYW(IVTYPE) = 'DPM'                                              MSL
       OVSNAM(IVTYPE) = 'dpm'                                              MSL
       OVLNAM(IVTYPE) = 'Mean direction of spectral peak'                  MSL
@@ -2686,7 +2886,7 @@
       OVHEXP(IVTYPE) = 360.                                               MSL
       OVEXCV(IVTYPE) = -999.                                              MSL
 !
-      IVTYPE = 81                                                         MSL
+      IVTYPE = 86                                                         MSL
       OVKEYW(IVTYPE) = 'DPMSEA'                                           MSL
       OVSNAM(IVTYPE) = 'dpmsea'                                           MSL
       OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'              MSL
@@ -2698,7 +2898,7 @@
       OVHEXP(IVTYPE) = 360.                                               MSL
       OVEXCV(IVTYPE) = -999.                                              MSL
 !
-      IVTYPE = 82                                                         MSL
+      IVTYPE = 87                                                         MSL
       OVKEYW(IVTYPE) = 'DPMSWE'                                           MSL
       OVSNAM(IVTYPE) = 'dpmswe'                                           MSL
       OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'            MSL
@@ -2710,7 +2910,7 @@
       OVHEXP(IVTYPE) = 360.                                               MSL
       OVEXCV(IVTYPE) = -999.                                              MSL
 !
-      IVTYPE = 83                                                         MSL
+      IVTYPE = 88                                                         MSL
       OVKEYW(IVTYPE) = 'TPSSEA'                                           MSL
       OVSNAM(IVTYPE) = 'tpssea'                                           MSL
       OVLNAM(IVTYPE) = 'Peak period of sea'                               MSL
@@ -2722,7 +2922,7 @@
       OVHEXP(IVTYPE) = 100.                                               MSL
       OVEXCV(IVTYPE) = -9.                                                MSL
 !
-      IVTYPE = 84                                                         MSL
+      IVTYPE = 89                                                         MSL
       OVKEYW(IVTYPE) = 'TPSSWE'                                           MSL
       OVSNAM(IVTYPE) = 'tpsswe'                                           MSL
       OVLNAM(IVTYPE) = 'Peak period of swell'                             MSL
@@ -2734,7 +2934,7 @@
       OVHEXP(IVTYPE) = 100.                                               MSL
       OVEXCV(IVTYPE) = -9.                                                MSL
 !
-      IVTYPE = 85                                                         MSL
+      IVTYPE = 90                                                         MSL
       OVKEYW(IVTYPE) = 'HSEA'                                             MSL
       OVSNAM(IVTYPE) = 'hsea'                                             MSL
       OVLNAM(IVTYPE) = 'Wave height of sea part'                          MSL
@@ -2746,7 +2946,7 @@
       OVHEXP(IVTYPE) = 100.                                               MSL
       OVEXCV(IVTYPE) = -9.                                                MSL
 !
-      IVTYPE = 86                                                         MSL
+      IVTYPE = 91                                                         MSL
       OVKEYW(IVTYPE) = 'SWE'                                              MSL
       OVSNAM(IVTYPE) = 'swe'                                              MSL
       OVLNAM(IVTYPE) = 'Spectral bandwidth'                               MSL
@@ -3662,15 +3862,17 @@
       USE SWCOMM2                                                         40.41
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
+      USE M_OBSTA                                                         41.71
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
       USE M_DIFFR                                                         40.21
       USE SwanGriddata                                                    40.80
+      USE SwanIEM                                                         41.85
 !
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -3679,22 +3881,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -3709,6 +3909,9 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.82: Dirk Rijnsdorp
+!     41.85: Ad Reniers
+!     41.90: Gal Akrish, Pieter Smit and Marcel Zijlema
 !
 !  1. Updates
 !
@@ -3726,6 +3929,9 @@
 !     40.31, Nov. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Jun. 07: extension to unstructured grids
+!     41.82, Aug. 21: introduce FIG source term
+!     41.85, Apr. 22: implementation of IEM (surfbeat model)
+!     41.90, Nov. 21: adding QC scattering
 !
 !  2. Purpose
 !
@@ -3777,9 +3983,12 @@
       REAL      BSPECS(MDC,MSC,NBSPEC,2)                                  40.31
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
       INTEGER   IUNT(NUNT)
+      REAL      FDN, FIGF                                                 41.82
+      CHARACTER(120) :: MSGSTR                                            41.85
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
       TYPE(BGPDAT), POINTER :: CURBGP                                     40.31
+      TYPE(OBSTDAT), POINTER :: COBST                                     41.71
       SAVE IENT
       DATA IENT/0/
       SAVE IUNT
@@ -3855,11 +4064,15 @@
 !        nsweep is set to 3 (CPU time enhanced, but number of             41.68
 !        iterations decreased compared to nsweep = 1)                     41.68
          nsweep = 3                                                       41.68
+!ADC         IF ( NSTATM == 1 ) nsweep = 1                                    41.68
+!        further optimization in case of no refraction/source terms
          IF ( IREFR == 0 ) nsweep = 4                                     41.68
          IF ( IQUAD == 0 .AND. IWCAP == 0 .AND. ISURF == 0 ) nsweep = 4   41.68
          IF ( OFFSRC ) nsweep = 4                                         41.68
-         IF ( NSTATM == 1 ) nsweep = 3                                    41.68
+         IF ( IGEN == 4 .OR. IQCM /= 0 ) nsweep = 3                       41.90
       ENDIF
+!     nsweep = 1 cannot work naturally in case of SECTOR
+      IF ( nsweep.EQ.1 .AND. .NOT.FULCIR ) nsweep = 3
 !
 !     adapt units in case of true energy
       IF ( INRHOG.EQ.1 ) THEN
@@ -3909,7 +4122,20 @@
 !
       IF (IWCAP.EQ.8) THEN
          JPSWEL = 12
-         MTSVAR = 12
+      ENDIF
+!
+!     prepare QC model
+      IF (IQCM.NE.0) THEN                                                 41.90
+         ! refraction due to depth variations only is already
+         ! included in the QC scattering
+         IF (IQCM.EQ.1) IREFR = 0
+         ! frequency shift due to mean current is already included
+         ! in the QC scattering
+         ITFRE = 0
+         ! rescaling is unwanted since action density may be negative
+         BRESCL = .FALSE.
+         ! no check on boundary because of coherence effects
+         BNDCHK = .FALSE.
       ENDIF
 !
 !     close input files containing stationary input fields                40.00
@@ -3985,6 +4211,66 @@
           ENDDO
         ENDIF
       ENDIF
+!
+!     check freeboard dependent transmission/reflection
+!
+      IF ( NUMOBS.GT.0 ) THEN                                             41.71
+         COBST => FOBSTAC                                                 41.71
+         DO II = 1, NUMOBS                                                41.71
+            IFREE = COBST%FBTYP1                                          41.71
+            ITRAS = COBST%TRTYPE                                          41.71
+            IRFRD = COBST%RFTYP3                                          41.71
+            IF ( IFREE.EQ.1 .AND. (ITRAS.NE.0 .OR. IRFRD.EQ.1) ) THEN     41.71
+               CALL MSGERR(1,'freeboard dependent factors cannot be')     41.71
+               CALL MSGERR(1,'applied to nonconstant transmission or')    41.71
+               CALL MSGERR(1,'reflection coefficients')                   41.71
+               IFREE = 0                                                  41.71
+            ENDIF                                                         41.71
+            COBST%FBTYP1 = IFREE                                          41.71
+            IF (.NOT.ASSOCIATED(COBST%NEXTOBST)) EXIT                     41.71
+            COBST => COBST%NEXTOBST                                       41.71
+         ENDDO                                                            41.71
+      ENDIF                                                               41.71
+!
+!     check radiating FIG energy and
+!     determine frequency distribution to FIG source
+!     (see Ardhuin et al., 2014)
+!
+      IF ( NUMOBS.GT.0 ) THEN                                             41.82
+         COBST => FOBSTAC                                                 41.82
+         DO II = 1, NUMOBS                                                41.82
+            IFIG  = COBST%IGTYP                                           41.82
+            ITRA  = COBST%TRTYPE                                          41.82
+            TRCF  = COBST%TRCOEF(1)                                       41.82
+            IFREE = COBST%FBTYP1                                          41.82
+            IF ( IFIG.EQ.1 .AND.                                          41.82
+     &           ( ITRA.NE.0  .OR. TRCF.NE.0. .OR. IFREE.NE.0 ) ) THEN    41.82
+               WRITE(MSGSTR,'(A)')                                        41.82
+     &                           'transmission not allowed in case of'//  41.82
+     &                           ' radiated FIG energy'                   41.82
+               CALL MSGERR( 1, TRIM(MSGSTR) )                             41.82
+               ITRA  = 0                                                  41.82
+               TRCF  = 0.                                                 41.82
+               IFREE = 0                                                  41.82
+            ENDIF                                                         41.82
+            COBST%TRTYPE    = ITRA                                        41.82
+            COBST%TRCOEF(1) = TRCF                                        41.82
+            COBST%FBTYP1    = IFREE                                       41.82
+            IF ( IFIG.EQ.1 ) THEN                                         41.82
+               ALLOCATE(COBST%IGFRQD(MSC))                                41.82
+               COBST%IGFRQD(:) = 0.                                       41.82
+               FDN = 0.                                                   41.82
+               DO JJ = 1, MSC                                             41.82
+                  FIGF = MIN( 1., 2.*PI * 0.015 / SPCSIG(JJ) )**1.5       41.82
+                  COBST%IGFRQD(JJ) = FIGF                                 41.82
+                  FDN = FDN + SPCSIG(JJ) * FIGF                           41.82
+               ENDDO                                                      41.82
+               COBST%IGFRQD = COBST%IGFRQD / FDN / FRINTF                 41.82
+            ENDIF                                                         41.82
+            IF (.NOT.ASSOCIATED(COBST%NEXTOBST)) EXIT                     41.82
+            COBST => COBST%NEXTOBST                                       41.82
+         ENDDO                                                            41.82
+      ENDIF                                                               41.82
 !
       ATMP = -999.                                                        41.48
       J    = 0                                                            41.48
@@ -4077,6 +4363,96 @@
          IF (.NOT.ALLOCATED(DIFPARDY)) ALLOCATE(DIFPARDY(0))              40.21
       END IF                                                              40.21
 !
+!     --- check surfbeat                                                  41.85
+!
+      IF (LSRFB) THEN
+         !
+         ! check problem dimension
+         !
+         IF ( ONED ) THEN
+            CALL MSGERR(3,'surfbeat computation not allowed in 1D mode')
+         ENDIF
+         !
+         ! check stationarity
+         !
+         IF ( NSTATC.NE.0 .OR. NSTATM.NE.0 ) THEN
+            CALL MSGERR(3,
+     &        'surfbeat computation not allowed in non-stationary mode')
+         ELSE
+            IF ( NCOMPT.EQ.1 .AND. ntf.LT.0 ) THEN
+               WRITE(MSGSTR,'(A)')
+     &                    'current COMPUTE consists of computation of'//
+     &                  ' sea-swell spectrum followed by bound ig waves'
+               CALL MSGERR( 0, TRIM(MSGSTR) )
+            ELSEIF ( NCOMPT.EQ.2 .AND. ntf.GT.0 ) THEN
+               WRITE(MSGSTR,'(A)')
+     &                    'current COMPUTE consists of computation of'//
+     &                    ' reflected (free) ig waves'
+               CALL MSGERR( 0, TRIM(MSGSTR) )
+            ELSEIF ( NCOMPT.GT.2 ) THEN
+               WRITE(MSGSTR,'(A)')
+     &            'command COMPUTE must appear no more than twice in '//
+     &            'one simulation'
+               CALL MSGERR( 3, TRIM(MSGSTR) )
+            ENDIF
+         ENDIF
+         !
+         ! check grid and orientation
+         !
+         IF ( OPTG.NE.1 ) THEN
+            CALL MSGERR(3,
+     &                  'surfbeat only supported for rectilinear grids')
+         ELSE
+            IF ( ALPC.NE.0.) THEN
+               WRITE(MSGSTR,'(A)')
+     &                  'grid orientation is restricted to [alpc] = 0'//
+     &                  ' in case of surfbeat'
+               CALL MSGERR( 3, TRIM(MSGSTR) )
+            ENDIF
+         ENDIF
+         !
+         ! check FIG energy
+         !
+         IF ( NUMOBS.GT.0 ) THEN
+            COBST => FOBSTAC
+            DO II = 1, NUMOBS
+               IFIG = COBST%IGTYP
+               IF ( IFIG.EQ.1 ) THEN
+                  CALL MSGERR(2,
+     &               'radiated FIG energy not allowed in case surfbeat')
+                  IFIG = 0
+               ENDIF
+               COBST%IGTYP = IFIG
+               IF (.NOT.ASSOCIATED(COBST%NEXTOBST)) EXIT
+               COBST => COBST%NEXTOBST
+            ENDDO
+         ENDIF
+         !
+         ! check west boundary during first COMPUTE
+         !
+         IF ( ntf.LT.0 ) THEN
+            IF ( NBGRPT.NE.MYC ) THEN
+               CALL MSGERR(3,
+     &      'boundary specification is not correct in case of surfbeat')
+               CALL MSGERR(0,
+     &                  'please only west boundary should be specified')
+            ELSE
+               J = 0
+               DO II = 1, NBGRPT
+                  INDXGR = BGRIDP(6*II-5)
+                  INDX   = KGRPNT(1,II)   ! ix=1: west
+                  IF (BGRIDP(6*II-4).EQ.1) THEN
+                     IF (INDXGR.NE.INDX) J=J+1
+                  ENDIF
+               ENDDO
+               IF (J.NE.0) THEN
+                  CALL MSGERR(3,
+     &          'location of boundary must be west in case of surfbeat')
+               ENDIF
+            ENDIF
+         ENDIF
+      ENDIF
+!
       RETURN
 ! * end of subroutine SWPREP *
       END
@@ -4097,7 +4473,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -4106,22 +4482,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. AUTHORS
@@ -4391,12 +4765,16 @@
 !           check first and last point of a curve
 !
             MXK = CUOPS%MIP                                               40.31
-            DO 30 IXK=1, MXK, MXK
-              XP = CUOPS%XP(IXK)                                          40.31
-              YP = CUOPS%YP(IXK)                                          40.31
+            IF ( MXK/=0 ) THEN
+              XP = CUOPS%XP(1)                                            40.31
+              YP = CUOPS%YP(1)                                            40.31
               CALL SINUPT (SNAME, XP, YP, XCGRID, YCGRID, KGRPNT,         30.72
      &                     KGRBND)                                        40.00
-   30       CONTINUE
+              XP = CUOPS%XP(MXK)
+              YP = CUOPS%YP(MXK)
+              CALL SINUPT (SNAME, XP, YP, XCGRID, YCGRID, KGRPNT,
+     &                     KGRBND)
+            ENDIF
           ENDIF
 !         --------------------------------------------------------------
           IF (STYPE .EQ. 'P' .OR. STYPE .EQ. 'U') THEN                    40.80
@@ -4482,11 +4860,12 @@
       USE M_GENARR
       USE M_PARALL
       USE SwanGriddata                                                    40.80
+      USE SwanBraggScat, only: dpmean                                     41.80
 !
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -4495,22 +4874,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -4526,6 +4903,8 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.75: Erick Rogers
+!     41.80: Dirk Rijnsdorp and Ad Reniers
 !
 !  1. Updates
 !
@@ -4547,6 +4926,8 @@
 !     40.31, Dec. 03: removing POOL construction
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Sep. 07: extension to unstructured grids
+!     41.75, Jan. 19: adding sea ice
+!     41.80, Sep. 21: adding Bragg scattering
 !
 !  2. Purpose
 !
@@ -4664,6 +5045,22 @@
         COMPDA(1,JTURB2) = 0.                                             40.35
         COMPDA(1,JTURB3) = 0.                                             40.35
       ENDIF
+      IF (VARAICE) THEN                                                   41.75
+        COMPDA(1,JAICE2) = 0.                                             41.75
+        COMPDA(1,JAICE3) = 0.                                             41.75
+      ENDIF
+      IF (VARHICE) THEN                                                   41.75
+        COMPDA(1,JHICE2) = 0.                                             41.75
+        COMPDA(1,JHICE3) = 0.                                             41.75
+      ENDIF
+      IF (VARHSS) THEN                                                    41.82
+        COMPDA(1,JHSS2) = 0.                                              41.82
+        COMPDA(1,JHSS3) = 0.                                              41.82
+      ENDIF
+      IF (VARTSS) THEN                                                    41.82
+        COMPDA(1,JTSS2) = 0.                                              41.82
+        COMPDA(1,JTSS3) = 0.                                              41.82
+      ENDIF
       COMPDA(1,JBOTLV) = 0.                                               40.65
 !
 !     --- structured grid                                                 40.80
@@ -4684,7 +5081,11 @@
 !
 !         ***** compute depth and water level *****
 !
-          DEP = SVALQI (XP, YP, 1, DEPTH, 1, IX, IY)                      40.31 30.90
+          IF ( IBRAG.EQ.0 ) THEN                                          41.80
+             DEP = SVALQI (XP, YP, 1, DEPTH, 1, IX, IY)                   40.31 30.90
+          ELSE
+             DEP = dpmean(INDX)                                           41.80
+          ENDIF
           COMPDA(INDX,JBOTLV) = DEP                                       40.65
 !
           IF (VARWLV) THEN                                                20.38
@@ -4800,6 +5201,38 @@
              COMPDA(INDX,JMUDL3) = XMUD                                   40.59
           ENDIF
 !
+!     ***** compute ice concentration (fraction) *****                    41.75
+!
+          IF (VARAICE) THEN
+             XAICE = SVALQI (XP, YP, 14, AICEF, 1 ,IX ,IY)                41.75
+             COMPDA(INDX,JAICE2) = XAICE                                  41.75
+             COMPDA(INDX,JAICE3) = XAICE                                  41.81
+          ENDIF
+!
+!     ***** compute ice thickness in meters *****                         41.75
+!
+          IF (VARHICE) THEN
+             XHICE = SVALQI (XP, YP, 15, HICEF, 1 ,IX ,IY)                41.75
+             COMPDA(INDX,JHICE2) = XHICE                                  41.75
+             COMPDA(INDX,JHICE3) = XHICE                                  41.81
+          ENDIF
+!
+!     ***** compute sea-swell sig wave height *****                       41.82
+!
+          IF (VARHSS) THEN
+             XHSS = SVALQI (XP, YP, 16, HSSF, 1 ,IX ,IY)                  41.82
+             COMPDA(INDX,JHSS2) = XHSS                                    41.82
+             COMPDA(INDX,JHSS3) = XHSS                                    41.82
+          ENDIF
+!
+!     ***** compute sea-swell mean wave period *****                      41.82
+!
+          IF (VARTSS) THEN
+             XTSS = SVALQI (XP, YP, 17, TSSF, 1 ,IX ,IY)                  41.82
+             COMPDA(INDX,JTSS2) = XTSS                                    41.82
+             COMPDA(INDX,JHSS3) = XTSS                                    41.82
+          ENDIF
+!
    10   CONTINUE
    20 CONTINUE
 !
@@ -4815,7 +5248,11 @@
          IF ( IGTYPE(1).EQ.3 ) THEN
             DEP = DEPTH(INDX)
          ELSE
-            DEP = SVALQI (XP, YP, 1, DEPTH, 1, 0, 0)                      40.80
+            IF ( IBRAG.EQ.0 ) THEN                                        41.80
+               DEP = SVALQI (XP, YP, 1, DEPTH, 1, 0, 0)                   40.80
+            ELSE
+               DEP = dpmean(INDX)                                         41.80
+            ENDIF
          ENDIF
          COMPDA(INDX,JBOTLV) = DEP                                        40.80
 !
@@ -4961,6 +5398,54 @@
              COMPDA(INDX,JMUDL3) = XMUD                                   40.80
           ENDIF
 !
+!     ***** compute aice, ice concentration (fraction)  *****             41.75
+!                                                                         41.75
+          IF (VARAICE) THEN                                               41.75
+             IF ( IGTYPE(14).EQ.3 ) THEN                                  41.75
+                XAICE = AICEF(INDX)                                       41.75
+             ELSE                                                         41.75
+                XAICE = SVALQI (XP, YP, 14, AICEF, 1 ,0, 0)               41.75
+             ENDIF                                                        41.75
+             COMPDA(INDX,JAICE2) = XAICE                                  41.75
+             COMPDA(INDX,JAICE3) = XAICE                                  41.75
+          ENDIF                                                           41.75
+!
+!     ***** compute hice, ice thickness (m)  *****                        41.75
+!                                                                         41.75
+          IF (VARHICE) THEN                                               41.75
+             IF ( IGTYPE(15).EQ.3 ) THEN                                  41.75
+                XHICE = HICEF(INDX)                                       41.75
+             ELSE                                                         41.75
+                XHICE = SVALQI (XP, YP, 15, HICEF, 1 ,0, 0)               41.75
+             ENDIF                                                        41.75
+             COMPDA(INDX,JHICE2) = XHICE                                  41.75
+             COMPDA(INDX,JHICE3) = XHICE                                  41.75
+          ENDIF                                                           41.75
+!
+!
+!     ***** compute sea-swell significant wave height  *****              41.82
+!                                                                         41.82
+          IF (VARHSS) THEN                                                41.82
+             IF ( IGTYPE(16).EQ.3 ) THEN                                  41.82
+                XHSS = HSSF(INDX)                                         41.82
+             ELSE                                                         41.82
+                XHSS = SVALQI (XP, YP, 16, HSSF, 1 ,0, 0)                 41.82
+             ENDIF                                                        41.82
+             COMPDA(INDX,JHSS2) = XHSS                                    41.82
+             COMPDA(INDX,JHSS3) = XHSS                                    41.82
+          ENDIF                                                           41.82
+!
+!     ***** compute sea-swell mean wave period  *****                     41.82
+!                                                                         41.82
+          IF (VARTSS) THEN                                                41.82
+             IF ( IGTYPE(17).EQ.3 ) THEN                                  41.82
+                XTSS = TSSF(INDX)                                         41.82
+             ELSE                                                         41.82
+                XTSS = SVALQI (XP, YP, 17, TSSF, 1 ,0, 0)                 41.82
+             ENDIF                                                        41.82
+             COMPDA(INDX,JTSS2) = XTSS                                    41.82
+             COMPDA(INDX,JTSS3) = XTSS                                    41.82
+          ENDIF                                                           41.82
       ENDDO                                                               40.80
 !
 !     *** initialise setup and saved depth ***                            32.02
@@ -5007,7 +5492,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -5016,22 +5501,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -5395,7 +5878,7 @@
  6010 FORMAT(' Test SVALQI:',5F10.3)
 !
       RETURN
-!     end of subroutine SVALQI
+!     end of function SVALQI
       END
 !***********************************************************************
 !                                                                      *
@@ -5410,7 +5893,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -5419,22 +5902,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -5522,7 +6003,7 @@
         WRITE (PRINTF, 6010) PSNAME, XP+XOFFS, YP+YOFFS
       ENDIF
  6010 FORMAT('       Set of output locations: ',A8,
-     &       '  coordinates:', 2F10.2)
+     &       '  coordinates:', 2F12.2)
 !
       RETURN
 !     end of subroutine SINUPT *
@@ -5539,7 +6020,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -5548,22 +6029,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -5669,7 +6148,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -5678,22 +6157,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -5844,7 +6321,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -5853,22 +6330,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -5943,7 +6418,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -5952,22 +6427,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -5981,6 +6454,7 @@
 !     40.41: Marcel Zijlema
 !     40.53: Andre van der Westhuysen
 !     40.80: Marcel Zijlema
+!     41.90: Gal Akrish, Pieter Smit and Marcel Zijlema
 !
 !  1. Updates
 !
@@ -6002,6 +6476,7 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.53, Mar. 05: change Alves and Banner parameters in case of XNL
 !     40.80, Oct. 07: determine default setting for stopping criterion
+!     41.90, Nov. 21: adding QC scattering
 !
 !  2. Purpose
 !
@@ -6074,6 +6549,36 @@
 !
 !     -----------------------------------------------------------------
 !
+!     check 4th generation model
+      IF (IGEN.EQ.4) THEN                                                 41.90
+         IF (IWIND.NE.0 .OR. IQUAD.NE.0 .OR. IWCAP.NE.0) THEN
+            CALL MSGERR (0, 'the deep water physics are excluded from')
+            CALL MSGERR (0, 'the fourth-generation mode')
+         ENDIF
+         IWIND = 0
+         IQUAD = 0
+         IWCAP = 0
+         PNUMS(20) = 1.E20
+         IF (PWTAIL(1).LT.1.E8) THEN
+            CALL MSGERR (1, 'the shape of the spectral tail cannot be')
+            CALL MSGERR (1, 'specified as it is not fixed')
+         ENDIF
+         PWTAIL(1)    = 1.E8
+         PWTAIL(2:10) = 0.
+         IF ( KSPHER.GT.0 ) CALL MSGERR (3,
+     &                          'spherical coordinates not supported '//
+     &                          'in case of fourth-generation mode')
+         IF ( LSETUP.GT.0 ) THEN
+            CALL MSGERR (1, 'wave-induced setup has not been tested')
+            CALL MSGERR (1, 'within the fourth-generation mode')
+         ENDIF
+         IF ( IDIFFR.GT.0 ) THEN
+            CALL MSGERR (0, 'the phase-decoupled diffraction cannot be')
+            CALL MSGERR (0, 'applied in case of fourth-generation mode')
+         ENDIF
+         IDIFFR = 0
+      ENDIF
+!
 !     *** Check formulation for whitecapping ***
 !
       IF ( IWCAP.GT.8 ) THEN
@@ -6120,9 +6625,47 @@
         CALL MSGERR(1,'Janssen (1991) for wind option JANS        ')
       ENDIF
 !
-!     *** check numerical scheme in presence of a current ***
+!     check QC scattering without ambient current
+      IF ( ICUR.EQ.0 .AND. IQCM.GT.1 ) THEN
+         CALL MSGERR(1,'Wave-current interaction is deactivated '//
+     &                 'in case of zero current')
+         IQCM = 1
+      ENDIF
 !
-      IF ( ICUR .EQ. 1 ) THEN
+      IF ( IQCM.NE.0 .AND. IDIFFR.GT.0 ) THEN
+         CALL MSGERR (1, 'the phase-decoupled diffraction should not')
+         CALL MSGERR (1, 'be activated in case of QC scattering')
+         IDIFFR = 0
+      ENDIF
+!
+!     check refraction scheme in case of QC scattering
+      IF ( IQCM.EQ.1 .AND. INT(PNUMS(17)).EQ.-1 ) THEN
+         CALL MSGERR (1, 'numerical scheme for refraction should not')
+         CALL MSGERR (1, 'be activated in case of QC scattering')
+         IREFR = 0
+      ENDIF
+!
+!     check numerical scheme for transport in frequency space
+      IF ( INT(PNUMS(8)).EQ.-999 ) THEN
+         IF ( IQCM.EQ.0 ) THEN
+            PNUMS(8) = 1.
+         ELSE
+            PNUMS(8) = 0.
+         ENDIF
+      ELSE
+         IF ( IQCM.NE.0 ) THEN
+            CALL MSGERR
+     &          (1, 'numerical scheme for transport in frequency space')
+            CALL MSGERR
+     &           (1, 'should not be activated in case of QC scattering')
+            PNUMS(8) = 0.
+            ITFRE = 0
+         ENDIF
+      ENDIF
+!
+!     *** check option numerical scheme in presence of a current ***
+!
+      IF ( ICUR .EQ. 1 .AND. IQCM.EQ.0 ) THEN
         IF ( PNUMS(6) .EQ. 0. ) THEN
           CALL MSGERR(1,'In presence of a current it is recommended to')
           CALL MSGERR(1,'use an implicit upwind scheme in theta space ')
@@ -6136,6 +6679,24 @@
           WRITE(PRINTF,*)
         ENDIF
       END IF
+!
+!     check absolute stopping criterion
+      IF ( .NOT. PNUMS(2).NE.-1. ) THEN
+         IF ( IQCM.EQ.0 ) THEN
+            PNUMS(2) = 0.005
+         ELSE
+            PNUMS(2) = 0.05
+         ENDIF
+      ENDIF
+!
+!     *** check vegetation Jacobsen in presence of a current ***
+!
+      IF ( ICUR .EQ. 1 ) THEN                                             41.77
+        IF ( IVEG .EQ. 2 ) THEN                                           41.77
+           CALL MSGERR(1,'Current effects are not included in')           41.77
+           CALL MSGERR(1,'vegetation approach of Jacobsen et al (2019)')  41.77
+        ENDIF                                                             41.77
+      END IF                                                              41.77
 !
       IF ( LSPNAR .AND. BRESCL ) THEN
          CALL MSGERR(1,'Rescaling is turned off since the directional')
@@ -6183,17 +6744,13 @@
       ENDIF                                                               40.08
 !
 !     Here the various problems with quadruplets are checked
-!     The combination of quadruplets and sectors is an error
-!     in the calculation of quadruplets when the SECTOR option is
-!     used in the CGRID command. This error should be corrected
-!     in the future
 !
-      IF (ICUR.NE.0 .AND. (IQUAD.EQ.1 .OR. IQUAD.EQ.2)) THEN              41.55
-         CALL MSGERR(1,'Quadruplets will be updated per iteration')       41.55
-         CALL MSGERR(1,'instead of per sweep. This will increase')        41.55
-         CALL MSGERR(1,'amount of internal memory with a factor 2')       41.55
-         IQUAD = 3                                                        41.55
-      ENDIF                                                               41.55
+      IF (ICUR.NE.0 .AND. (IQUAD.EQ.1 .OR. IQUAD.EQ.2)) THEN
+         CALL MSGERR(0,'In presence of a current it is recommended to')
+         CALL MSGERR(0,'update quadruplets per iteration instead of')
+         CALL MSGERR(0,'per sweep. This will, however, increase the')
+         CALL MSGERR(0,'amount of internal memory with a factor 2.')
+      ENDIF
 !
       IF (IWIND.EQ.3 .OR. IWIND.EQ.4
      &               .OR. IWIND.EQ.8                                      40.88
@@ -6204,6 +6761,11 @@
           CALL MSGERR(2,'wind is present                            ')    30.60
         ENDIF
       ENDIF
+!
+!     The combination of quadruplets and sectors is an error
+!     in the calculation of quadruplets when the SECTOR option is
+!     used in the CGRID command. This error should be corrected
+!     in the future
 !
       IF (IQUAD .GE. 1) THEN                                              30.72
 !
@@ -6234,6 +6796,20 @@
 !
       END IF                                                              30.72
 !
+!     check parameters for Bragg scattering                               41.80
+!
+      IF ( IBRAG.NE.0 ) THEN
+         IF ( IGTYPE(1).NE.1 ) THEN
+            CALL MSGERR (2,'A regular bottom grid is required')           41.80
+            CALL MSGERR (2,'in case of Bragg scattering'      )           41.80
+         ELSE
+            IF (PBRAG(1).GT.0.5*MAX(MXG(1),MYG(1))) THEN                  41.80
+               CALL MSGERR(2,'region size over which a bottom spectrum')  41.80
+               CALL MSGERR(2,'needs to be computed is too large'       )  41.80
+            ENDIF
+         ENDIF
+      ENDIF
+!
 !     Check whether limiter should be de-activated
 !
       IF (IQUAD.EQ.0 .AND. PNUMS(20).LT.100.) THEN                        40.41
@@ -6256,15 +6832,6 @@
          END IF                                                           40.31
       END IF                                                              40.41
 !
-!     When using triads MSC must be less than 200!                        30.72
-!
-      IF ((ITRIAD.GT.0).AND.(MSC.GT.200)) THEN                            30.72
-         CALL MSGERR(4,'When triads are active the number of     ')       30.72
-         CALL MSGERR(4,'directions chosen in the CGRID command   ')       30.72
-         CALL MSGERR(4,'must be less than 200                    ')       30.72
-         RETURN
-      END IF                                                              30.72
-!
 !     When Alves and Banner and XNL are applied change the parameters     40.53
 !
       IF ( IWCAP.EQ.7 .AND. (IQUAD.EQ.51 .OR. IQUAD.EQ.52 .OR.            40.53
@@ -6275,6 +6842,18 @@
          IF (EQREAL(PWCAP( 9),    0.0)) PWCAP( 9) = 0.                    40.53
          IF (EQREAL(PWCAP(11),    0.0)) PWCAP(11) = 0.                    40.53
       END IF                                                              40.53
+!
+!     check stopping criterion in case of 4th generation model
+      IF (IGEN.EQ.4) THEN                                                 41.90
+         IF (PNUMS(21).EQ.0.) THEN
+            CALL MSGERR(1,'command NUM ACCUR is obsolete')
+            CALL MSGERR(0,'default stopping criterion is used instead')
+            PNUMS(21) = 1.
+            PNUMS(1)  = 0.01
+            PNUMS(2)  = 0.05
+            PNUMS(4)  = 99.
+         ENDIF
+      ENDIF
 !
       IF ( ITEST .GE. 120 ) THEN
         WRITE(PRINTF,3000) IWIND ,IQUAD, ICUR, IWCAP, MSC
@@ -6296,6 +6875,7 @@
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
      &                   UYB   , NPLAF , TURBF , MUDLF , WXI   ,          40.59 40.35 40.55 40.31
+     &                   AICEF , HICEF , HSSF  , TSSF  ,                  41.82 41.75
 !NCOH     &                   WYI   )
 !COH     &                   WYI   , z2w   , uv2w  )                          41.61
 !                                                                    *
@@ -6314,7 +6894,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -6323,22 +6903,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -6356,6 +6934,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -6379,6 +6958,7 @@
 !     40.31, Nov. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Sep. 07: extension to unstructured grids
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -6422,6 +7002,8 @@
       REAL     DEPTH(*), WLEVL(*), FRIC(*), UXB(*), UYB(*),               40.31
      &         NPLAF(*), TURBF(*),                                        40.35 40.55
      &         MUDLF(*),                                                  40.59
+     &         AICEF(*), HICEF(*),                                        41.75
+     &         HSSF(*), TSSF(*),                                          41.82
      &         WXI(*), WYI(*)                                             40.31
 !COH      LOGICAL  uv2w, z2w                                                  41.61
 !
@@ -6910,6 +7492,114 @@
      &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
         ENDIF
       ENDIF
+
+!     field 14: field containing ice concentration (fraction)
+      IF (IFLDYN(14) .EQ. 1) THEN
+        CALL FLFILE (14, 0, AICEF, (/0./),
+     &               0, JAICE2, JAICE3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' ice frac. from file in test points'
+          IF (OPTG.NE.5) THEN                                             41.75
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JAICE3)
+             ENDDO
+          ELSE                                                            41.75
+             DO IPTST = 1, MIN(10,NPTST)                                  41.75
+                IVP = XYTST(IPTST)                                        41.75
+                TSTVAL(IPTST) = COMPDA(IVP,JAICE3)                        41.75
+             ENDDO                                                        41.75
+          ENDIF                                                           41.75
+          WRITE (PRTEST, 122) ' ice frac.: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+
+!     field 15: field containing ice thickness in meters
+      IF (IFLDYN(15) .EQ. 1) THEN
+        CALL FLFILE (15, 0, HICEF, (/0./),
+     &               0, JHICE2, JHICE3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' ice thick. from file in test points'
+          IF (OPTG.NE.5) THEN                                             41.75
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JHICE3)
+             ENDDO
+          ELSE                                                            41.75
+             DO IPTST = 1, MIN(10,NPTST)                                  41.75
+                IVP = XYTST(IPTST)                                        41.75
+                TSTVAL(IPTST) = COMPDA(IVP,JHICE3)                        41.75
+             ENDDO                                                        41.75
+          ENDIF                                                           41.75
+          WRITE (PRTEST, 122) ' ice thick.: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+!
+!     field 16: field containing sea-swell significant wave height
+      IF (IFLDYN(16) .EQ. 1) THEN
+        CALL FLFILE (16, 0, HSSF, (/0./),
+     &               0, JHSS2, JHSS3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' sea-swell Hs from file in test points'
+          IF (OPTG.NE.5) THEN                                             41.82
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JHSS3)
+             ENDDO
+          ELSE                                                            41.82
+             DO IPTST = 1, MIN(10,NPTST)                                  41.82
+                IVP = XYTST(IPTST)                                        41.82
+                TSTVAL(IPTST) = COMPDA(IVP,JHSS3)                         41.82
+             ENDDO                                                        41.82
+          ENDIF                                                           41.82
+          WRITE (PRTEST, 122) ' sea-swell Hs: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+
+!     field 17: field containing sea-swell mean wave period
+      IF (IFLDYN(17) .EQ. 1) THEN
+        CALL FLFILE (17, 0, TSSF, (/0./),
+     &               0, JTSS2, JTSS3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' sea-swell Tm from file in test points'
+          IF (OPTG.NE.5) THEN                                             41.82
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JTSS3)
+             ENDDO
+          ELSE                                                            41.82
+             DO IPTST = 1, MIN(10,NPTST)                                  41.82
+                IVP = XYTST(IPTST)                                        41.82
+                TSTVAL(IPTST) = COMPDA(IVP,JTSS3)                         41.82
+             ENDDO                                                        41.82
+          ENDIF                                                           41.82
+          WRITE (PRTEST, 122) ' sea-swell Tm: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
 !
 !     End of subroutine SNEXTI
 !
@@ -6936,7 +7626,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -6945,22 +7635,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -7556,7 +8244,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -7565,22 +8253,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -7998,7 +8684,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -8007,22 +8693,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -8381,7 +9065,7 @@
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
-!     | Faculty of Civil Engineering                              |
+!     | Faculty of Civil Engineering and Geosciences              |
 !     | Environmental Fluid Mechanics Section                     |
 !     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
 !     |                                                           |
@@ -8390,22 +9074,20 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
@@ -8666,12 +9348,17 @@
 !****************************************************************
 !
       USE M_WCAP
+      USE OUTP_DATA                                                       41.78
       USE M_SNL4
+      USE M_BNDSPEC                                                       41.78
       USE M_GENARR
       USE M_PARALL
       USE M_DIFFR
       USE SwanGriddata
       USE SwanCompdata
+      USE SwanIEM                                                         41.85
+      USE SwanBraggScat                                                   41.80
+      USE SwanQCM                                                         41.90
 
       IMPLICIT NONE
 !
@@ -8687,33 +9374,33 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2018  Delft University of Technology
+!     Copyright (C) 1993-2022  Delft University of Technology
 !
-!     This program is free software; you can redistribute it and/or
-!     modify it under the terms of the GNU General Public License as
-!     published by the Free Software Foundation; either version 2 of
-!     the License, or (at your option) any later version.
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
 !
 !     This program is distributed in the hope that it will be useful,
 !     but WITHOUT ANY WARRANTY; without even the implied warranty of
 !     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 !     GNU General Public License for more details.
 !
-!     A copy of the GNU General Public License is available at
-!     http://www.gnu.org/copyleft/gpl.html#SEC3
-!     or by writing to the Free Software Foundation, Inc.,
-!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
 !
 !
 !  0. Authors
 !
 !     40.31: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.78: Bert Jagers
 !
 !  1. Updates
 !
 !     40.31, Oct. 03: New subroutine
 !     40.80, Aug. 07: extension to unstructured grids
+!     41.78, Mar. 21: delete linked lists
 !
 !  2. Purpose
 !
@@ -8722,6 +9409,7 @@
 !  3. Method
 !
 !     De-allocates several allocatable arrays
+!     Deletes linked lists
 !
 !  9. Subroutines calling
 !
@@ -8730,6 +9418,7 @@
 ! 13. Source text
 !
       IF (ALLOCATED(SIGPOW))   DEALLOCATE(SIGPOW)
+      IF (ALLOCATED(AF11  ))   DEALLOCATE(AF11  )
       IF (ALLOCATED(CNL4_1))   DEALLOCATE(CNL4_1)
       IF (ALLOCATED(CNL4_2))   DEALLOCATE(CNL4_2)
       IF (ALLOCATED(LAMBDA))   DEALLOCATE(LAMBDA)
@@ -8758,12 +9447,16 @@
       IF (ALLOCATED(DIFPARDX)) DEALLOCATE(DIFPARDX)
       IF (ALLOCATED(DIFPARDY)) DEALLOCATE(DIFPARDY)
       IF (ALLOCATED(MUDLF ))   DEALLOCATE(MUDLF )
+      IF (ALLOCATED(AICEF ))   DEALLOCATE(AICEF )
+      IF (ALLOCATED(HICEF ))   DEALLOCATE(HICEF )
       IF (ALLOCATED(NPLAF ))   DEALLOCATE(NPLAF )
       IF (ALLOCATED(LAYH  ))   DEALLOCATE(LAYH  )
       IF (ALLOCATED(VEGDIL))   DEALLOCATE(VEGDIL)
       IF (ALLOCATED(VEGNSL))   DEALLOCATE(VEGNSL)
       IF (ALLOCATED(VEGDRL))   DEALLOCATE(VEGDRL)
       IF (ALLOCATED(TURBF ))   DEALLOCATE(TURBF )
+      IF (ALLOCATED(HSSF  ))   DEALLOCATE(HSSF  )
+      IF (ALLOCATED(TSSF  ))   DEALLOCATE(TSSF  )
 !
       IF (ALLOCATED(xcugrd  )) DEALLOCATE(xcugrd  )
       IF (ALLOCATED(ycugrd  )) DEALLOCATE(ycugrd  )
@@ -8773,6 +9466,38 @@
       IF (ALLOCATED( vmark  )) DEALLOCATE( vmark  )
       IF (ALLOCATED( vlist  )) DEALLOCATE( vlist  )
       IF (ALLOCATED( blist  )) DEALLOCATE( blist  )
+!
+      IF (ALLOCATED( fb     )) DEALLOCATE( fb     )
+      IF (ALLOCATED( fbdxy  )) DEALLOCATE( fbdxy  )
+!
+      IF (ALLOCATED( kx     )) DEALLOCATE( kx     )
+      IF (ALLOCATED( ky     )) DEALLOCATE( ky     )
+      IF (ALLOCATED( xpsc   )) DEALLOCATE( xpsc   )
+      IF (ALLOCATED( xpd    )) DEALLOCATE( xpd    )
+      IF (ALLOCATED( ypd    )) DEALLOCATE( ypd    )
+      IF (ALLOCATED( kxd    )) DEALLOCATE( kxd    )
+      IF (ALLOCATED( kyd    )) DEALLOCATE( kyd    )
+      IF (ALLOCATED( disbk0 )) DEALLOCATE( disbk0 )
+      IF (ALLOCATED( disbk1 )) DEALLOCATE( disbk1 )
+!
+      IF (ALLOCATED( iwt    )) DEALLOCATE( iwt    )
+      IF (ALLOCATED( itt    )) DEALLOCATE( itt    )
+      IF (ALLOCATED( iss    )) DEALLOCATE( iss    )
+      IF (ALLOCATED( freq   )) DEALLOCATE( freq   )
+      IF (ALLOCATED( E0     )) DEALLOCATE( E0     )
+      IF (ALLOCATED( Ebig   )) DEALLOCATE( Ebig   )
+!
+      CALL DELETE ( FOPS )
+      NULLIFY( COPS )
+      LOPS = .FALSE.
+      CALL DELETE ( FORQ )
+      LORQ = .FALSE.
+      CALL DELETE ( FBNDFIL )
+      LBFILS = .FALSE.
+      CALL DELETE ( FBS )
+      LBS = .FALSE.
+      CALL DELETE ( FBGP )
+      LBGP = .FALSE.
 !
       RETURN
       END

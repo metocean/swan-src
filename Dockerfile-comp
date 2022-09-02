@@ -1,6 +1,6 @@
-FROM metocean/ifort:v19-python_3.7-buster
+FROM metocean/ifort:2022
 FROM python:3.7-slim-buster
-LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
+LABEL maintainer "MetOcean waves team"
 
 ARG mpich_version
 ARG hdf5_version
