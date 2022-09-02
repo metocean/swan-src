@@ -1,4 +1,4 @@
-FROM metocean/ifort:2022
+FROM metocean/ifort:v19-python_3.7-buster
 FROM python:3.7-slim-buster
 LABEL maintainer "MetOcean waves team"
 
