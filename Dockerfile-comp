@@ -1,4 +1,5 @@
 FROM metocean/ifort:v19-python_3.7-buster
+# FROM metocean/ifort:2022 # (currently breaking running model on mpi)
 FROM python:3.7-slim-buster
 LABEL maintainer "MetOcean waves team"
 
@@ -9,14 +10,24 @@ ARG netcdf_fortran_version
 
 # copy compiler(s)
 COPY --from=0 /opt/intel /opt/intel
+# COPY --from=0 /opt/intel/oneapi /opt/intel/oneapi #(v2022)
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG USER_NAME=metocean
 
 RUN apt -y update &&\
-    apt install -y vim sudo wget &&\
     apt -y upgrade &&\
+    apt install -y vim \ 
+    sudo \ 
+    wget \
+    build-essential \
+    zlib1g \
+    zlib1g-dev \
+    m4 \
+    procps \
+    gdb \
+    less &&\
     apt -y clean
 
 RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
@@ -30,15 +41,22 @@ ENV HDF5_VERSION=$hdf5_version
 ENV NETCDF_VERSION=$netcdf_version
 ENV NETCDF_FORTRAN_VERSION=$netcdf_fortran_version
 
-# zlib used to build hdf5/netcdf/swan
-RUN apt install -y build-essential zlib1g zlib1g-dev m4 &&\
-    apt -y clean
-
-# for debugging
-RUN apt-get install -y gdb less
-
-ADD install_scripts/install_required.sh /tmp/
-RUN cd /tmp && ./install_required.sh &&\
-    rm -rf /tmp/*
+# we separate the build of libs for allowing caching
+ADD install_scripts/install_mpich.sh /tmp/
+RUN  echo "----------------------------------------" &&\
+     echo "---------- Installing mpich ------------" &&\
+     echo "----------------------------------------" &&\
+     cd /tmp && ./install_mpich.sh
+ADD install_scripts/install_hdf5.sh /tmp/
+RUN  echo "----------------------------------------" &&\
+     echo "---------- Installing hdf5 -----------" &&\
+     echo "----------------------------------------" &&\
+     cd /tmp && ./install_hdf5.sh
+ADD install_scripts/install_netcdf4.sh /tmp/
+RUN  echo "----------------------------------------" &&\
+     echo "---------- Installing netcdf4 ----------" &&\
+     echo "----------------------------------------" &&\
+     cd /tmp && ./install_netcdf4.sh &&\
+     rm -rf /tmp/*
 
 CMD ["/bin/bash"]
