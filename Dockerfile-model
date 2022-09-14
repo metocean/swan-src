@@ -1,5 +1,6 @@
 ARG SWAN_IMAGE_TAG_SUFFIX
-FROM metocean/swan:comp-${SWAN_IMAGE_TAG_SUFFIX}
+# FROM metocean/swan:comp-${SWAN_IMAGE_TAG_SUFFIX}
+FROM metocean/swan:comp-v4120.3.1
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG ftn
