@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # This script needs to be source'd before calling any Intel compilers
 # source /opt/intel/bin/compilervars.sh intel64
 source /opt/intel/oneapi/setvars.sh intel64
