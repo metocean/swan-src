@@ -1,5 +1,4 @@
-FROM metocean/ifort:v19-python_3.7-buster
-# FROM metocean/ifort:2022 # (currently breaking running model on mpi)
+FROM metocean/ifort:2022
 FROM python:3.7-slim-buster
 LABEL maintainer "MetOcean waves team"
 
@@ -9,31 +8,30 @@ ARG netcdf_version
 ARG netcdf_fortran_version
 
 # copy compiler(s)
-COPY --from=0 /opt/intel /opt/intel
-# COPY --from=0 /opt/intel/oneapi /opt/intel/oneapi #(v2022)
+COPY --from=0 /opt/intel/oneapi /opt/intel/oneapi
 
 ARG USER_ID=1001
 ARG GROUP_ID=1001
 ARG USER_NAME=metocean
 
 RUN apt -y update &&\
-    apt -y upgrade &&\
-    apt install -y vim \ 
-    sudo \ 
-    wget \
-    build-essential \
-    zlib1g \
-    zlib1g-dev \
-    m4 \
-    procps \
-    gdb \
-    less &&\
-    apt -y clean
+     apt -y upgrade &&\
+     apt install -y vim \ 
+     sudo \ 
+     wget \
+     build-essential \
+     zlib1g \
+     zlib1g-dev \
+     m4 \
+     procps \
+     gdb \
+     less &&\
+     apt -y clean
 
 RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
-    chmod 666 /etc/sudoers &&\
-    echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers &&\
-    chmod 440 /etc/sudoers
+     chmod 666 /etc/sudoers &&\
+     echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers &&\
+     chmod 440 /etc/sudoers
 
 # Set required environment variables
 ENV MPICH_VERSION=$mpich_version
