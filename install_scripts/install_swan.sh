@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # This script needs to be source'd before calling any Intel compilers
-source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/oneapi/setvars.sh #/opt/intel/bin/compilervars.sh intel64
 
 # plain "set -e" doesn't work for pipes (e.g., errors in the "make | tee" command below could still go unnoticed)
 # setting -e before compilervars.sh has sometimes caused problems
