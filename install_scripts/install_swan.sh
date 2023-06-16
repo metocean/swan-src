@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # This script needs to be source'd before calling any Intel compilers
-source /opt/intel/oneapi/setvars.sh #/opt/intel/bin/compilervars.sh intel64
 
 # plain "set -e" doesn't work for pipes (e.g., errors in the "make | tee" command below could still go unnoticed)
 # setting -e before compilervars.sh has sometimes caused problems
@@ -11,6 +10,9 @@ echo "----------------- Building SWAN -----------------"
 INSTALL_DIR=/usr/local/bin/swan
 mkdir $INSTALL_DIR
 echo "SWAN install dir: $INSTALL_DIR"
+
+unlink $SWAN_SRC/ftn_$FTN/macros.inc
+ln -s $SWAN_SRC/ftn_msl/macros/nvidia_static_macros.inc $SWAN_SRC/ftn_$FTN/macros.inc
 
 # Building MPI and Serial versions
 for mode in mpi omp ser; do

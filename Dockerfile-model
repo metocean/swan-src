@@ -1,6 +1,24 @@
-ARG SWAN_IMAGE_TAG_SUFFIX
-FROM metocean/swan:comp-${SWAN_IMAGE_TAG_SUFFIX}
+# ARG SWAN_IMAGE_TAG_SUFFIX
+# FROM metocean/swan:comp-${SWAN_IMAGE_TAG_SUFFIX}
+FROM metocean/nvidia:22.11-plus_swan
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
+
+ARG USER_ID=1001
+ARG GROUP_ID=1001
+ARG USER_NAME=metocean
+
+RUN apt -y update &&\
+    apt -y upgrade &&\
+    apt install -y vim \
+    sudo \
+    gdb \
+    less &&\
+    apt -y clean
+
+RUN adduser -u $USER_ID $USER_NAME --disabled-password &&\
+    chmod 666 /etc/sudoers &&\
+    echo "$USER_NAME ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers &&\
+    chmod 440 /etc/sudoers
 
 ARG ftn
 ARG default_mode
@@ -18,5 +36,7 @@ COPY install_scripts/install_swan.sh $INSTALL_SCRIPTS/
 RUN ./$INSTALL_SCRIPTS/install_swan.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan.sh
 
-# copy entrypoint
+# # copy entrypoint
 COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
+
+CMD ["/bin/bash"]

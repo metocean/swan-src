@@ -3329,7 +3329,7 @@
 !
 ! 13. Source text
 !
-      PARAMETER  (NVOTP=102)                                              MSL 41.62 41.15 40.64 40.51 40.41 40.00
+      PARAMETER  (NVOTP=101)                                              MSL 41.62 41.15 40.64 40.51 40.41 40.00
       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
      &           VOQ(MIP,*)     ,
      &           WK(*)          ,
