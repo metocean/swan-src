@@ -12,8 +12,6 @@ services:
         ftn: msl
         default_mode: mpi
         SWAN_IMAGE_TAG_SUFFIX: ${SWAN_IMAGE_TAG_SUFFIX}
-    depends_on:
-      - comp
   
   # Build test image
   test:

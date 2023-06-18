@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# This script needs to be source'd before calling any Intel compilers
-
 # plain "set -e" doesn't work for pipes (e.g., errors in the "make | tee" command below could still go unnoticed)
 # setting -e before compilervars.sh has sometimes caused problems
 set -e -u -x -o pipefail
