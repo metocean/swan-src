@@ -1,0 +1,1492 @@
+diff --color -ruN ftn_stock/agioncmd.ftn90 ftn_msl/agioncmd.ftn90
+--- ftn_stock/agioncmd.ftn90	2023-06-16 18:07:22.321918446 +1200
++++ ftn_msl/agioncmd.ftn90	2023-06-16 16:50:00.243806619 +1200
+@@ -268,6 +268,7 @@
+ 
+             ! global attributes
+             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Conventions', 'CF-1.5') )
++            call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Institution', 'MetOcean Solutions Ltd') )
+             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'History', history) )
+             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Directional_convention', dconv) )
+ 
+@@ -378,7 +379,8 @@
+             call nccheck ( nf90_def_dim( ncid, 'frequency', spcgrid%nfreq, spcgrid%frq_dimid ) );
+             call nccheck ( nf90_def_var( ncid, 'frequency', NF90_FLOAT, spcgrid%frq_dimid, spcgrid%frq_varid ) );
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'units', 's-1') )
+-            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'standard_name', 'wave_frequency') )
++            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'long_name', 'sea surface wave frequency') )                              !MSL (added long name)
++            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'standard_name', 'sea_surface_wave_frequency') )                          !MSL (using CF standard name)
+ 
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'flow',  spcgrid%frequency(1) ) )
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'fhigh', spcgrid%frequency(spcgrid%nfreq) ) )
+@@ -393,10 +395,11 @@
+                 call nccheck ( nf90_def_dim( ncid, 'direction', spcgrid%ndir, spcgrid%dir_dimid ) )
+                 call nccheck ( nf90_def_var( ncid, 'direction', NF90_FLOAT, spcgrid%dir_dimid, spcgrid%dir_varid ) );
+                 call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'units', 'radians') )
+-                call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'direction') )
+                 if ( nautical ) then
++                    call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'sea surface wave from direction') )                 !MSL (add convention to long name)
+                     call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'standard_name', 'sea_surface_wave_from_direction') )
+                 else
++                    call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'sea surface wave from direction') )                 !MSL (add convention to long name)
+                     call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'standard_name', 'sea_surface_wave_to_direction') )
+                 end if
+                 call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'mdc',   spcgrid%ndir ) )
+@@ -417,7 +420,7 @@
+                 else
+                     call nccheck ( nf90_put_att( ncid, evarid, '_FillValue',NF90_FILL_FLOAT) )
+                 end if
+-                call nccheck ( nf90_put_att( ncid, evarid, 'long_name', 'density') )
++                call nccheck ( nf90_put_att( ncid, evarid, 'long_name', 'sea surface wave directional variance spectral density') )         !MSL (updated long name)
+                 call nccheck ( nf90_put_att( ncid, evarid, 'units', 'm2 s rad-1') )
+                 call nccheck ( nf90_put_att( ncid, evarid, 'standard_name', &
+                             'sea_surface_wave_directional_variance_spectral_density') )
+diff --color -ruN ftn_stock/macros/gfortran_static_macros.inc ftn_msl/macros/gfortran_static_macros.inc
+--- ftn_stock/macros/gfortran_static_macros.inc	1970-01-01 12:00:00.000000000 +1200
++++ ftn_msl/macros/gfortran_static_macros.inc	2023-06-16 16:50:00.251806893 +1200
+@@ -0,0 +1,41 @@
++##############################################################################
++# IA32_GNU:		Intel Pentium with Linux using GNU compiler gfortran.
++##############################################################################
++F90_SER = gfortran
++F90_OMP = gfortran
++F90_MPI = mpif90
++FLAGS_OPT = -O
++FLAGS_MSC = -w -fno-second-underscore
++FLAGS90_MSC = $(FLAGS_MSC) -ffree-line-length-none
++FLAGS_DYN = -fPIC
++FLAGS_SER =
++FLAGS_OMP = -fopenmp
++FLAGS_MPI =
++NETCDFROOT = /usr/local
++ifneq ($(NETCDFROOT),)
++  INCS_SER = -I$(NETCDFROOT)/include
++  INCS_OMP = -I$(NETCDFROOT)/include
++  INCS_MPI = -I$(NETCDFROOT)/include
++  LIBS_SER = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz -ldl -lm
++  LIBS_OMP = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz -ldl -lm
++  LIBS_MPI = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lz -ldl -lm
++  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
++else
++  INCS_SER = /usr/include
++  INCS_OMP = /usr/include
++  INCS_MPI = /usr/include
++  LIBS_SER = /usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
++  LIBS_OMP = /usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff -static-libgcc
++  LIBS_MPI = /usr/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
++  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
++endif
++O_DIR = ../work/odir4/
++OUT = -o 
++EXTO = o
++MAKE = make
++RM = rm -f
++ifneq ($(NETCDFROOT),)
++  swch = -unix -netcdf
++else
++  swch = -unix
++endif
+diff --color -ruN ftn_stock/macros/macros.inc ftn_msl/macros/macros.inc
+--- ftn_stock/macros/macros.inc	2023-06-16 16:50:00.295808406 +1200
++++ ftn_msl/macros/macros.inc	1970-01-01 12:00:00.000000000 +1200
+@@ -1,41 +0,0 @@
+-##############################################################################
+-# IA32_GNU:		Intel Pentium with Linux using GNU compiler gfortran.
+-##############################################################################
+-F90_SER = gfortran
+-F90_OMP = gfortran
+-F90_MPI = mpif90
+-FLAGS_OPT = -O
+-FLAGS_MSC = -w -fno-second-underscore
+-FLAGS90_MSC = $(FLAGS_MSC) -ffree-line-length-none
+-FLAGS_DYN =
+-FLAGS_SER =
+-FLAGS_OMP = -fopenmp
+-FLAGS_MPI =
+-NETCDFROOT = /usr
+-ifneq ($(NETCDFROOT),)
+-  INCS_SER = -I$(NETCDFROOT)/include
+-  INCS_OMP = -I$(NETCDFROOT)/include
+-  INCS_MPI = -I$(NETCDFROOT)/include
+-  LIBS_SER = -L$(NETCDFROOT)/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
+-  LIBS_OMP = -L$(NETCDFROOT)/lib/x86_64-linux-gnu -lnetcdf -lnetcdff -static-libgcc
+-  LIBS_MPI = -L$(NETCDFROOT)/lib/x86_64-linux-gnu -lnetcdf -lnetcdff
+-  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
+-else
+-  INCS_SER =
+-  INCS_OMP =
+-  INCS_MPI =
+-  LIBS_SER =
+-  LIBS_OMP = -static-libgcc
+-  LIBS_MPI =
+-  NCF_OBJS =
+-endif
+-O_DIR = ../work/odir4/
+-OUT = -o 
+-EXTO = o
+-MAKE = make
+-RM = rm -f
+-ifneq ($(NETCDFROOT),)
+-  swch = -unix -netcdf
+-else
+-  swch = -unix
+-endif
+diff --color -ruN ftn_stock/macros/nvidia_static_macros.inc ftn_msl/macros/nvidia_static_macros.inc
+--- ftn_stock/macros/nvidia_static_macros.inc	1970-01-01 12:00:00.000000000 +1200
++++ ftn_msl/macros/nvidia_static_macros.inc	2023-06-19 16:41:58.246864939 +1200
+@@ -0,0 +1,41 @@
++##############################################################################
++# IA32_Intel/x86-64_Intel: Intel Pentium with Linux using Intel compiler 17.
++##############################################################################
++F90_SER = nvfortran
++F90_OMP = nvfortran
++F90_MPI = mpif90
++FLAGS_OPT = -O2
++FLAGS_MSC = -static -traceback
++FLAGS90_MSC = $(FLAGS_MSC)
++FLAGS_DYN = -fPIC
++FLAGS_SER =
++FLAGS_OMP = -mp
++FLAGS_MPI =
++NETCDFROOT = /usr/local
++ifneq ($(NETCDFROOT),)
++  INCS_SER = -I$(NETCDFROOT)/include
++  INCS_OMP = -I$(NETCDFROOT)/include
++  INCS_MPI = -I$(NETCDFROOT)/include
++  LIBS_SER = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
++  LIBS_OMP = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
++  LIBS_MPI = -L$(NETCDFROOT)/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
++  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
++else
++  INCS_SER = -I/usr/include -I/usr/include/x86_64-linux-gnu/mpich
++  INCS_OMP = -I/usr/include -I/usr/include/x86_64-linux-gnu/mpich
++  INCS_MPI = -I/usr/include -I/usr/include/x86_64-linux-gnu/mpich
++  LIBS_SER = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
++  LIBS_OMP = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
++  LIBS_MPI = -L/usr/lib -lnetcdff -lnetcdf -lhdf5_hl -lhdf5 -lm -lz
++  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o
++endif
++O_DIR = ../work/odir4/
++OUT = -o
++EXTO = o
++MAKE = make
++RM = rm -f
++ifneq ($(NETCDFROOT),)
++  swch = -unix -impi -netcdf
++else
++  swch = -unix -impi
++endif
+\ No newline at end of file
+diff --color -ruN ftn_stock/msl4120.agioncmd.patch ftn_msl/msl4120.agioncmd.patch
+--- ftn_stock/msl4120.agioncmd.patch	1970-01-01 12:00:00.000000000 +1200
++++ ftn_msl/msl4120.agioncmd.patch	2023-06-16 18:07:22.285913871 +1200
+@@ -0,0 +1,42 @@
++--- ftn_stock_patched/agioncmd.ftn90	2022-08-31 17:44:20.567472848 -0300
+++++ ftn_msl/agioncmd.ftn90	2020-12-08 16:02:33.892453518 -0300
++@@ -268,6 +268,7 @@
++ 
++             ! global attributes
++             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Conventions', 'CF-1.5') )
+++            call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Institution', 'MetOcean Solutions Ltd') )
++             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'History', history) )
++             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Directional_convention', dconv) )
++ 
++@@ -378,7 +379,8 @@
++             call nccheck ( nf90_def_dim( ncid, 'frequency', spcgrid%nfreq, spcgrid%frq_dimid ) );
++             call nccheck ( nf90_def_var( ncid, 'frequency', NF90_FLOAT, spcgrid%frq_dimid, spcgrid%frq_varid ) );
++             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'units', 's-1') )
++-            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'standard_name', 'wave_frequency') )
+++            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'long_name', 'sea surface wave frequency') )                              !MSL (added long name)
+++            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'standard_name', 'sea_surface_wave_frequency') )                          !MSL (using CF standard name)
++ 
++             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'flow',  spcgrid%frequency(1) ) )
++             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'fhigh', spcgrid%frequency(spcgrid%nfreq) ) )
++@@ -393,10 +395,11 @@
++                 call nccheck ( nf90_def_dim( ncid, 'direction', spcgrid%ndir, spcgrid%dir_dimid ) )
++                 call nccheck ( nf90_def_var( ncid, 'direction', NF90_FLOAT, spcgrid%dir_dimid, spcgrid%dir_varid ) );
++                 call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'units', 'radians') )
++-                call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'direction') )
++                 if ( nautical ) then
+++                    call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'sea surface wave from direction') )                 !MSL (add convention to long name)
++                     call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'standard_name', 'sea_surface_wave_from_direction') )
++                 else
+++                    call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'sea surface wave from direction') )                 !MSL (add convention to long name)
++                     call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'standard_name', 'sea_surface_wave_to_direction') )
++                 end if
++                 call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'mdc',   spcgrid%ndir ) )
++@@ -417,7 +420,7 @@
++                 else
++                     call nccheck ( nf90_put_att( ncid, evarid, '_FillValue',NF90_FILL_FLOAT) )
++                 end if
++-                call nccheck ( nf90_put_att( ncid, evarid, 'long_name', 'density') )
+++                call nccheck ( nf90_put_att( ncid, evarid, 'long_name', 'sea surface wave directional variance spectral density') )         !MSL (updated long name)
++                 call nccheck ( nf90_put_att( ncid, evarid, 'units', 'm2 s rad-1') )
++                 call nccheck ( nf90_put_att( ncid, evarid, 'standard_name', &
++                             'sea_surface_wave_directional_variance_spectral_density') )
+diff --color -ruN ftn_stock/nctablemd.ftn90 ftn_msl/nctablemd.ftn90
+--- ftn_stock/nctablemd.ftn90	2023-06-16 18:07:22.325918954 +1200
++++ ftn_msl/nctablemd.ftn90	2023-06-16 18:07:22.285913871 +1200
+@@ -23,6 +23,7 @@
+ !         %datamax       real       maximum expected data value
+ !         %varid         int        nc90_var_id
+         use netcdf
++        use SWCOMM1, only: OUTPAR         !MSL (so we have access to fcutt)
+         implicit none
+         private
+         public                                       :: nctable, nctable_record
+@@ -42,272 +43,346 @@
+             integer                                  :: varid
+         end type nctable_record
+ 
+-        type (nctable_record)                        :: nctable(66)
++
++        type (nctable_record)                        :: nctable(84)
+ 
+         data nctable(1) / nctable_record("depth",&
+-                            "sea_floor_depth_below_sea_level",&
+-                            "depth below mean sea level", &
++                            "sea_floor_depth_below_sea_surface",&                                                       !MSL (this should consider tides as well)
++                            "depth below sea surface", &                                                                !MSL (this should consider tides as well)
+                             "m", NF90_FLOAT, 0, 0, variddum) /, &
+              nctable(2) / nctable_record("xcur",&
+                             "eastward_sea_water_velocity",&
+-                            "x component of current", &
+-                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
++                            "eastward component of current velocity", &                                                 !MSL (changed long name)
++                            "m s^{-1}", NF90_SHORT, -20., 20., variddum) /, &                                           !MSL (changed units)
+              nctable(3) / nctable_record("ycur",&
+                             "northward_sea_water_velocity",&
+-                            "y component of current", &
+-                            "m s-1", NF90_SHORT, -20., 20., variddum) /, &
++                            "northward component of current velocity", &                                                !MSL (changed long name)
++                            "m s^{-1}", NF90_SHORT, -20., 20., variddum) /, &                                           !MSL (changed units)
+              nctable(4) / nctable_record("xwnd",&
+-                            "eastward_wind",&
+-                            "U-Component of Wind", &
+-                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
++                            "eastward_wind_at_10m_above_ground_level",&                                                 !MSL (specifying vertical level because variable is 2d)
++                            "eastward component of wind velocity", &                                                    !MSL (changed long name)
++                            "m s^{-1}", NF90_SHORT, -100., 100., variddum) /, &                                         !MSL (changed units)
+              nctable(5) / nctable_record("ywnd",&
+-                            "northward_wind",&
+-                            "V-Component of Wind", &
+-                            "m s-1", NF90_SHORT, -100., 100., variddum) /, &
++                            "northward_wind_at_10m_above_ground_level",&                                                !MSL (specifying vertical level because variable is 2d)
++                            "northward component of wind velocity", &                                                   !MSL (changed long name)
++                            "m s^{-1}", NF90_SHORT, -100., 100., variddum) /, &                                         !MSL (changed units)
+              nctable(6) / nctable_record("astd",&
+-                            "none",&
+-                            "air sea temperature difference (k)", &
++                            "air_sea_temperature_difference",&                                                          !MSL (added stdname, not in CF list)
++                            "air sea temperature difference", &                                                         !MSL (removing unit from name)
+                             "k", NF90_BYTE, 0, 0, variddum) /, &
+              nctable(7) / nctable_record("ustar",&
+-                            "none",&
++                            "sea_surface_wave_friction_velocity",&
+                             "friction velocity", &
+-                            "m s-1", NF90_SHORT, 0, 20, variddum) /,&
++                            "m s^{-1}", NF90_SHORT, 0, 20, variddum) /,&                                                !MSL (changed units)
+              nctable(8) / nctable_record("hs",&
+                             "sea_surface_wave_significant_height",&
+-                            "hs", &
++                            "significant height of wind and swell waves", &                                             !MSL (added long name)
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(9) / nctable_record("L",&
+-                            "none",&
+-                            "average wave length", &
+-                            "m", NF90_SHORT, 0., 1000., variddum) /, &
+-             nctable(10) / nctable_record("theta0",&
+-                            "sea_surface_wave_from_direction",&
+-                            "theta0", &
+-                            "degrees", NF90_SHORT, 0., 360., variddum) /, &
++             nctable(9) / nctable_record("wlenm",&                                                                      !MSL (made name consistent with OVKEYW)
++                            "sea_surface_wave_mean_wavelength",&                                                        !MSL (added stdname)
++                            "mean wavelength of wind and swell waves", &                                                !MSL (added long name)
++                            "m", NF90_SHORT, 0, 0, variddum) /, &
++             nctable(10) / nctable_record("thetam",&                                                                    !MSL (using thetam for mean dir, removed theta0 entry)
++                            "sea_surface_wave_mean_from_direction",&                                                    !MSL (specifying "mean", not in CF list)
++                            "mean wave direction of wind and swell waves", &                                            !MSL (more descriptive long name)
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &                                              !MSL (changed units)
+              nctable(11) / nctable_record("tmm10",&
+                             "sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment",&
+-                            "tm-10", &
++                            "mean absolute wave period of wind and swell waves from the inverse frequency moment", &    !MSL (added long name)
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(12) / nctable_record("thetam",&
+-                            "none",&
+-                            "thetam", &
+-                            "degrees", NF90_BYTE, 0, 0, variddum) /, &
+-             nctable(13) / nctable_record("tp",&
+-                            "none",&
+-                            "tp", &
+-                            "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(14) / nctable_record("thetap",&
+-                            "none",&
+-                            "thetap", &
+-                            "degrees", NF90_SHORT, 0., 360., variddum) /,&
+-             nctable(15) / nctable_record("fpl",&
++             nctable(12) / nctable_record("tpr",&                                                                       !MSL (using rtp to be consistent with OVKEYW and make it clear it is relative)
++                            "sea_surface_wave_period_at_variance_spectral_density_maximum",&                            !MSL (changed CF to specify it is "relative"; absolute counterpart uses CF's)
++                            "relative peak wave period of wind and swell waves", &                                      !MSL (added long name)
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(13) / nctable_record("thetap",&
++                            "sea_surface_wave_from_direction_at_variance_spectral_density_maximum",&                    !MSL (added stdname, CF-compliant)
++                            "peak wave direction of wind and swell waves", &                                            !MSL (added long name)
++                            "degree", NF90_SHORT, 0., 360., variddum) /,&                                               !MSL (changed units)
++             nctable(14) / nctable_record("fpl",&
+                             "none",&
+                             "peak frequency of wind sea part of spectrum", &
+                             "s-1", NF90_BYTE, 0., 10., variddum) /,&
+-             nctable(16) / nctable_record("dpl",&
++             nctable(15) / nctable_record("dpl",&
+                             "none",&
+                             "direction of peak frequency of wind sea part of spectrum", &
+-                            "degrees", NF90_BYTE, 0., 360., variddum) /,&
+-             nctable(17) / nctable_record("sign_wave_height_partitions",&
++                            "degree", NF90_BYTE, 0., 360., variddum) /,&                                                !MSL (changed units)
++             nctable(16) / nctable_record("sign_wave_height_partitions",&
+                             "none",&
+                             "hs of partitions. does this mean that i have an extra dimension???", &
+                             "m", NF90_SHORT, 0., 30., variddum) /, &
+-             nctable(18) / nctable_record("tp_partitions",&
++             nctable(17) / nctable_record("tp_partitions",&
+                             "none",&
+                             "relative peak periods of partitions of the spectrum", &
+                             "s", NF90_BYTE, 0., 24., variddum) /,&
+-             nctable(19) / nctable_record("tp_length_partitions",&
++             nctable(18) / nctable_record("tp_length_partitions",&
+                             "none",&
+                             "peak wave lengths of partitions of the spectrum", &
+                             "s", NF90_SHORT, 0, 0, variddum) /,&
+-             nctable(20) / nctable_record("theta0_partitions",&
++             nctable(19) / nctable_record("theta0_partitions",&
+                             "none",&
+                             "mean wave direction of partitions of spectrum", &
+                             "degrees", NF90_BYTE, 0., 360., variddum) /,&
+-             nctable(21) / nctable_record("spread_partitions",&
++             nctable(20) / nctable_record("spread_partitions",&
+                             "none",&
+                             "directional spread of partition of spectrum cf", &
+                             "degrees", NF90_BYTE, 0, 81, variddum) /, &
+-             nctable(22) / nctable_record("wind_sea_fraction_partitions",&
++             nctable(21) / nctable_record("wind_sea_fraction_partitions",&
+                             "none",&
+                             "wind sea fraction of partitions of spectrum", &
+                             "1", NF90_SHORT, 0., 1., variddum) /,&
+-             nctable(23) / nctable_record("wind_sea_fraction",&
++             nctable(22) / nctable_record("wind_sea_fraction",&
+                             "none",&
+                             "wind sea fraction of entire spectrum", &
+                             "1", NF90_SHORT, 0., 1., variddum) /,&
+-             nctable(24) / nctable_record("npartitions",&
++             nctable(23) / nctable_record("npartitions",&
+                             "none",&
+                             "number of partitions found in spectrum", &
+                             "1", NF90_BYTE, 0, 0, variddum) /,&
+-             nctable(25) / nctable_record("source_term_timestep",&
++             nctable(24) / nctable_record("source_term_timestep",&
+                             "none",&
+                             "average timestep in the source term integration", &
+                             "s", NF90_SHORT, 0, 0, variddum) /,&
+-             nctable(26) / nctable_record("cut_off_frequency",&
++             nctable(25) / nctable_record("cut_off_frequency",&
+                             "none",&
+                             "cut-off frequency", &
+                             "s-1", NF90_SHORT, 0., 40., variddum) /,&
+-             nctable(27) / nctable_record("icec",&
++             nctable(26) / nctable_record("icec",&
+                             "sea_ice_area_fraction",&
+                             "ice cover", &
+                             "1", NF90_BYTE, 0., 1., variddum) /,&
+-             nctable(28) / nctable_record("ssh",&
+-                            "sea_surface_height",&
+-                            "SSH", &
++             nctable(27) / nctable_record("ssh",&
++                            "sea_surface_height_above_geoid",&                                                          !MSL (changed stdname)
++                            "sea surface height", &
+                             "m", NF90_SHORT, -15., 15., variddum) /, &
+-             nctable(29) / nctable_record("landmask",&
++             nctable(28) / nctable_record("landmask",&
+                             "land_binary_mask",&
+                             "land cover (1=land, 0=sea)", &
+-                            "m", nf90_byte, 0, 0, variddum) /, &
+-             nctable(30) / nctable_record("tm02",&
++                            "m", NF90_BYTE, 0, 0, variddum) /, &
++             nctable(29) / nctable_record("tm02",&
+                             "sea_surface_wave_mean_period_from_variance_spectral_density_second_frequency_moment", &
+-                            "tm02", &
++                            "mean absolute wave period of wind and swell waves from the second frequency moment", &     !MSL (added long name)
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(31) / nctable_record("tm01",&
++             nctable(30) / nctable_record("tm01",&
+                             "sea_surface_wave_mean_period_from_variance_spectral_density_first_frequency_moment", &
+-                            "tm01", &
+-                            "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(32) / nctable_record("tps",&
+-                            "none",&
+-                            "tps", &
+-                            "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(33) / nctable_record("spread",&
+-                            "none",&
+-                            "directional spreading", &
+-                            "degrees", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(34) / nctable_record("rtm01",&
+-                            "none", &
+-                            "rtm01", &
++                            "mean absolute wave period of wind and swell waves from the first frequency moment", &      !MSL (added long name)
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(35) / nctable_record("hswe",&
+-                            "sea_surface_swell_wave_significant_height",&
+-                            "wave height of swell part", &
++             nctable(31) / nctable_record("tps",&
++                            "sea_surface_wave_period_at_variance_spectral_density_maximum",&                            !MSL (added stdname)
++                            "smooth relative peak wave period of wind and swell waves", &                               !MSL (added long name)
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(32) / nctable_record("dspr",&                                                                      !MSL (made name consistent with OVKEYW)
++                            "sea_surface_wave_directional_spread",&                                                     !MSL (added standard name)
++                            "directional spreading of wind and swell waves", &                                          !MSL (updated long name)
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &                                              !MSL (changed units)
++             nctable(33) / nctable_record("rtm01",&
++                            "sea_surface_wave_mean_period_from_variance_spectral_density_first_frequency_moment", &     !MSL (added standard name)
++                            "mean relative wave period of wind and swell waves from the first frequency moment", &      !MSL (added long name)
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(34) / nctable_record("hswe",&
++                            "sea_surface_above_TCUTs_period_wave_significant_height",&                                  !MSL (changed from CF's swell name so tcut can be prescribed)
++                            "significant height of swell waves above TCUT seconds period", &                            !MSL (updated long name)
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(36) / nctable_record("rtmm10",&
+-                            "none",&
+-                            "rtm-10", &
+-                            "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(37) / nctable_record("botl",&
+-                            "none",&
+-                            "depth below still water level", &
++             nctable(35) / nctable_record("rtmm10",&
++                            "sea_surface_wave_mean_period_from_variance_spectral_density_inverse_frequency_moment",&    !MSL (added standard name)
++                            "mean relative wave period of wind and swell waves from the inverse frequency moment", &    !MSL (added long name)
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(36) / nctable_record("botl",&
++                            "sea_floor_depth_below_mean_sea_level",&                                                    !MSL (This is the one that do not include tides)
++                            "depth below mean sea level", &                                                             !MSL (updating long name)
+                             "m", NF90_FLOAT, 0, 0, variddum) /, &
+-             nctable(38) / nctable_record("ubot",&
+-                            "none",&
+-                            "orbital velocity near bottom", &
+-                            "m s-1", NF90_SHORT, 0, 15, variddum) /, &
+-             nctable(39) / nctable_record("urms",&
+-                            "none",&
+-                            "rms of orbital velocity near bottom", &
+-                            "m s-1", NF90_SHORT, 0, 5, variddum) /, &
+-             nctable(40) / nctable_record("dhs",&
+-                            "none",&
+-                            "dHs", &
++             nctable(37) / nctable_record("ubot",&
++                            "sea_surface_wave_root_mean_square_near_bottom_orbital_velocity_maxima",&                   !MSL (added stdname, not in CF's)
++                            "root mean square of the orbital velocity maxima near the bottom", &                        !MSL (updated long name)
++                            "m s^{-1}", NF90_SHORT, 0, 15, variddum) /, &                                               !MSL (changed units)
++             nctable(38) / nctable_record("urms",&
++                            "sea_surface_wave_root_mean_square_near_bottom_orbital_velocity",&                          !MSL (added stdname, not in CF's)
++                            "root mean square of the orbital velocity near the bottom", &                               !MSL (updated stdname)
++                            "m s^{-1}", NF90_SHORT, 0, 5, variddum) /, &                                                !MSL (changed units)
++             nctable(39) / nctable_record("dhs",&
++                            "sea_surface_wave_significant_height_difference_between_iterations",&                       !MSL (added stdname, not in CF's)
++                            "difference in significant wave height between iterations", &                               !MSL (added long name)
+                             "m", NF90_SHORT, 0, 25, variddum) /, &
+-             nctable(41) / nctable_record("dtm",&
+-                            "none",&
+-                            "dTm", &
++             nctable(40) / nctable_record("dtm",&
++                            "sea_surface_wave_mean_period_difference_between_iterations",&                              !MSL (added stdname, not in CF's)
++                            "difference in mean wave period between iterations", &                                      !MSL (added long name)
+                             "s", NF90_SHORT, 0, 25, variddum) /, &
+-             nctable(42) / nctable_record("cdrag",&
+-                            "none",&
+-                            "Cdrag", &
+-                            "1", NF90_SHORT, 0., 20., variddum) /, &
+-             nctable(43) / nctable_record("phs0",&
++             nctable(41) / nctable_record("cdrag",&
++                            "surface_drag_coefficient_in_air",&                                                         !MSL (added stdname)
++                            "wind drag coefficient", &                                                                  !MSL (added longname)
++                            "1", NF90_SHORT, 0, 1, variddum) /, &
++             nctable(42) / nctable_record("qb",&                                                                        !MSL (ALL NEW FROM HERE)
++                            "sea_surface_wave_breaking_fraction",&
++                            "fraction of breaking waves", &
++                            "1", NF90_SHORT, 0., 1., variddum) /, &
++             nctable(43) / nctable_record("steepn",&
++                            "sea_surface_wave_steepness",&
++                            "wave steepness of sea and swell waves", &
++                            "1", NF90_SHORT, 0., 1., variddum) /, &
++             nctable(44) / nctable_record("fspr",&
++                            "sea_surface_wave_frequency_spread",&
++                            "normalized width of the frequency spectrum of wind and swell waves", &
++                            "1", NF90_SHORT, 0., 1., variddum) /, &
++             nctable(45) / nctable_record("tm",&                                                                        !MSL (using tm instead of PER which is not too descriptive)
++                            "sea_surface_wave_mean_period",&
++                            "mean absolute wave period", &
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(46) / nctable_record("rtm",&                                                                       !MSL (using rtm instead of RPER which is not too descriptive)
++                            "sea_surface_wave_mean_period",&
++                            "mean relative wave period", &
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(47) / nctable_record("dissip",&
++                            "sea_surface_wave_energy_dissipation",&
++                            "wave energy dissipations of sea and swell waves", &
++                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
++             nctable(48) / nctable_record("disbot",&
++                            "sea_surface_wave_energy_dissipation_due_to_bottom_friction",&
++                            "wave energy dissipations of sea and swell waves due to bottom friction", &
++                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
++             nctable(49) / nctable_record("dissurf",&
++                            "sea_surface_wave_energy_dissipation_due_to_depth_induced_breaking",&
++                            "wave energy dissipations of sea and swell waves due to depth-induced breaking", &
++                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
++             nctable(50) / nctable_record("diswcap",&
++                            "sea_surface_wave_energy_dissipation_due_to_whitecapping",&
++                            "wave energy dissipations of sea and swell waves due to whitecapping", &
++                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
++             nctable(51) / nctable_record("disveg",&
++                            "sea_surface_wave_energy_dissipation_due_to_vegetation",&
++                            "wave energy dissipations of sea and swell waves due to vegetation", &
++                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
++             nctable(52) / nctable_record("radstr",&
++                            "energy_transfer_between_waves_and_currents_due_to_radiation_stress",&
++                            "energy transfer between waves and currents due to radiation stress", &
++                            "W m-2", NF90_SHORT, 0., 1000., variddum) /, &
++             nctable(53) / nctable_record("wlenp",&
++                            "sea_surface_wave_wavelength_at_variance_spectral_density_maximum",&
++                            "peak wavelength of wind and swell waves", &
++                            "m", NF90_SHORT, 0., 10000., variddum) /, &
++             nctable(54) / nctable_record("dpm",&                                                                       !MSL (not in official SWAN)
++                            "sea_surface_wave_from_direction_at_variance_spectral_density_maximum",&
++                            "mean direction at the spectral peak of wind and swell waves", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /,&
++             nctable(55) / nctable_record("dpmsea",&                                                                    !MSL (not in official SWAN)
++                            "sea_surface_below_TCUTs_period_wave_from_direction_at_variance_spectral_density_maximum",&
++                            "mean direction at the spectral peak of wind waves below TCUT seconds period", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /,&
++             nctable(56) / nctable_record("dpmswe",&                                                                    !MSL (not in official SWAN)
++                            "sea_surface_above_TCUTs_period_wave_from_direction_at_variance_spectral_density_maximum",&
++                            "mean direction at the spectral peak of swell waves above TCUT seconds period", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /,&
++             nctable(57) / nctable_record("hsea",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_below_TCUTs_period_wave_significant_height",&
++                            "significant height of wind waves under TCUT seconds period", &
++                            "m", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(58) / nctable_record("tpssea",&                                                                    !MSL (not in official SWAN)
++                            "sea_surface_below_TCUTs_period_wave_period_at_variance_spectral_density_maximum",&
++                            "smooth relative peak wave period of wind waves below TCUT seconds period", &
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(59) / nctable_record("tpsswe",&                                                                    !MSL (not in official SWAN)
++                            "sea_surface_above_TCUTs_period_wave_period_at_variance_spectral_density_maximum",&
++                            "smooth relative peak wave period of swell waves above TCUT seconds period", &
++                            "s", NF90_SHORT, 0., 50., variddum) /, &
++             nctable(60) / nctable_record("setup",&
++                            "sea_surface_wave_setup",&
++                            "Wave setup", &
++                            "m", NF90_SHORT, 0., 20., variddum) /, &
++             nctable(61) / nctable_record("phs0",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_wind_wave_significant_height",&
+                             "sea surface wind wave significant height", &
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(44) / nctable_record("phs1",&
++             nctable(62) / nctable_record("phs1",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_primary_swell_wave_significant_height",&
+                             "sea surface primary_swell wave significant height", &
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(45) / nctable_record("phs2",&
++             nctable(63) / nctable_record("phs2",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_secondary_swell_wave_significant_height",&
+                             "sea surface secondary_swell wave significant height", &
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(46) / nctable_record("phs3",&
++             nctable(64) / nctable_record("phs3",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_tertiary_swell_wave_significant_height",&
+                             "sea surface tertiary_swell wave significant height", &
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(47) / nctable_record("phs4",&
++             nctable(65) / nctable_record("phs4",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_quaternary_swell_wave_significant_height",&
+                             "sea surface quaternary_swell wave significant height", &
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(48) / nctable_record("phs5",&
++             nctable(66) / nctable_record("phs5",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_quinary_swell_wave_significant_height",&
+                             "sea surface quinary_swell wave significant height", &
+                             "m", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(49) / nctable_record("ptp0",&
++             nctable(67) / nctable_record("ptp0",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_wind_wave_period_at_variance_spectral_density_maximum",&
+                             "sea surface wind wave period at variance spectral density maximum", &
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(50) / nctable_record("ptp1",&
++             nctable(68) / nctable_record("ptp1",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_primary_swell_wave_period_at_variance_spectral_density_maximum",&
+                             "sea surface primary swell wave period at variance spectral density maximum", &
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(51) / nctable_record("ptp2",&
++             nctable(69) / nctable_record("ptp2",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_secondary_swell_wave_period_at_variance_spectral_density_maximum",&
+                             "sea surface secondary swell wave period at variance spectral density maximum", &
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(52) / nctable_record("ptp3",&
++             nctable(70) / nctable_record("ptp3",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_tertiary_swell_wave_period_at_variance_spectral_density_maximum",&
+                             "sea surface tertiary swell wave period at variance spectral density maximum", &
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(53) / nctable_record("ptp4",&
++             nctable(71) / nctable_record("ptp4",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_quaternary_swell_wave_period_at_variance_spectral_density_maximum",&
+                             "sea surface quaternary swell wave period at variance spectral density maximum", &
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(54) / nctable_record("ptp5",&
++             nctable(72) / nctable_record("ptp5",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_quinary_swell_wave_period_at_variance_spectral_density_maximum",&
+                             "sea surface quinary swell wave period at variance spectral density maximum", &
+                             "s", NF90_SHORT, 0., 50., variddum) /, &
+-             nctable(55) / nctable_record("pdir0",&
++             nctable(73) / nctable_record("pdir0",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_wind_wave_mean_from_direction",&
+                             "sea surface wind wave mean from direction", &
+                             "degree", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(56) / nctable_record("pdir1",&
++             nctable(74) / nctable_record("pdir1",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_primary_swell_wave_mean_from_direction",&
+                             "sea surface primary swell wave mean from direction", &
+                             "degree", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(57) / nctable_record("pdir2",&
++             nctable(75) / nctable_record("pdir2",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_secondary_swell_wave_mean_from_direction",&
+                             "sea surface secondary swell wave mean from direction", &
+                             "degree", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(58) / nctable_record("pdir3",&
++             nctable(76) / nctable_record("pdir3",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_tertiary_swell_wave_mean_from_direction",&
+                             "sea surface tertiary swell wave mean from direction", &
+                             "degree", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(59) / nctable_record("pdir4",&
++             nctable(77) / nctable_record("pdir4",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_quaternary_swell_wave_mean_from_direction",&
+                             "sea surface quaternary swell wave mean from direction", &
+                             "degree", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(60) / nctable_record("pdir5",&
++             nctable(78) / nctable_record("pdir5",&                                                                      !MSL (not in official SWAN)
+                             "sea_surface_quinary_swell_wave_mean_from_direction",&
+                             "sea surface quinary swell wave mean from direction", &
+                             "degree", NF90_SHORT, 0., 360., variddum) /, &
+-             nctable(61) / nctable_record("pspr0",&
+-                            "none",&
+-                            "directional spread of partition", &
+-                            "degree", NF90_SHORT, 0., 81., variddum) /, &
+-             nctable(62) / nctable_record("pspr1",&
+-                            "none",&
+-                            "directional spread of partition", &
+-                            "degree", NF90_SHORT, 0., 81., variddum) /, &
+-             nctable(63) / nctable_record("pspr2",&
+-                            "none",&
+-                            "directional spread of partition", &
+-                            "degree", NF90_SHORT, 0., 81., variddum) /, &
+-             nctable(64) / nctable_record("pspr3",&
+-                            "none",&
+-                            "directional spread of partition", &
+-                            "degree", NF90_SHORT, 0., 81., variddum) /, &
+-             nctable(65) / nctable_record("pspr4",&
+-                            "none",&
+-                            "directional spread of partition", &
+-                            "degree", NF90_SHORT, 0., 81., variddum) /, &
+-             nctable(66) / nctable_record("pspr5",&
+-                            "none",&
+-                            "directional spread of partition", &
+-                            "degree", NF90_SHORT, 0., 81., variddum) /
++             nctable(79) / nctable_record("pspr0",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_wind_wave_directional_spread",&
++                            "sea surface wind wave directional spread", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &
++             nctable(80) / nctable_record("pspr1",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_primary_swell_wave_directional_spread",&
++                            "sea surface primary swell wave directional spread", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &
++             nctable(81) / nctable_record("pspr2",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_secondary_swell_wave_directional_spread",&
++                            "sea surface secondary swell wave directional spread", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &
++             nctable(82) / nctable_record("pspr3",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_tertiary_swell_wave_directional_spread",&
++                            "sea surface tertiary swell wave directional spread", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &
++             nctable(83) / nctable_record("pspr4",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_quaternary_swell_wave_directional_spread",&
++                            "sea surface quaternary swell wave directional spread", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /, &
++             nctable(84) / nctable_record("pspr5",&                                                                      !MSL (not in official SWAN)
++                            "sea_surface_quinary_swell_wave_directional_spread",&
++                            "sea surface quinary swell wave directional spread", &
++                            "degree", NF90_SHORT, 0., 360., variddum) /
++
+ 
+     contains
+         subroutine get_nctable_record(varname, trecord, found)
+@@ -320,6 +395,8 @@
+             do i=1,size(nctable)
+                 if ( nctable(i)%name == varname ) then
+                     trecord = nctable(i)
++                    call set_partition_name(trecord%standard_name, trecord%standard_name)    !MSL
++                    call set_partition_name(trecord%long_name, trecord%long_name)            !MSL
+                     if ( .not.nautical ) then
+                         tmpname = trecord%standard_name
+                         call nautical_to_cartesian_name(tmpname, trecord%standard_name)
+@@ -354,4 +431,25 @@
+                 end if
+             end if
+         end subroutine nautical_to_cartesian_name
++
++        subroutine set_partition_name(nname, cname)                                                    !MSL
++            character(128),             intent( in)    :: nname                                        !MSL
++            character(128),             intent(out)    :: cname                                        !MSL
++            integer                                    :: i, tint                                      !MSL
++            character(4)                               :: search = 'TCUT'                              !MSL
++            character(20)                              :: tstr                                         !MSL
++            i = index(nname, search)                                                                   !MSL
++            if ( i > 0 ) then                                                                          !MSL
++                tint =  1/OUTPAR(5)                                                                    !MSL
++                write(tstr, '(i1)') tint                                                               !MSL
++                if ( i+len(search) < len(trim(nname)) ) then                                           !MSL
++                    cname = nname(1:i-1) // trim(tstr) // nname(i+len(search):len(trim(nname)))        !MSL
++                else                                                                                   !MSL
++                    cname = nname(1:i-1) // trim(tstr)                                                 !MSL
++                end if                                                                                 !MSL
++            else                                                                                       !MSL
++                cname = nname                                                                          !MSL
++            end if                                                                                     !MSL
++        end subroutine set_partition_name                                                              !MSL
++
+     end module nctablemd
+diff --color -ruN ftn_stock/ocpids.ftn ftn_msl/ocpids.ftn
+--- ftn_stock/ocpids.ftn	2023-06-16 18:07:22.325918954 +1200
++++ ftn_msl/ocpids.ftn	2023-06-16 18:07:22.285913871 +1200
+@@ -304,12 +304,16 @@
+          OPEN (UNIT=SCREEN, FILE=SCRFIL, ERR=960)                         34.01
+       ENDIF
+       IF (LREAD) THEN
+-         IF (INPFIL.NE.'    ') THEN
+-            OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                 40.41
+-!CVIS     &            SHARED,                                                 40.41
+-     &            ERR=910)                                                40.41
+-         ENDIF
+-         CALL RDINIT
++        IF (INPFIL.NE.'    ') THEN                                        MSL
++          IF (IARGC().GT.0) THEN                                          MSL
++            CALL GETARG(1, INPFIL)                                        MSL
++          ENDIF                                                           MSL
++          PRINT*, 'Opening ', INPFIL                                      MSL
++          OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                   MSL
++!CVIS     &        SHARED,                                                     40.41
++     &          ERR=910)                                                  MSL
++        ENDIF                                                             MSL
++        CALL RDINIT
+       ENDIF
+ !
+       RETURN
+diff --color -ruN ftn_stock/swanmain.ftn ftn_msl/swanmain.ftn
+--- ftn_stock/swanmain.ftn	2023-06-16 18:07:22.333919971 +1200
++++ ftn_msl/swanmain.ftn	2023-06-16 18:07:22.297915396 +1200
+@@ -1269,7 +1269,7 @@
+       UT     = 'sec'
+       UL     = 'm'
+       UET    = 'm3/s'
+-      UDI    = 'degr'
++      UDI    = 'degree'
+       UST    = 'm2/s2'
+       UF     = 'N/m2'
+       UP     = 'W/m'
+@@ -2872,6 +2872,92 @@
+       OVHEXP(IVTYPE) = 10.
+       OVEXCV(IVTYPE) = -9.
+ !
++!     IVTYPE 85-99 RESERVED FOR MSL OUTPUT
++!
++      IVTYPE = 85                                                         MSL
++      OVKEYW(IVTYPE) = 'DPM'                                              MSL
++      OVSNAM(IVTYPE) = 'dpm'                                              MSL
++      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'                  MSL
++      OVUNIT(IVTYPE) = UDI                                                MSL
++      OVSVTY(IVTYPE) = 2                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 360.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 360.                                               MSL
++      OVEXCV(IVTYPE) = -999.                                              MSL
++!
++      IVTYPE = 86                                                         MSL
++      OVKEYW(IVTYPE) = 'DPMSEA'                                           MSL
++      OVSNAM(IVTYPE) = 'dpmsea'                                           MSL
++      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'              MSL
++      OVUNIT(IVTYPE) = UDI                                                MSL
++      OVSVTY(IVTYPE) = 2                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 360.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 360.                                               MSL
++      OVEXCV(IVTYPE) = -999.                                              MSL
++!
++      IVTYPE = 87                                                         MSL
++      OVKEYW(IVTYPE) = 'DPMSWE'                                           MSL
++      OVSNAM(IVTYPE) = 'dpmswe'                                           MSL
++      OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'            MSL
++      OVUNIT(IVTYPE) = UDI                                                MSL
++      OVSVTY(IVTYPE) = 2                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 360.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 360.                                               MSL
++      OVEXCV(IVTYPE) = -999.                                              MSL
++!
++      IVTYPE = 88                                                         MSL
++      OVKEYW(IVTYPE) = 'TPSSEA'                                           MSL
++      OVSNAM(IVTYPE) = 'tpssea'                                           MSL
++      OVLNAM(IVTYPE) = 'Peak period of sea'                               MSL
++      OVUNIT(IVTYPE) = UT                                                 MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 1000.                                              MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 100.                                               MSL
++      OVEXCV(IVTYPE) = -9.                                                MSL
++!
++      IVTYPE = 89                                                         MSL
++      OVKEYW(IVTYPE) = 'TPSSWE'                                           MSL
++      OVSNAM(IVTYPE) = 'tpsswe'                                           MSL
++      OVLNAM(IVTYPE) = 'Peak period of swell'                             MSL
++      OVUNIT(IVTYPE) = UT                                                 MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 1000.                                              MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 100.                                               MSL
++      OVEXCV(IVTYPE) = -9.                                                MSL
++!
++      IVTYPE = 90                                                         MSL
++      OVKEYW(IVTYPE) = 'HSEA'                                             MSL
++      OVSNAM(IVTYPE) = 'hsea'                                             MSL
++      OVLNAM(IVTYPE) = 'Wave height of sea part'                          MSL
++      OVUNIT(IVTYPE) = UH                                                 MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 100.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 100.                                               MSL
++      OVEXCV(IVTYPE) = -9.                                                MSL
++!
++      IVTYPE = 91                                                         MSL
++      OVKEYW(IVTYPE) = 'SWE'                                              MSL
++      OVSNAM(IVTYPE) = 'swe'                                              MSL
++      OVLNAM(IVTYPE) = 'Spectral bandwidth'                               MSL
++      OVUNIT(IVTYPE) = ' '                                                MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 1.                                                 MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 1.                                                 MSL
++      OVEXCV(IVTYPE) = -9                                                 MSL
++!
+       IVTYPE = 100                                                        41.62
+       OVKEYW(IVTYPE) = 'PTHS'                                             41.62
+       OVSNAM(IVTYPE) = 'HsPT01'                                           41.62
+diff --color -ruN ftn_stock/swanout1.ftn ftn_msl/swanout1.ftn
+--- ftn_stock/swanout1.ftn	2023-06-16 18:07:22.337920480 +1200
++++ ftn_msl/swanout1.ftn	2023-06-19 16:41:58.246864939 +1200
+@@ -812,7 +812,9 @@
+      &       IVTYPE.EQ.13 .OR. IVTYPE.EQ.14 .OR. IVTYPE.EQ.16 .OR.
+      &       IVTYPE.EQ.21 .OR. IVTYPE.EQ.22 .OR. IVTYPE.EQ.43 .OR.
+      &       IVTYPE.EQ.44 .OR. IVTYPE.EQ.48 .OR. IVTYPE.EQ.53 .OR.
+-     &       IVTYPE.EQ.58                                          )      40.64 40.61 40.51 40.41 40.00
++     &       IVTYPE.EQ.85 .OR. IVTYPE.EQ.86 .OR. IVTYPE.EQ.87 .OR.        MSL
++     &       IVTYPE.EQ.88 .OR. IVTYPE.EQ.89 .OR. IVTYPE.EQ.90 .OR.        MSL
++     &       IVTYPE.EQ.91 .OR. IVTYPE.EQ.58                        )      MSL 40.64 40.61 40.51 40.41 40.00
+      &   BKC = MAX (1, BKC)
+ !
+ !        for some quantities also compute Depth, current, K and Cg
+@@ -3327,7 +3329,7 @@
+ !
+ ! 13. Source text
+ !
+-      PARAMETER  (NVOTP=94)                                               41.85 41.62 41.15 40.64 40.51 40.41 40.00
++      PARAMETER  (NVOTP=101)                                              MSL 41.62 41.15 40.64 40.51 40.41 40.00
+       REAL       XC(MIP)        ,YC(MIP)       ,AC2(MDC,MSC,MCGRD),
+      &           VOQ(MIP,*)     ,
+      &           WK(*)          ,
+@@ -3348,10 +3350,13 @@
+ !
+       LOGICAL    OQPROC(*), EQREAL                                        30.72
+       LOGICAL :: EXCPT     ! if true value in point is undefined          40.86
+-      INTEGER    NOSWLL                                                   41.72
++      REAL ISIGP(0:2)                                                     MSL
++      INTEGER IPART                                                       MSL
++      INTEGER NOSWLL                                                      41.72
+       SAVE IENT, IVOTP
+       DATA IENT /0/
+       DATA IVOTP /10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 28, 32, 33,     20.61
++     &            85, 86, 87, 88, 89, 90, 91,                             MSL
+      &            100, 101, 102, 103, 104, 105, 106, 107, 108, 109,       41.62
+      &            110, 111, 112, 113, 114, 115, 116, 117, 118, 119,       41.62
+      &            120, 121, 122, 123, 124, 125, 126, 127, 128, 129,       41.62
+@@ -3447,7 +3452,8 @@
+ !       significant wave height
+ !
+         IVTYPE = 10
+-        IF (OQPROC(IVTYPE)) THEN
++        IVTYPE2 = 90                                                      MSL
++        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2)) THEN                       MSL
+           IF (OUTPAR(6).EQ.0.) THEN                                       40.87
+ !            integration over [0,inf]                                     40.87
+              ETOT = 0.
+@@ -3474,20 +3480,24 @@
+      &                             WK , ECS , 0.  , 0.    , ACLOC      ,  40.87
+      &                             1  )                                   40.87
+           ENDIF                                                           40.87
+-          IF (ETOT .GE. 0.) THEN                                          30.00
+-            VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
+-          ELSE
+-            VOQ(IP,VOQR(IVTYPE)) = 0.                                     40.86
+-          ENDIF
+-          IF (ITEST.GE.100) THEN                                          40.00
+-            WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
+-          ENDIF
++          IF (OQPROC(IVTYPE)) THEN                                        MSL
++            IF (ETOT .GE. 0.) THEN                                        30.00
++              VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
++            ELSE
++              VOQ(IP,VOQR(IVTYPE)) = 0.                                   40.86
++            ENDIF
++            IF (TEST.GE.100) THEN                                         40.00
++              WRITE(PRINTF,222) IP,OVSNAM(IVTYPE),VOQ(IP,VOQR(IVTYPE))    40.00
++            ENDIF
++          ENDIF                                                           MSL
+         ENDIF
+ !
+-!       swell wave height
++!       sea/swell wave height
+ !
+         IVTYPE = 44
+-        IF (OQPROC(IVTYPE)) THEN
++        IVTYPE2 = 90                                                      MSL
++        IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2)) THEN                       MSL
++        IF (OQPROC(IVTYPE2)) ETOT2=ETOT                                   MSL
+           ETOT = 0.
+           FSWELL = PI2 * OUTPAR(5)
+ !         trapezoidal rule is applied
+@@ -3507,6 +3517,7 @@
+             ENDDO
+             IF (SPCSIG(IS).GT.FSWELL) EXIT
+           ENDDO
++          IF (OQPROC(IVTYPE)) THEN                                        MSL
+           IF (ETOT .GE. 0.) THEN                                          30.00
+             VOQ(IP,VOQR(IVTYPE)) = 4.*SQRT(ETOT)
+           ELSE
+@@ -3514,9 +3525,20 @@
+           ENDIF
+           IF (ITEST.GE.100) THEN                                          40.00
+             WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   40.00
++          ENDIF
++          ENDIF
++          IF (OQPROC(IVTYPE2)) THEN                                       MSL
++          IF (ETOT .GE. 0.) THEN                                          MSL
++            VOQ(IP,VOQR(IVTYPE2)) = 4.*SQRT(ETOT2-ETOT)                   MSL
++          ELSE                                                            MSL
++            VOQ(IP,VOQR(IVTYPE2)) = 0.                                    MSL
++          ENDIF                                                           MSL
++          IF (ITEST.GE.100) THEN                                          MSL
++           WRITE(PRINTF,222) IP,OVSNAM(IVTYPE2),VOQ(IP,VOQR(IVTYPE2))     MSL
+  222        FORMAT(' SWOEXA: POINT ', I5, 2X, A, 1X, E12.4)
+           ENDIF
+         ENDIF
++        ENDIF
+ !
+ !       average relative period                              modified 10.09
+ !
+@@ -3714,28 +3736,40 @@
+            ENDIF
+         ENDIF
+ !
+-!       peak period
++!       peak period - also get for dpm
+ !
+-        IVTYPE = 12
+-        IF (OQPROC(IVTYPE)) THEN
+-           EMAX = 0.
+-           ISIGM = -1
+-           DO IS = 1, MSC
++        FSWELL = PI2 * OUTPAR(5)                                          MSL
++        DO IPART = 0,2                                                    MSL
++          IVTYPE = 12
++          IVTYPE2 = 90                                                    MSL
++          IF (OQPROC(IVTYPE).OR.OQPROC(IVTYPE2+IPART).OR.                 MSL
++     &        OQPROC(88).OR.OQPROC(89)) THEN                              MSL
++            EMAX = 0.
++            ISIGP(IPART) = -1                                             MSL
++            DO IS = 1, MSC
++              IF (IPART.EQ.1.AND.SPCSIG(IS).LT.FSWELL) CYCLE              MSL
++              IF (IPART.EQ.2.AND.SPCSIG(IS).GT.FSWELL) THEN               MSL
++                IF (ISIGP(2).EQ.IS-1) ISIGP(2)=-1                         MSL
++                EXIT                                                      MSL
++              ENDIF                                                       MSL
+               ETD = 0.
+               DO ID = 1, MDC
+                 ETD = ETD + SPCSIG(IS)*ACLOC(ID,IS)*DDIR                  30.72
+               ENDDO
+               IF (ETD.GT.EMAX) THEN
++                IF (IPART.NE.1.OR.EMAX.NE.0.) ISIGP(IPART) = IS           MSL
+                 EMAX  = ETD
+-                ISIGM = IS
+               ENDIF
+-           ENDDO
+-           IF (ISIGM.GT.0) THEN
+-             VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGM)                   30.72
+-           ELSE
+-             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+-           ENDIF
+-        ENDIF
++            ENDDO
++            IF (OQPROC(IVTYPE)) THEN                                      MSL
++              IF (ISIGP(0).GT.0) THEN                                     MSL
++                VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(ISIGP(0))             30.72 MSL
++              ELSE
++                VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
++              ENDIF
++            ENDIF                                                         MSL
++          ENDIF
++        ENDDO                                                             MSL
+ !
+ !       peak period based on parabolic fitting                            40.51
+ !
+@@ -3789,6 +3823,44 @@
+            END IF
+         END IF
+ !
++!       sea/swell peak period based on parabolic fitting                  MSL
++!       40.51                                                             MSL
++!
++        DO IVTYPE = 88,89                                                 MSL
++          IF (OQPROC(IVTYPE)) THEN                                        MSL
++            E1     = 0.                                                   MSL
++            E2     = 0.                                                   MSL
++            E3     = 0.                                                   MSL
++            ETD    = 0.                                                   MSL
++            ISIGM  = ISIGP(IVTYPE-87)                                     MSL
++            IF (ISIGM.GT.1.AND.ISIGM.LT.MSC) THEN                         MSL
++              SIG1 = SPCSIG(ISIGM-1)                                      MSL
++              SIG2 = SPCSIG(ISIGM+1)                                      MSL
++              SIG3 = SPCSIG(ISIGM  )                                      MSL
++              DO ID = 1, MDC                                              MSL
++                E1 = E1+SIG1*ACLOC(ID,ISIGM-1)                            MSL
++                E2 = E2+SIG2*ACLOC(ID,ISIGM+1)                            MSL
++                E3 = E3+SIG3*ACLOC(ID,ISIGM)                              MSL
++              ENDDO                                                       MSL
++              P    = SIG1+SIG2                                            MSL
++              Q    = (E1-E2)/(SIG1-SIG2)                                  MSL
++              R    = SIG1+SIG3                                            MSL
++              T    = (E1-E3)/(SIG1-SIG3)                                  MSL
++              A    = (T-Q)/(R-P)                                          MSL
++              IF (A.LT.0) THEN                                            MSL
++                SIGP = (-Q+P*A)/(2.*A)                                    MSL
++              ELSE                                                        MSL
++                SIGP = SIG3                                               MSL
++              END IF                                                      MSL
++              VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SIGP                           MSL
++            ELSE IF (ISIGM.EQ.1) THEN                                     MSL
++              VOQ(IP,VOQR(IVTYPE)) = 2.*PI/SPCSIG(1)                      MSL
++            ELSE                                                          MSL
++              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                       MSL
++            END IF                                                        MSL
++          END IF                                                          MSL
++        ENDDO                                                             MSL
++!
+ !       peak direction
+ !
+         IVTYPE = 14
+@@ -3825,6 +3897,40 @@
+            ENDIF
+         ENDIF
+ !
++!       mean direction at peak frequency                                  MSL
++!                                                                         MSL
++        DO IPART = 0, 2                                                   MSL
++          IVTYPE = 85+IPART                                               MSL
++          IF (OQPROC(IVTYPE)) THEN                                        MSL
++            IF (ISIGP(IPART).GT.0) THEN                                   MSL
++              eex = 0                                                     MSL
++              eey = 0                                                     MSL
++              DO ID = 1, MDC                                              MSL
++                EAD = ACLOC(ID,ISIGP(IPART))                              MSL
++                EEX = EEX + EAD * SPCDIR(ID,2)                            MSL
++                EEY = EEY + EAD * SPCDIR(ID,3)                            MSL
++              ENDDO                                                       MSL
++              IF (ABS(EEX).GT.0.OR.ABS(EEY).GT.0) THEN                    MSL
++                IF (BNAUT) THEN                                           MSL 30.70
++                  DIRDEG = ATAN2(EEY,EEX) * 180./PI                       MSL 10.15
++                ELSE                                                      MSL
++                  DIRDEG = (ALCQ + ATAN2(EEY,EEX)) * 180./PI              MSL 10.15
++                ENDIF                                                     MSL
++                IF (DIRDEG.LT.0.) DIRDEG = DIRDEG + 360.                  MSL 10.15
++!                                                                         MSL
++!               *** Convert (if necessary) from nautical degrees ***      MSL 32.01
++!               *** to cartesian degrees                         ***      MSL 32.01
++!                                                                         MSL
++                VOQ(IP,VOQR(IVTYPE)) = DEGCNV( DIRDEG )                   MSL 32.01
++              ELSE                                                        MSL
++                VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                     MSL
++              ENDIF                                                       MSL
++            ELSE                                                          MSL
++              VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                       MSL
++            ENDIF                                                         MSL
++          ENDIF                                                           MSL
++        ENDDO                                                             MSL
++!
+ !       mean direction
+ !
+         IVTYPE = 13
+@@ -4029,6 +4135,35 @@
+            ENDIF
+         ENDIF
+ !
++!       spectral bandwidth                                                MSL
++!                                                                         MSL
++        IVTYPE = 91                                                       MSL
++        IF (OQPROC(IVTYPE)) THEN                                          MSL
++          ETOT = 0.                                                       MSL
++          EM2  = 0.                                                       MSL
++          EM4  = 0.                                                       MSL
++          DO ID = 1, MDC                                                  MSL
++            DO IS = 2, MSC                                                MSL
++              DS = SPCSIG(IS)-SPCSIG(IS-1)                                MSL
++              EAD = 0.5*(SPCSIG(IS)*ACLOC(ID,IS)+                         MSL
++     &                   SPCSIG(IS-1)*ACLOC(ID,IS-1))*DS*DDIR             MSL
++              ETOT = ETOT + EAD                                           MSL
++              SIG1 = 0.5*(SPCSIG(IS)+SPCSIG(IS-1))                        MSL
++              EM2 = EM2+SIG1**2*EAD                                       MSL
++              EM4 = EM4+SIG1**4*EAD                                       MSL
++            ENDDO                                                         MSL
++          ENDDO                                                           MSL
++          EZQ = EM2**2/(ETOT*EM4)                                         MSL
++          IF (EZQ.GE.0.AND.EZQ.LE.1) THEN                                 MSL
++            VOQ(IP,VOQR(IVTYPE)) = SQRT(1-EZQ)                            MSL
++          ELSE                                                            MSL
++            VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)                         MSL
++          ENDIF                                                           MSL
++          IF (ITEST.GE.100) THEN                                          MSL
++            WRITE(PRINTF, 222) IP, OVSNAM(IVTYPE), VOQ(IP,VOQR(IVTYPE))   MSL
++          ENDIF                                                           MSL
++        ENDIF                                                             MSL
++!
+ !       peakedness (Qp)                                                   40.64
+ !
+         IVTYPE = 58
+@@ -4791,8 +4926,6 @@
+           IF (OQPROC(150)) VOQ(IP,VOQR(150:150+NOSWLL)) = 0.              41.72 41.62
+           IF (OQPROC(160)) VOQ(IP,VOQR(160:160+NOSWLL)) = 0.              41.72 41.62
+ !
+-!         limit number of partitions in output to 10                      41.62
+-          NP = MIN(NP,10)                                                 41.62
+           IF (NP.GT.0) THEN                                               41.62
+             IF (OQPROC(171)) VOQ(IP,VOQR(171)) = NINT(REAL(NP))           41.62
+             IF (OQPROC(100)) THEN                                         41.62
+diff --color -ruN ftn_stock/SwanSpectPart.ftn ftn_msl/SwanSpectPart.ftn
+--- ftn_stock/SwanSpectPart.ftn	2023-06-16 18:07:22.317917938 +1200
++++ ftn_msl/SwanSpectPart.ftn	2023-06-16 18:07:22.277912854 +1200
+@@ -93,8 +93,8 @@
+ 
+         ! These hardcoded values (from ww3_grid.ftn) can be made
+         ! user-defined with the OUTPUT command
+-        PARAMETER             (IHMAX=100, HSPMIN=0.05, WSMULT=1.7,        41.62
+-     &                         WSCUT=0.333, FLCOMB=.FALSE.)
++        PARAMETER             (IHMAX=200, HSPMIN=0.05, WSMULT=1.7,        41.62
++     &                         WSCUT=0.333, FLCOMB=.TRUE.)
+ !
+ !  8. Subroutines and functions used
+ !
+diff --color -ruN ftn_stock/swmod1.ftn ftn_msl/swmod1.ftn
+--- ftn_stock/swmod1.ftn	2023-06-16 18:07:22.341920988 +1200
++++ ftn_msl/swmod1.ftn	2023-06-16 18:07:22.309916921 +1200
+@@ -700,6 +700,13 @@
+ !  (78) [  'HICE']
+ !  (79) [  'REDB']
+ !  (80) [  'REDC']
++!  (85) [   'DPM']                                                         MSL
++!  (86) ['DPMSEA']                                                         MSL
++!  (87) ['DPMSWE']                                                         MSL
++!  (88) ['TPSSEA']                                                         MSL
++!  (89) ['TPSSWE']                                                         MSL
++!  (90) [  'HSEA']                                                         MSL
++!  (91) [   'SWE']                                                         MSL
+ ! OVSNAM(NMOVAR)   short name of output quantity
+ !  ( 1) [    'Xp']
+ !  ( 2) [    'Yp']
+@@ -776,6 +783,13 @@
+ !  (78) ['  hice']
+ !  (79) ['Sbragg']
+ !  (80) [   'Sqc']
++!  (85) [   'dpm']                                                         MSL
++!  (86) ['dpmsea']                                                         MSL
++!  (87) ['dpmswe']                                                         MSL
++!  (88) ['tpssea']                                                         MSL
++!  (89) ['tpsswe']                                                         MSL
++!  (90) [  'hsea']                                                         MSL
++!  (91) [   'swe']                                                         MSL
+ ! OVLNAM(NMOVAR)   long name of output quantity
+ !  ( 1) [                        'X user coordinate']
+ !  ( 2) [                        'Y user coordinate']
+@@ -852,6 +866,13 @@
+ !  (78) [                            'ice thickness']
+ !  (79) [          'Total absolute Bragg scattering']
+ !  (80) [             'Total absolute QC scattering']
++!  (85) [      'Mean direction at the spectral peak']                      MSL
++!  (86) [  'Mean sea direction at the spectral peak']                      MSL
++!  (87) ['Mean swell direction at the spectral peak']                      MSL
++!  (88) [    'Smooth peak wave period of wind waves']                      MSL
++!  (89) [   'Smooth peak wave period of swell waves']                      MSL
++!  (90) [         'significant height of wind waves']                      MSL
++!  (91) [                       'Spectral bandwidth']                      MSL
+ ! OVUNIT(NMOVAR)   unit of of output quantity
+ !  ( 1) [CALCULAT] =UL
+ !  ( 2) [CALCULAT] =UL
+@@ -928,6 +949,12 @@
+ !  (78) [     'm']
+ !  (79) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (80) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
++!  (85) [CALCULAT] =UDI                                                    MSL
++!  (86) [CALCULAT] =UDI                                                    MSL
++!  (87) [CALCULAT] =UDI                                                    MSL
++!  (88) [CALCULAT] =UT                                                     MSL
++!  (89) [CALCULAT] =UT                                                     MSL
++!  (90) [CALCULAT] =UH                                                     MSL
+ ! SNAME [        ] name of output point set
+ ! UAP   [  'W/m2'] unit of dissipation
+ ! UD    [        ] not used
+@@ -1049,6 +1076,13 @@
+ !  (78)  [  1]   hice
+ !  (79)  [  1]   Sbragg
+ !  (80)  [  1]   Sqc
++!  (85)  [  1]   Dpm                                                       MSL
++!  (86)  [  1]   Dpmsea                                                    MSL
++!  (87)  [  1]   Dpmswe                                                    MSL
++!  (88)  [  1]   Tpssea                                                    MSL
++!  (89)  [  1]   Tpsswe                                                    MSL
++!  (90)  [  1]   Hsea                                                      MSL
++!  (91)  [  1]   Swe                                                       MSL
+ ! OVEXCV(NMOVAR)   exception value for output quantity
+ !  ( 1)  [ -1.E10] Xp
+ !  ( 2)  [ -1.E10] Yp
+@@ -1123,6 +1157,13 @@
+ !  (78)  [    -9.] hice
+ !  (79)  [    -9.] Sbragg
+ !  (80)  [    -9.] Sqc
++!  (85)  [   -999] Dpm                                                     MSL
++!  (86)  [   -999] Dpmsea                                                  MSL
++!  (87)  [   -999] Dpmswe                                                  MSL
++!  (88)  [     -9] Tpssea                                                  MSL
++!  (89)  [     -9] Tpsswe                                                  MSL
++!  (90)  [     -9] Hsea                                                    MSL
++!  (91)  [     -9] Swe                                                     MSL
+ ! OVLEXP(NMOVAR)   lower expected limit of output quantity
+ !  ( 1)  [ -1.E10] Xp
+ !  ( 2)  [ -1.E10] Yp
+@@ -1197,6 +1238,13 @@
+ !  (78)  [     0.] hice
+ !  (79)  [     0.] Sbragg
+ !  (80)  [     0.] Sqc
++!  (85)  [     0.] Dpm                                                     MSL
++!  (86)  [     0.] Dpmsea                                                  MSL
++!  (87)  [     0.] Dpmswe                                                  MSL
++!  (88)  [     0.] Tpssea                                                  MSL
++!  (89)  [     0.] Tpsswe                                                  MSL
++!  (90)  [     0.] Hsea                                                    MSL
++!  (91)  [     0.] Swe                                                     MSL
+ ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
+ !  ( 1)  [ -1.E10] Xp
+ !  ( 2)  [ -1.E10] Yp
+@@ -1271,6 +1319,13 @@
+ !  (78)  [     0.] hice
+ !  (79)  [     0.] Sbragg
+ !  (80)  [     0.] Sqc
++!  (85)  [     0.] Dpm                                                     MSL
++!  (86)  [     0.] Dpmsea                                                  MSL
++!  (87)  [     0.] Dpmswe                                                  MSL
++!  (88)  [     0.] Tpssea                                                  MSL
++!  (89)  [     0.] Tpsswe                                                  MSL
++!  (90)  [     0.] Hsea                                                    MSL
++!  (91)  [     0.] Swe                                                     MSL
+ ! OVHEXP(NMOVAR)   upper expected limit of output quantity
+ !  ( 1)  [  1.E10] Xp
+ !  ( 2)  [  1.E10] Yp
+@@ -1345,6 +1400,13 @@
+ !  (78)  [    10.] hice
+ !  (79)  [    0.1] Sbragg
+ !  (80)  [    0.1] Sqc
++!  (85)  [   360.] Dpm                                                     MSL
++!  (86)  [   360.] Dpmsea                                                  MSL
++!  (87)  [   360.] Dpmswe                                                  MSL
++!  (88)  [   100.] Tpssea                                                  MSL
++!  (89)  [   100.] Tpsswe                                                  MSL
++!  (90)  [   100.] Hsea                                                    MSL
++!  (91)  [     1.] Swe                                                     MSL
+ ! OVULIM(NMOVAR)   upper limit of validity
+ !  ( 1)  [  1.E10] Xp
+ !  ( 2)  [  1.E10] Yp
+@@ -1419,6 +1481,13 @@
+ !  (78)  [   100.] hice
+ !  (79)  [  1000.] Sbragg
+ !  (80)  [  1000.] Sqc
++!  (85)  [   360.] Dpm                                                     MSL
++!  (86)  [   360.] Dpmsea                                                  MSL
++!  (87)  [   360.] Dpmswe                                                  MSL
++!  (88)  [  1000.] Tpssea                                                  MSL
++!  (89)  [  1000.] Tpsswe                                                  MSL
++!  (90)  [   100.] Hsea                                                    MSL
++!  (91)  [     1.] Swe                                                     MSL
+ ! SINCQ  [       ] sin of ALCQ
+ ! SINPQ  [       ] sin of ALPQ
+ ! SPCPOW [      1] power in expression for computation of average frequency
+diff --color -ruN ftn_stock/swn_outnc.ftn90 ftn_msl/swn_outnc.ftn90
+--- ftn_stock/swn_outnc.ftn90	2023-06-16 18:07:22.341920988 +1200
++++ ftn_msl/swn_outnc.ftn90	2023-06-16 18:07:22.309916921 +1200
+@@ -1523,6 +1523,7 @@
+                 ! Definition mode
+                 call create_ncfile(ncfile, ncid, recordaxe(irq), pntgrid=pntgrid, nautical=BNAUT)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'project', PROJID) )
++                call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'model',   VERTXT) )                                    !MSL (add model version)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'run', PROJNR) )
+                 call create_variables(ncid, ivtyp, ovlnam, .false.)
+ 
+@@ -1574,6 +1575,7 @@
+ 
+                 call create_ncfile(ncfile, ncid, recordaxe(irq), mapgrid=mapgrid, nautical=BNAUT)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'project', PROJID) )
++                call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'model',   VERTXT) )                                    !MSL (add model version)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'run', PROJNR) )
+                 call create_variables(ncid, ivtyp, ovlnam, .true.)
+ 
+@@ -1658,56 +1660,75 @@
+     end subroutine create_variables
+ 
+     subroutine stnames_init()
+-        STNAMES(  4, 1) = 'depth'
+-        STNAMES(  5, 1) = 'xcur'
+-        STNAMES(  5, 2) = 'ycur'
+-        STNAMES(  6, 1) = 'ubot'
+-        STNAMES( 10, 1) = 'hs'
+-        STNAMES( 11, 1) = 'tm01'
+-        STNAMES( 12, 1) = 'tp'
+-        STNAMES( 13, 1) = 'theta0'
+-        STNAMES( 14, 1) = 'thetap'
+-        STNAMES( 16, 1) = 'spread'
+-        STNAMES( 17, 1) = 'L'
+-        STNAMES( 26, 1) = 'xwnd'
+-        STNAMES( 26, 2) = 'ywnd'
+-        STNAMES( 28, 1) = 'rtm01'
+-        STNAMES( 30, 1) = 'dhs'
+-        STNAMES( 31, 1) = 'dtm'
+-        STNAMES( 32, 1) = 'tm02'
+-        STNAMES( 34, 1) = 'urms'
+-        STNAMES( 35, 1) = 'ustar'
+-        STNAMES( 38, 1) = 'cdrag'
+-        STNAMES( 44, 1) = 'hswe'
+-        STNAMES( 47, 1) = 'tmm10'
+-        STNAMES( 48, 1) = 'rtmm10'
+-        STNAMES( 51, 1) = 'ssh'
+-        STNAMES( 52, 1) = 'botl'
+-        STNAMES( 53, 1) = 'tps'
+-        STNAMES(100, 1) = 'phs0'
+-        STNAMES(101, 1) = 'phs1'
+-        STNAMES(102, 1) = 'phs2'
+-        STNAMES(103, 1) = 'phs3'
+-        STNAMES(104, 1) = 'phs4'
+-        STNAMES(105, 1) = 'phs5'
+-        STNAMES(110, 1) = 'ptp0'
+-        STNAMES(111, 1) = 'ptp1'
+-        STNAMES(112, 1) = 'ptp2'
+-        STNAMES(113, 1) = 'ptp3'
+-        STNAMES(114, 1) = 'ptp4'
+-        STNAMES(115, 1) = 'ptp5'
+-        STNAMES(130, 1) = 'pdir0'
+-        STNAMES(131, 1) = 'pdir1'
+-        STNAMES(132, 1) = 'pdir2'
+-        STNAMES(133, 1) = 'pdir3'
+-        STNAMES(134, 1) = 'pdir4'
+-        STNAMES(135, 1) = 'pdir5'
+-        STNAMES(140, 1) = 'pspr0'
+-        STNAMES(141, 1) = 'pspr1'
+-        STNAMES(142, 1) = 'pspr2'
+-        STNAMES(143, 1) = 'pspr3'
+-        STNAMES(144, 1) = 'pspr4'
+-        STNAMES(145, 1) = 'pspr5'
++        STNAMES( 4, 1) = 'depth'
++        STNAMES( 5, 1) = 'xcur'
++        STNAMES( 5, 2) = 'ycur'
++        STNAMES( 6, 1) = 'ubot'
++        STNAMES( 7, 1) = 'dissip'          !MSL (added)
++        STNAMES( 8, 1) = 'qb'              !MSL (added)
++        STNAMES(10, 1) = 'hs'
++        STNAMES(11, 1) = 'tm01'
++        STNAMES(12, 1) = 'tpr'             !MSL (changed name)
++        STNAMES(13, 1) = 'thetam'          !MSL (changed name)
++        STNAMES(14, 1) = 'thetap'
++        STNAMES(16, 1) = 'dspr'            !MSL (changed name)
++        STNAMES(17, 1) = 'wlenm'           !MSL (changed name)
++        STNAMES(18, 1) = 'steepn'          !MSL (added)
++        STNAMES(26, 1) = 'xwnd'
++        STNAMES(26, 2) = 'ywnd'
++        STNAMES(28, 1) = 'rtm01'
++        STNAMES(30, 1) = 'dhs'
++        STNAMES(31, 1) = 'dtm'
++        STNAMES(32, 1) = 'tm02'
++        STNAMES(33, 1) = 'fspr'            !MSL (added)
++        STNAMES(34, 1) = 'urms'
++        STNAMES(35, 1) = 'ustar'
++        STNAMES(38, 1) = 'cdrag'
++        STNAMES(39, 1) = 'setup'           !MSL (added)
++        STNAMES(42, 1) = 'tm'              !MSL (added)
++        STNAMES(43, 1) = 'rtm'             !MSL (added)
++        STNAMES(44, 1) = 'hswe'
++        STNAMES(47, 1) = 'tmm10'
++        STNAMES(48, 1) = 'rtmm10'
++        STNAMES(51, 1) = 'ssh'
++        STNAMES(52, 1) = 'botl'
++        STNAMES(53, 1) = 'tps'
++        STNAMES(54, 1) = 'disbot'          !MSL (added)
++        STNAMES(55, 1) = 'dissurf'         !MSL (added)
++        STNAMES(56, 1) = 'diswcap'         !MSL (added)
++        STNAMES(57, 1) = 'disveg'          !MSL (added)
++        STNAMES(69, 1) = 'radstr'          !MSL (added)
++        STNAMES(71, 1) = 'wlenp'           !MSL (added)
++        STNAMES(85, 1) = 'dpm'             !MSL (not in official SWAN)
++        STNAMES(86, 1) = 'dpmsea'          !MSL (not in official SWAN)
++        STNAMES(87, 1) = 'dpmswe'          !MSL (not in official SWAN)
++        STNAMES(88, 1) = 'tpssea'          !MSL (not in official SWAN)
++        STNAMES(89, 1) = 'tpsswe'          !MSL (not in official SWAN)
++        STNAMES(90, 1) = 'hsea'            !MSL (not in official SWAN)
++        STNAMES(100, 1) = 'phs0'           !MSL (not in official SWAN)
++        STNAMES(101, 1) = 'phs1'           !MSL (not in official SWAN)
++        STNAMES(102, 1) = 'phs2'           !MSL (not in official SWAN)
++        STNAMES(103, 1) = 'phs3'           !MSL (not in official SWAN)
++        STNAMES(104, 1) = 'phs4'           !MSL (not in official SWAN)
++        STNAMES(105, 1) = 'phs5'           !MSL (not in official SWAN)
++        STNAMES(110, 1) = 'ptp0'           !MSL (not in official SWAN)
++        STNAMES(111, 1) = 'ptp1'           !MSL (not in official SWAN)
++        STNAMES(112, 1) = 'ptp2'           !MSL (not in official SWAN)
++        STNAMES(113, 1) = 'ptp3'           !MSL (not in official SWAN)
++        STNAMES(114, 1) = 'ptp4'           !MSL (not in official SWAN)
++        STNAMES(115, 1) = 'ptp5'           !MSL (not in official SWAN)
++        STNAMES(130, 1) = 'pdir0'          !MSL (not in official SWAN)
++        STNAMES(131, 1) = 'pdir1'          !MSL (not in official SWAN)
++        STNAMES(132, 1) = 'pdir2'          !MSL (not in official SWAN)
++        STNAMES(133, 1) = 'pdir3'          !MSL (not in official SWAN)
++        STNAMES(134, 1) = 'pdir4'          !MSL (not in official SWAN)
++        STNAMES(135, 1) = 'pdir5'          !MSL (not in official SWAN)
++        STNAMES(140, 1) = 'pspr0'          !MSL (not in official SWAN)
++        STNAMES(141, 1) = 'pspr1'          !MSL (not in official SWAN)
++        STNAMES(142, 1) = 'pspr2'          !MSL (not in official SWAN)
++        STNAMES(143, 1) = 'pspr3'          !MSL (not in official SWAN)
++        STNAMES(144, 1) = 'pspr4'          !MSL (not in official SWAN)
++        STNAMES(145, 1) = 'pspr5'          !MSL (not in official SWAN)         
+         stnames_initialized = .true.
+ 
+     end subroutine stnames_init
