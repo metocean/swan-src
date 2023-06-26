@@ -10,7 +10,7 @@ mkdir $INSTALL_DIR
 echo "SWAN install dir: $INSTALL_DIR"
 
 unlink $SWAN_SRC/ftn_$FTN/macros.inc
-ln -s $SWAN_SRC/ftn_msl/macros/nvidia_static_macros.inc $SWAN_SRC/ftn_$FTN/macros.inc
+ln -s $SWAN_SRC/ftn_$FTN/macros/nvidia_static_macros.inc $SWAN_SRC/ftn_$FTN/macros.inc
 
 # Building MPI and Serial versions
 for mode in mpi omp ser; do
