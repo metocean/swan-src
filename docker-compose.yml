@@ -10,7 +10,7 @@ services:
       dockerfile: Dockerfile-model
       args:
         ftn: msl
-        default_mode: mpi
+        default_mode: omp
         SWAN_IMAGE_TAG_SUFFIX: ${SWAN_IMAGE_TAG_SUFFIX}
   
   # Build test image
