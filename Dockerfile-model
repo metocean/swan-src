@@ -1,6 +1,4 @@
-# ARG SWAN_IMAGE_TAG_SUFFIX
-# FROM metocean/swan:comp-${SWAN_IMAGE_TAG_SUFFIX}
-FROM metocean/nvidia:22.11-plus_swan_py38
+FROM metocean/nvidia:22.11-plus_swan
 LABEL maintainer "Henrique Rapizo <h.rapizo@metocean.co.nz>"
 
 ARG USER_ID=1001
