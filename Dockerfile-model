@@ -34,7 +34,7 @@ COPY install_scripts/install_swan.sh $INSTALL_SCRIPTS/
 RUN ./$INSTALL_SCRIPTS/install_swan.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan.sh
 
-# # copy entrypoint
+# copy entrypoint
 COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
 
 CMD ["/bin/bash"]
