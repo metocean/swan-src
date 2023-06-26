@@ -1,1 +1,1 @@
-/source/swan-src/swan_src/ftn_msl/macros/nvidia_static_macros.inc
+macros/nvidia_static_macros.inc
