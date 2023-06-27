@@ -1,0 +1,108 @@
+@@ -256,30 +256,31 @@
+                 call nccheck ( nf90_def_dim( ncid, 'time', NF90_UNLIMITED, recordaxe%dimid ) );
+                 call nccheck ( nf90_def_var( ncid, 'time', NF90_INT, recordaxe%dimid, recordaxe%varid ) )
+                 call nccheck ( nf90_put_att( ncid, recordaxe%varid, 'units', 'seconds since 1970-01-01') )
+                 call nccheck ( nf90_put_att( ncid, recordaxe%varid, 'calendar', 'gregorian') )
+                 call nccheck ( nf90_put_att( ncid, recordaxe%varid, 'standard_name', 'time') )
+                 call nccheck ( nf90_put_att( ncid, recordaxe%varid, 'long_name', 'time') )
+             else
+                 call nccheck ( nf90_def_dim( ncid, 'run', NF90_UNLIMITED, recordaxe%dimid ) );
+                 call nccheck ( nf90_def_var( ncid, 'run', NF90_INT, recordaxe%dimid, recordaxe%varid ) )
+                 call nccheck ( nf90_put_att( ncid, recordaxe%varid, 'long_name', 'run number') )
+                 call nccheck ( nf90_put_att( ncid, recordaxe%varid, 'units', '1' ) )
+             end if
+ 
+             ! global attributes
+             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Conventions', 'CF-1.5') )
++            call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Institution', 'MetOcean Solutions Ltd') )
+             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'History', history) )
+             call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'Directional_convention', dconv) )
+ 
+             if ( present(mapgrid) ) then
+                 call agnc_define_mapgrid(ncid, mapgrid)
+                 if ( present(spcgrid) ) call agnc_define_spcgrid(ncid, spcgrid, do_scale, dconv, mapgrid=mapgrid)
+             else
+                 if ( present(pntgrid) ) then
+                     call agnc_define_pntgrid(ncid, pntgrid)
+                     if ( present(spcgrid) ) call agnc_define_spcgrid(ncid, spcgrid, do_scale, dconv, pntgrid=pntgrid)
+                 else
+                     call agnc_set_error('Provide a point grid or a map grid to create_ncfile')
+                 end if
+             end if
+ 
+@@ -366,70 +367,72 @@
+             nautical = .false.
+             if ( dconv == 'nautical') nautical = .true.
+ 
+             if ( do_scale ) then
+                 nf90_var_type  = NF90_SHORT
+             else
+                 nf90_var_type  = NF90_FLOAT
+             end if
+ 
+             !
+             ! frequency
+             !
+             call nccheck ( nf90_def_dim( ncid, 'frequency', spcgrid%nfreq, spcgrid%frq_dimid ) );
+             call nccheck ( nf90_def_var( ncid, 'frequency', NF90_FLOAT, spcgrid%frq_dimid, spcgrid%frq_varid ) );
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'units', 's-1') )
+-            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'standard_name', 'wave_frequency') )
++            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'long_name', 'sea surface wave frequency') )                              !MSL (added long name)
++            call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'standard_name', 'sea_surface_wave_frequency') )                          !MSL (using CF standard name)
+ 
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'flow',  spcgrid%frequency(1) ) )
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'fhigh', spcgrid%frequency(spcgrid%nfreq) ) )
+             call nccheck ( nf90_put_att( ncid, spcgrid%frq_varid, 'msc',   spcgrid%nfreq-1 ) )
+ 
+             call agnc_get_recordaxe_ids( ncid, ra_dimid )
+ 
+             if ( spcgrid%ndir > 0 ) then
+                 !
+                 ! 2D direction axe
+                 !
+                 call nccheck ( nf90_def_dim( ncid, 'direction', spcgrid%ndir, spcgrid%dir_dimid ) )
+                 call nccheck ( nf90_def_var( ncid, 'direction', NF90_FLOAT, spcgrid%dir_dimid, spcgrid%dir_varid ) );
+                 call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'units', 'radians') )
+-                call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'direction') )
+                 if ( nautical ) then
++                    call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'sea surface wave from direction') )                 !MSL (add convention to long name)
+                     call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'standard_name', 'sea_surface_wave_from_direction') )
+                 else
++                    call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'long_name', 'sea surface wave from direction') )                 !MSL (add convention to long name)
+                     call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'standard_name', 'sea_surface_wave_to_direction') )
+                 end if
+                 call nccheck ( nf90_put_att( ncid, spcgrid%dir_varid, 'mdc',   spcgrid%ndir ) )
+ 
+                 !
+                 ! 2D density spectrum
+                 !
+                 if ( present(mapgrid) ) then
+                     call nccheck ( nf90_def_var( ncid, 'density', nf90_var_type, &
+                                             (/ spcgrid%dir_dimid, spcgrid%frq_dimid, mapgrid%lon_dimid, mapgrid%lat_dimid, ra_dimid /), evarid ) )
+                 else
+                     call nccheck ( nf90_def_var( ncid, 'density', nf90_var_type, &
+                                         (/ spcgrid%dir_dimid, spcgrid%frq_dimid, pntgrid%pnt_dimid, ra_dimid /), evarid ) )
+                 end if
+ 
+                 if ( do_scale ) then
+                     call nccheck ( nf90_put_att( ncid, evarid, '_FillValue',NF90_FILL_SHORT) )
+                 else
+                     call nccheck ( nf90_put_att( ncid, evarid, '_FillValue',NF90_FILL_FLOAT) )
+                 end if
+-                call nccheck ( nf90_put_att( ncid, evarid, 'long_name', 'density') )
++                call nccheck ( nf90_put_att( ncid, evarid, 'long_name', 'sea surface wave directional variance spectral density') )         !MSL (updated long name)
+                 call nccheck ( nf90_put_att( ncid, evarid, 'units', 'm2 s rad-1') )
+                 call nccheck ( nf90_put_att( ncid, evarid, 'standard_name', &
+                             'sea_surface_wave_directional_variance_spectral_density') )
+ 
+                 if ( do_scale) then
+                     call nccheck ( nf90_put_att( ncid, evarid, 'note', &
+                             'multiply with scale_density') )
+                 end if
+ 
+                 if ( spcgrid%relative ) then
+                     call nccheck ( nf90_put_att( ncid, evarid, 'relative_to_current', 'true') )
+                 else
+                     call nccheck ( nf90_put_att( ncid, evarid, 'relative_to_current', 'false') )
+                 end if
+ 

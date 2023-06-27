@@ -1,0 +1,35 @@
+@@ -81,32 +81,32 @@
+ !      IHMAX     Int.  Public   Number of discrete spectral levels.
+ !      HSPMIN    Real  Public   Minimum significant height per part.
+ !      WSMULT    Real  Public   Multiplier for wind sea boundary.
+ !      WSCUT     Real  Public   Cut-off wind factor for wind seas.
+ !      FLCOMB    Log.  Public   Flag for combining wind seas.
+ !     ----------------------------------------------------------------
+ !
+       PUBLIC
+ 
+         INTEGER               :: IHMAX
+         REAL                  :: HSPMIN, WSMULT, WSCUT
+         LOGICAL               :: FLCOMB
+ 
+         ! These hardcoded values (from ww3_grid.ftn) can be made
+         ! user-defined with the OUTPUT command
+-        PARAMETER             (IHMAX=100, HSPMIN=0.05, WSMULT=1.7,        41.62
+-     &                         WSCUT=0.333, FLCOMB=.FALSE.)
++        PARAMETER             (IHMAX=200, HSPMIN=0.05, WSMULT=1.7,        41.62
++     &                         WSCUT=0.333, FLCOMB=.TRUE.)
+ !
+ !  8. Subroutines and functions used
+ !
+ !     ---
+ !
+ !  9. Subroutines and functions calling
+ !
+ !     ---
+ !
+ ! 10. Error messages
+ !
+ !     ---
+ !
+ ! 11. Remarks
+ !
