@@ -1,1 +1,1 @@
-macros/ifort_static_macros.inc
+macros/nvidia_static_macros.inc

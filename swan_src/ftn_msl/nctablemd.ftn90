@@ -114,7 +114,7 @@
                             "none",&
                             "relative peak periods of partitions of the spectrum", &
                             "s", NF90_BYTE, 0., 24., variddum) /,&
-             nctable(19) / nctable_record("tp_length_partitions",&
+             nctable(18) / nctable_record("tp_length_partitions",&
                             "none",&
                             "peak wave lengths of partitions of the spectrum", &
                             "s", NF90_SHORT, 0, 0, variddum) /,&

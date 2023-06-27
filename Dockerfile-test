@@ -24,31 +24,20 @@ RUN pip install --no-cache-dir setuptools \
                                nco \
                                numpy \
                                pandas \
-                               xarray \
+                               xarray==0.17.0 \
+                               netCDF4 \
+                               sh \
+                               ipdb \
                                pytest
-RUN pip install --no-cache-dir netCDF4 \
-                               ipdb
 # Compile and install model reference src to be compared with
 COPY swan_src $SWAN_SRC
 COPY install_scripts/install_swan-ref.sh $INSTALL_SCRIPTS/
-COPY swan_src/patch/netcdf_multiple_compute3.patch $SWAN_SRC/ftn_${FTNREF}
-
 # uncomment below for src version test
 RUN ./$INSTALL_SCRIPTS/install_swan-ref.sh &&\
     rm -f $INSTALL_SCRIPTS/install_swan-ref.sh
 
 # copy entrypoint
 COPY install_scripts/entrypoint.sh $INSTALL_SCRIPTS/
-
-RUN pip install --upgrade --no-cache-dir ipython \
-                                         nco        \
-                                         numpy \
-                                         pandas \
-                                         xarray \
-                                         pytest \
-                                         netCDF4 \
-                                         ipdb \
-                                         sh
 
 # copy since mounting does not work with bob
 COPY tests/run_tinyapp.py /usr/local/bin/

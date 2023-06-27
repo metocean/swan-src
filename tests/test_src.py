@@ -6,9 +6,9 @@ import pytest
 import glob
 from collections import OrderedDict
 from datetime import datetime
-import xarray as xr # issue lots of warnings
+import xarray as xr # producing lots of warnings
 
-# from wavespectra import read_swan #TODO implement tests using wavespectra
+# from wavespectra import read_swan #TODO implement spec tests
 
 errors = []
 
@@ -35,30 +35,44 @@ class TestSwanSrc(object):
 
     def run_ref(self):
         """run reference src"""
-        self.logger.info('  Running reference model: {}\n see run log in {}\n'.format(self.ref,self.REFDIR+'/ref.log'))
+        self.logger.info("  Running reference model: {}\n see run log in " \
+                         "{}\n".format(self.ref,self.REFDIR+'/ref.log'))
 
-        if not os.path.exists(self.REFDIR): shutil.copytree(self.CTLDIR, self.REFDIR)
+        if not os.path.exists(self.REFDIR): 
+            shutil.copytree(self.CTLDIR, self.REFDIR)
         os.chdir(self.REFDIR)
         sh.touch("machinefile")
         os.system('rm -rf out/*')
         if self.ref == self.new:
-            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi-ref.exe '+self.BINDIR+'/swan.exe')
+            os.system(
+                "unlink "+self.BINDIR+"/swan.exe && ln -s " + self.BINDIR + \
+                "/swan/swan_mpi-ref.exe "+self.BINDIR+"/swan.exe")
             with open("./ref.log", "w") as h:
-                sh.swanrun('-input','par.20180513_00z_'+self.ref+'.swn','-mpi','2',_out=h)
-            os.system('unlink '+self.BINDIR+'/swan.exe && ln -s '+self.BINDIR+'/swan/swan_mpi.exe '+self.BINDIR+'/swan.exe')
+                sh.swanrun('-input',
+                           'par.20180513_00z_'+self.ref+'.swn',
+                           '-mpi','2',_out=h)
+            os.system(
+                "unlink "+self.BINDIR+"/swan.exe && ln -s " + \
+                self.BINDIR+'/swan/swan_mpi.exe '+self.BINDIR+'/swan.exe')
         else:
             with open("./ref.log", "w") as h:
-                sh.mpiexec('-n','2',self.BINDIR+'/swan-ref.exe','par.20180513_00z_'+self.ref+'.swn',_out=h)            
+                sh.mpiexec('-n','2',
+                           self.BINDIR+'/swan-ref.exe',
+                           'par.20180513_00z_'+self.ref+'.swn',_out=h)            
        
     def run_new(self):
         """run new src"""
-        self.logger.info('  Running model to be tested: {}\n see run log in {}\n'.format(self.new,self.NEWDIR+'/new.log'))
-        if not os.path.exists(self.NEWDIR): shutil.copytree(self.CTLDIR, self.NEWDIR)
+        self.logger.info("  Running model to be tested: {}\n see run log in " \
+                         "{}\n".format(self.new,self.NEWDIR+"/new.log"))
+        if not os.path.exists(self.NEWDIR): 
+            shutil.copytree(self.CTLDIR, self.NEWDIR)
         os.chdir(self.NEWDIR)
         sh.touch("machinefile")
         os.system('rm -rf out/*')
         with open("./new.log", "w") as h:
-            sh.mpiexec('-n','2',self.BINDIR+'/swan.exe','par.20180513_00z_'+self.new+'.swn',_out=h)
+            sh.mpiexec('-n','2',
+                       self.BINDIR+'/swan.exe',
+                       'par.20180513_00z_'+self.new+'.swn',_out=h)
 
     def test_grid(self, models):
         # first test runs both models
@@ -73,29 +87,45 @@ class TestSwanSrc(object):
         # check if rename is necessary
 
         if self.ref != self.new:
-            vardict=[(list(dsref.var())[i], list(dsnew.var())[i]) for i in range(len(dsref.var()))]
+            vardict=[
+                (list(dsref.var())[i], 
+                 list(dsnew.var())[i]) for i in range(len(dsref.var()))
+                ]
             var_mapping = OrderedDict((vardict))
-            dimdict=[(list(dsref.coords)[i], list(dsnew.coords)[i]) for i in range(len(dsref.coords))]
+            dimdict=[
+                (list(dsref.coords)[i], 
+                 list(dsnew.coords)[i]) for i in range(len(dsref.coords))
+                ]
             dim_mapping = OrderedDict((dimdict))
             
             dsref = dsref.rename(var_mapping)
             dsref = dsref.rename(dim_mapping)
         
-        varnames = ['hs','tm01','tm02','xwnd','ywnd','hswe','tps'] # maybe use all var in ds?
-        self.logger.info(' Performing grid test for {}: \n'.format([dispvar.title() for dispvar in varnames]))
+        varnames = ['hs','tm01','tm02',
+                    'xwnd','ywnd','hswe','tps'] # maybe use all vars
+        self.logger.info(
+            ' Performing grid test for {}: \n'.format(
+                [dispvar.title() for dispvar in varnames]
+                )
+            )
         for varname in varnames:
             # self.logger.info('...checking grid for: {}'.format(varname.title()))
 
             parref = dsref[varname]; parnew = dsnew[varname]
             rdiff = (parref - parnew)/parref
             if abs(rdiff.max()) > 0.05:
-                errors.append("error: Maximum Relative {} difference = {:g} %".format(varname.title(), abs(rdiff.max().values)*100))
+                errors.append(
+                    "error: Maximum Relative {} difference = {:g} %".format(
+                        varname.title(), abs(rdiff.max().values)*100
+                        )
+                    )
                 self.logger.error(' {} failed :( \n'.format(varname.title()))
             else:
                 self.logger.info(' {} passed :) \n'.format(varname.title()))
 
         # assert no error message has been registered, else print messages
-        assert not errors, "grid test - following errors occured:\n{}".format("\n".join(errors))    
+        assert not errors, \
+            "grid test - following errors occured:\n{}".format("\n".join(errors))
 
     # def test_param(self):        
     #     hsref = read_swan(self.REFDIR+'/out/pt01.spec').spec.hs().values

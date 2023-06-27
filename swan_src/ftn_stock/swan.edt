@@ -6,7 +6,7 @@
 !   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
 !        [maxerr]  [grav]  [rho] [cdcap] [uscap] [inrhog]                   &
 !        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
-!        [froudmax]  [sort]  [nsweep]  CURV  [printf]  [prtest]
+!        [froudmax]  [icewind]  [sort]  [nsweep]  CURV  [printf]  [prtest]
 !
 !   MODE  / STATIONARY \  / TWODimensional
 !         \ DYNAMIC    /  \ ONEDimensional
@@ -23,6 +23,7 @@
 !
 !   INPgrid                                                                 &
 !      BOT | WLEV | CUR | VX | VY | FR | WI | WX | WY | NPLA | TURB | MUDL  &
+!      AICE | HICE | HSS | TSS                                              &
 !
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !      |                                                                |
@@ -38,19 +39,23 @@
 !   READgrid UNSTRUCtured <  TRIAngle \
 !                          | EASYmesh / 'fname'
 !
-!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COOR|NPLAnts|TURB|MUDL   &
+!   READinp    BOTtom | WLevel | CURrent | FRiction | WInd | COOR | NPLAnts &
+!              TURB | MUDL | AICE | HICE | HSS | TSS                        &
+!
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
+!
 !        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
 !
-!                              | WU
-!   WIND  [vel] [dir]   DRAG  <  -> FIT
-!                              | SWELL
+!   WIND  [vel] [dir]
+!
+!   ICE  [aice] [hice]
 !
 !                       |  JONswap  [gamma]  |
-!   BOUnd SHAPespec     |  PM                |
-!                      <   GAUSs  [sigfr]     >  PEAK|MEAN   DSPR  POWer|DEGRees
+!                       |  PM                |
+!   BOUnd SHAPespec    <   GAUSs  [sigfr]     >  PEAK|MEAN   DSPR  POWer|DEGRees
 !                       |  BIN               |
+!                       |  TMA  [gamma] [d]  |
 !
 !              / -> SIDE  N|NW|W|SW|S|SE|E|NE | [k]  CCW|CLOCKWise       \
 !   BOUndspec <                                                           > &
@@ -85,26 +90,30 @@
 !
 !   GEN2  [cf10] [cf20] [cf30] [cf40] [cf50] [cf60] [edmlpm] [cdrag] [umin]
 !
-!            |    JANSsen [cds1] [delta]                               |
-!            |                                                         |
-!            | -> KOMen   [cds2] [stpm]                                |
-!            |                                                         |
-!            |    YAN                                                  |
-!            |                                                         |
-!            |    WESTHuysen [cds2] [br] [p0] [powst] [powk]           |
-!            |                                                         |
-!            |    BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [cdsv]    &  |
-!            |                  | -> UP |                              |
-!   GEN3    <        [feswell] <         > VECTAU  TRUE10               > (AGROW [a])
-!            |                  | DOWN  |                              |
-!            |                                                         |
-!            |    ST6     [a1sds] [a2sds] [p1sds] [p2sds]           &  |
-!            |        | -> UP |    | -> HWANG |                        |
-!            |       <         >  <     FAN    >  VECTAU|SCATAU     &  |
-!            |        | DOWN  |    |    ECMWF |                        |
-!            |        |    TRUE10                 |                    |
-!            |       <                             >  DEBias [cdfac]   |
-!            |        | -> U10Proxy [windscaling] |                    |
+!         |    JANSsen [cds1] [delta]                |                     |
+!         |                                          |                     |
+!         | -> KOMen   [cds2] [stpm]                 |        |   WU    |  |
+!         |                                           > DRAG < -> FIT    > |
+!         |    YAN                                   |        |   SWELL |  |
+!         |                                          |                     |
+!         |    WESTH [cds2] [br] [p0] [powst] [powk] |                     |
+!         |                                                                |
+!         |    BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [cdsv]    &         |
+!         |                  | -> UP |                                     |
+!   GEN3 <        [feswell] <         > VECTAU  TRUE10                      > &
+!         |                  | DOWN  |                                     |
+!         |                                                                |
+!         |    ST6     [a1sds] [a2sds] [p1sds] [p2sds]           &         |
+!         |        | -> UP |    | -> HWANG |                               |
+!         |       <         >  <     FAN    >  VECTAU|SCATAU     &         |
+!         |        | DOWN  |    |    ECMWF |                               |
+!         |                                                                |
+!         |        |    TRUE10                 |                           |
+!         |       <                             >  DEBias [cdfac]          |
+!         |        | -> U10Proxy [windscaling] |                           |
+!
+!       (AGROW [a])
+!
 !
 !           |    ROGers  [cdsv] [feswell]
 !   SSWELL <  -> ARDhuin [cdsv]
@@ -135,13 +144,13 @@
 !        |                                                             |
 !        |    VAR [alpha] [gammin] [gammax] [gamneg] [coeff1] [coeff2] |
 !        |                                                             |
-!   BRE <     RUE [alpha] [a] [b]                                       > &
+!   BRE <     RUE [alpha] [a] [b]                                       >   &
 !        |                                                             |
 !        |    BKD [alpha] [gamma0] [a1] [a2] [a3]                      |
 !        |                                                             |
 !        |    TG  [alpha] [gamma] [pown]                               |
 !
-!     ( DIRectionality [spread] )                                         &
+!     ( DIRectionality [spread] )                                           &
 !
 !     ( FREQDep [power] [fmin] [fmax] )
 !
@@ -158,11 +167,30 @@
 !
 !   TRIad [itriad] [trfac] [cutfr] [a] [b] [p] [urcrit] [urslim]
 !
-!   VEGEtation  < [height] [diamtr] [nstems] [drag] >
+!   BRAGg [ibrag] [nreg] [cutoff]                                           &
+!
+!         | -> FT
+!        <
+!         |    FILE 'fname' [idla] [mkx] [mky] [dkx] [dky]
+!
+!   SCAT [iqcm]                                                             &
+!
+!              | -> WIDth [rfac]                                   |
+!      ( GRId <                                                     > )     &
+!              | Kxy [kxlow] [kylow] [kxlen] [kylen] [mkxc] [mkyc] |
+!
+!      ( TRUnc [alpha] [qmax] )
+!
+!   VEGEtation [iveg]  < [height] [diamtr] [nstems] [drag] >
 !
 !   TURBulence  [ctb]  (CURrent [tbcur])
 !
 !   MUD  [layer]  [rhom]  [viscm]  [rhow]  [viscw]
+!
+!          | -> R19   [c0] [c1] [c2] [c3] [c4] [c5] [c6]
+!   SICE  <     D15   [Chf]
+!          |    M18   [Chf]
+!          |    R21B  [Chf npf]
 !
 !   LIMiter [ursell] [qb]
 !
@@ -178,7 +206,13 @@
 !        ( REFLec [reflc] <                   > )                           &
 !                          |    RDIFF [pown] |
 !
-!               LINe < [xp] [yp] >
+!        ( FREEboard [hgt] [gammat] [gammar] Quay )                         &
+!
+!        LINe < [xp] [yp] >
+!
+!   OBSTacle  FIG [alpha1] [hss] [tss]  REFLec [reflc]  LINe < [xp] [yp] >
+!
+!   SURFBeat  [df] [nmax] [emin]  UNIForm/LOGarithmic
 !
 !   SETUP  [supcor]
 !
@@ -246,8 +280,8 @@
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
 !             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
-!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
-!             DISTUR|TURB|DISMUD|DISSWELL|                                  &
+!             GENE|GENW|REDI|REDQ|REDT|REDB|REDC|PROPA|PROPX|PROPT|PROPS|   &
+!             RADS|LWAVP|HBIG|DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|      &
 !             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP|PARTIT >    &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
@@ -256,12 +290,12 @@
 !             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
 !             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
 !             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
-!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
-!             DISTUR|TURB|DISMUD|DISSWELL|                                  &
+!             GENE|GENW|REDI|REDQ|REDT|REDB|REDC|PROPA|PROPX|PROPT|PROPS|   &
+!             RADS|LWAVP|HBIG|DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|      &
 !             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP >           &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
 !
-!   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL   'fname'                       &
+!   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL  S|L  'fname'                   &
 !                    MONth  ESCAle  COMPress                                &
 !                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
 !
