@@ -1,7 +1,5 @@
 #!/bin/bash
-
 BASEDIR=/source/swan-src/swan_src
-
 stock_dir=$BASEDIR/ftn_stock
 msl_dir=$BASEDIR/ftn_msl
 diff_dir=$BASEDIR/patch
