@@ -50,6 +50,7 @@ done
 # mkdir $BASEDIR/ftn_stock/macros
 # cp $BASEDIR/ftn_msl/macros/gfortran_static_macros.inc $BASEDIR/ftn_stock/macros/macros.inc
 # cp $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_stock/macros/
+# rm $BASEDIR/ftn_stock/macros.inc
 # ln -s $BASEDIR/ftn_stock/macros/nvidia_static_macros.inc $BASEDIR/ftn_stock/macros.inc
 # # for the latest versions, 41.41 and 41.45, after fixing swanmain.ftn we also cleanup:
 # rm $BASEDIR/ftn_msl/*.ftn.orig
