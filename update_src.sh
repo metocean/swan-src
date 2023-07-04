@@ -37,11 +37,14 @@ for f in $(ls $BASEDIR/patch/*ftn*.patch); do
     patch -p0 -u $BASEDIR/ftn_msl/${fname%.*} $BASEDIR/patch/$fname
 done
 
-# NOTE: after the above step it might be necessary to fix patch conflixts
-# that's why we do not remove/cleanup any directories. Otherwise:
+# # NOTE: after the above step it might be necessary to fix patch conflixts
+# # that's why we do not remove/cleanup any directories. Otherwise:
 # rm -rf $BASEDIR/ftn_stock
 # mv $BASEDIR/ftn_new $BASEDIR/ftn_stock
 # rm -rf $BASEDIR/ftn_msl_old
+# # for the latest versions, 41.41 and 41.45, after fixing swanmain.ftn we also cleanup:
+# rm $BASEDIR/ftn_msl/*.ftn.orig
+# rm $BASEDIR/ftn_msl/swanmain.ftn.rej
 
 echo
 git status
