@@ -18,23 +18,29 @@ rm -rf swan$SWAN_VERSION*
 
 echo
 echo "Getting individual patch of the following modified MSL files:"
-bash /source/swan-src/swan_src/patch/create_patch_files.sh
+bash $BASEDIR/patch/create_patch_files.sh
 
 echo
 echo "Replacing ftn_msl with new files from ftn_new"
-rm -rf /source/swan-src/swan_src/ftn_msl/*.ftn*
-for f in $(ls /source/swan-src/swan_src/ftn_new/*.ftn*); do
+cp -a $BASEDIR/ftn_msl $BASEDIR/ftn_msl_old # save old msl for tmp backup
+rm -rf $BASEDIR/ftn_msl/*
+cp -rf $BASEDIR/ftn_msl_old/macros/ $BASEDIR/ftn_msl/ # readd macros options
+ln -s $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_msl/macros.inc
+for f in $(ls $BASEDIR/ftn_new/*); do
     fname=$(basename $f)
-    cp /source/swan-src/swan_src/ftn_new/$fname /source/swan-src/swan_src/ftn_msl/$fname
+    cp $BASEDIR/ftn_new/$fname $BASEDIR/ftn_msl/$fname
 done
 
 echo
 echo "Applying patch of MSL vs previous stock to new files"
 # WARNING: this will usually fail for swanmain.ftn if new vars are added in the official release
-for f in $(ls /source/swan-src/swan_src/patch/*ftn*.patch); do
+for f in $(ls $BASEDIR/patch/*ftn*.patch); do
     fname=$(basename $f)
-    patch -p0 -u /source/swan-src/swan_src/ftn_msl/${fname%.*} /source/swan-src/swan_src/patch/$fname
+    patch -p0 -u $BASEDIR/ftn_msl/${fname%.*} $BASEDIR/patch/$fname
 done
+
+# NOTE: after the above step it might be necessary to fix patch conflixts
+# that's why we do not remove/cleanup any directories
 
 echo
 git status
