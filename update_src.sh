@@ -3,11 +3,11 @@
 set -e
 
 # create new branch for src update
-git checkout -b "version_update"
+SWAN_VERSION=4145
+git checkout -b "version_update_$SWAN_VERSION"
 
 BASEDIR=/source/swan-src/swan_src
 
-SWAN_VERSION=4145
 mkdir $BASEDIR/ftn_new
 cd $BASEDIR/ftn_new
 echo "Downloading swan version $SWAN_VERSION"
