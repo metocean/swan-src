@@ -22,7 +22,7 @@ echo
 echo "Replacing ftn_msl with new files from ftn_new"
 cp -a $BASEDIR/ftn_msl $BASEDIR/ftn_msl_old # save old msl for tmp backup
 rm -rf $BASEDIR/ftn_msl/*
-cp -rf $BASEDIR/ftn_msl_old/macros/ $BASEDIR/ftn_msl/ # readd macros options
+cp -a $BASEDIR/ftn_msl_old/macros/ $BASEDIR/ftn_msl/ # readd macros options
 ln -s $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_msl/macros.inc
 for f in $(ls $BASEDIR/ftn_new/*); do
     fname=$(basename $f)
@@ -46,7 +46,7 @@ done
 # rm -rf $BASEDIR/ftn_msl_old
 # # recopy macros options to stock and link as it is also used
 # mkdir $BASEDIR/ftn_stock/macros
-# mv $BASEDIR/ftn_stock/macros.inc $BASEDIR/ftn_stock/macros
+# cp $BASEDIR/ftn_msl/macros/gfortran_static_macros.inc $BASEDIR/ftn_stock/macros/macros.inc
 # cp $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_stock/macros/
 # ln -s $BASEDIR/ftn_stock/macros/nvidia_static_macros.inc $BASEDIR/ftn_stock/macros.inc
 # # for the latest versions, 41.41 and 41.45, after fixing swanmain.ftn we also cleanup:
