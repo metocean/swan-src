@@ -48,7 +48,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -557,7 +557,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -916,7 +916,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1183,7 +1183,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1511,7 +1511,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1619,6 +1619,7 @@
      &        KK, IXB, IXE, IYB, IYE, IX, IY
       REAL UXLOC,UYLOC,RDIST,RDX,RDY,RR,UBLOC,F1,RTMP,XP1,YP1
       REAL RVAL1, RVAL2
+      LOGICAL CVTK                                                        41.95
 !
       INTEGER IVTYPE ! temporary counter for NMOVAR, used in VOQR,
                      ! OQPROC, OVKEYW, etc.
@@ -1999,7 +2000,7 @@
       IVTYPE=76
       JCOMPDA=JDSXI ! give J-name here, JDSXI/JAICE2/JHICE2
 !     begin block of code that is identical for all new variables
-      IF (OQPROC(IVTYPE)) THEN                                                41.75
+      IF (OQPROC(IVTYPE)) THEN                                            41.75
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) IVTYPE,
      &  VOQR(IVTYPE), JCOMPDA
         IF (JCOMPDA.GT.1) THEN
@@ -2026,7 +2027,7 @@
       IVTYPE=77
       JCOMPDA=JAICE2 ! give J-name here, JDSXI/JAICE2/JHICE2
 !     note special use of VARAICE and PICE
-      IF (OQPROC(IVTYPE)) THEN                                                41.75
+      IF (OQPROC(IVTYPE)) THEN                                            41.75
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) IVTYPE,
      &  VOQR(IVTYPE), JCOMPDA
         IF (VARAICE) THEN
@@ -2054,7 +2055,7 @@
       IVTYPE=78
       JCOMPDA=JHICE2 ! give J-name here, JDSXI/JAICE2/JHICE2
 !     note special use of PICE
-      IF (OQPROC(IVTYPE)) THEN                                                41.75
+      IF (OQPROC(IVTYPE)) THEN                                            41.75
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) IVTYPE,
      &  VOQR(IVTYPE), JCOMPDA
         IF (JCOMPDA.GT.1) THEN
@@ -2445,7 +2446,7 @@
 !
       IF (OQPROC(8)) THEN
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 8,
-     &  VOQR(8)
+     &  VOQR(8), JQB
         IF (OPTG.NE.5) THEN                                               40.80
            CALL SWIPOL (COMPDA(1,JQB), OVEXCV(8), XC, YC, MIP, CROSS,     40.86
      &                  VOQ(1,VOQR(8)) ,KGRPNT, COMPDA(1,JDP2))           30.21
@@ -2456,13 +2457,34 @@
         ENDIF                                                             40.80
       ENDIF
 !
+!     breaker index                                                       41.96
+!
+      IF (OQPROC(82)) THEN
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 82,
+     &  VOQR(82), JGAMMA
+        IF (JGAMMA.GT.1) THEN
+          IF (OPTG.NE.5) THEN
+             CALL SWIPOL(COMPDA(1,JGAMMA),OVEXCV(82),XC, YC, MIP, CROSS,
+     &                   VOQ(1,VOQR(82)) ,KGRPNT, COMPDA(1,JDP2))
+          ELSE
+             CALL SwanInterpolateOutput ( VOQ(1,VOQR(82)), VOQ(1,1),
+     &                                    VOQ(1,2), COMPDA(1,JGAMMA),
+     &                                    MIP, KVERT, OVEXCV(82) )
+          ENDIF
+        ELSE
+          DO IP = 1, MIP
+            VOQ(IP,VOQR(82)) = PSURF(2)
+          ENDDO
+        ENDIF
+      ENDIF
+!
 !     wind velocity                                                       10.07
 !
       IF (OQPROC(26)) THEN
         JVQX = VOQR(26)
         JVQY = JVQX+1
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 26,
-     &  VOQR(26)
+     &  VOQR(26), JWX2
         IF (VARWI) THEN
           IF (OPTG.NE.5) THEN                                             40.80
              CALL SWIPOL (COMPDA(1,JWX2), OVEXCV(26),XC, YC, MIP, CROSS,  40.86
@@ -2653,7 +2675,7 @@
 !
       IF (OQPROC(20).AND.OPTG.EQ.5) THEN                                  40.80
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 20,      40.80
-     &  VOQR(20)                                                          40.80
+     &  VOQR(20), 0                                                       40.80
         CALL SwanInterpolateOutput ( VOQ(1,VOQR(20)), VOQ(1,1),           40.80
      &                               VOQ(1,2), FORCE(1,1),                40.80
      &                               MIP, KVERT, OVEXCV(20) )             40.80
@@ -2666,7 +2688,7 @@
 !
       IF (OQPROC(45)) THEN
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 45,      40.03
-     &  VOQR(45)
+     &  VOQR(45), JURSEL
         IF (OPTG.NE.5) THEN                                               40.80
            CALL SWIPOL (COMPDA(1,JURSEL), OVEXCV(45),XC, YC, MIP, CROSS,  40.86
      &                  VOQ(1,VOQR(45)) ,KGRPNT, COMPDA(1,JDP2))          40.03
@@ -2675,6 +2697,25 @@
      &                                  VOQ(1,2), COMPDA(1,JURSEL),       40.80
      &                                  MIP, KVERT, OVEXCV(45) )          40.80
         ENDIF                                                             40.80
+      ENDIF
+!
+!     biphase
+!
+      IF (OQPROC(83)) THEN                                                41.97
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 83,
+     &  VOQR(83), JBIPH
+        IF (OPTG.NE.5) THEN
+           CALL SWIPOL (COMPDA(1,JBIPH), OVEXCV(83),XC, YC, MIP, CROSS,
+     &                  VOQ(1,VOQR(83)) ,KGRPNT, COMPDA(1,JDP2))
+        ELSE
+           CALL SwanInterpolateOutput ( VOQ(1,VOQR(83)), VOQ(1,1),
+     &                                  VOQ(1,2), COMPDA(1,JBIPH),
+     &                                  MIP, KVERT, OVEXCV(83) )
+        ENDIF
+        DO IP = 1, MIP
+           F1 = VOQ(IP,VOQR(83))
+           IF (.NOT.EQREAL(F1,OVEXCV(83))) VOQ(IP,VOQR(83))=F1*180./PI
+        ENDDO
       ENDIF
 !
 !     Air-Sea temperature difference
@@ -2703,7 +2744,7 @@
       IF (OQPROC(49)) THEN
         IF (IDIFFR.EQ.1) THEN
           IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 49,    40.21
-     &    VOQR(49)
+     &    VOQR(49), 0
           IF (OPTG.NE.5) THEN                                             40.80
              CALL SWIPOL (DIFPARAM(:), OVEXCV(49), XC, YC, MIP, CROSS,    40.86 40.21
      &                    VOQ(1,VOQR(49)) ,KGRPNT, COMPDA(1,JDP2))        40.21
@@ -2731,7 +2772,7 @@
 !
       IF (OQPROC(27)) THEN
          IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 27,
-     &   VOQR(27)
+     &   VOQR(27), JFRC2
          IF (VARFR) THEN
             IF (OPTG.NE.5) THEN                                           40.80
 !              interpolation done in all active and non-active points
@@ -2767,7 +2808,7 @@
 !
       IF (OQPROC(51)) THEN                                                40.51
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 51,
-     &  VOQR(51)
+     &  VOQR(51), JWLV2
         IF (VARWLV) THEN
            IF (OPTG.NE.5) THEN                                            40.80
 !             interpolation done in all active and non-active points
@@ -2834,6 +2875,10 @@
      &        VOQ(IP,IVYP) = YP1 + YOFFS
       ENDDO
 !
+!     --- scan comp. grid as output frame in case of VTK format           41.95
+!
+      CVTK = LCOMPGRD .AND. RTYPE.EQ.'BLKV'                               41.95
+!
 !     --- in case of parallel run, mark location points inside own        40.31
 !         subdomain                                                       40.31
 
@@ -2855,10 +2900,10 @@
             IY = INT(YC(IP))                                              41.07 40.31
             RVAL1 = FLOAT(IX)
             RVAL2 = FLOAT(IY)
-            IF ( .NOT.EQREAL(XC(IP),RVAL1) .OR.
-     &                EQREAL(XC(IP),0.)) IX = IX + 1
-            IF ( .NOT.EQREAL(YC(IP),RVAL2) .OR.
-     &                EQREAL(YC(IP),0.)) IY = IY + 1
+            IF ( .NOT.( CVTK .OR. EQREAL(XC(IP),RVAL1) ) .OR.
+     &           EQREAL(XC(IP),0.)) IX = IX + 1
+            IF ( .NOT.( CVTK .OR. EQREAL(YC(IP),RVAL2) ) .OR.
+     &           EQREAL(YC(IP),0.)) IY = IY + 1
             IF ( IX.GE.IXB .AND. IX.LE.IXE .AND.                          40.31
      &           IY.GE.IYB .AND. IY.LE.IYE ) IONOD(IP) = INODE            40.31
          END DO                                                           40.31
@@ -2868,7 +2913,7 @@
 !PUN!
 !PUN      IF (MNPROC.EQ.1) GOTO 900
 !PUN!
-!PUN      IF (.NOT.LCOMPGRD .OR. RTYPE.NE.'BLKV') THEN
+!PUN      IF ( .NOT.CVTK ) THEN
 !PUN         NOWNV = 0
 !PUN         DO IP = 1, MIP
 !PUN            IF ( KVERT(IP).GT.0 ) THEN
@@ -2929,7 +2974,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -3194,7 +3239,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5058,7 +5103,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5276,7 +5321,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by

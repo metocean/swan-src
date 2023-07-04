@@ -26,7 +26,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -182,7 +182,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -302,7 +302,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -403,7 +403,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -544,7 +544,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1477,7 +1477,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1696,7 +1696,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1809,6 +1809,7 @@
 ! JAOLD  [ 8+2*MDISP] within array SWMATR
 ! JASTD2 [  1] new air-sea temp. diff. within array COMPDA
 ! JASTD3 [  1] last read air-sea temp. diff. within array COMPDA
+! JBIPH  [ 29] parametrized biphase
 ! JBOTLV [ 28] bottom level within array COMPDA
 ! JCDRAG [  1] drag coefficient within array COMPDA,
 !              set by command WCAP JANS ...
@@ -1843,8 +1844,8 @@
 !              set by command READ FR ...
 ! JFRC3  [  1] friction coefficient within array COMPDA
 !              set by command READ FR ...
-! JGAMMA [  1] breaker parameter within array COMPDA,
-!              set by command BREAK NKD ...
+! JGAMMA [  1] breaker index within array COMPDA
+!              used with command BREAK BKD
 ! JGEN0  [   ] within array SWMATR
 ! JGEN1  [   ] within array SWMATR
 ! JGENR  [  1] total generation within array COMPDA
@@ -1909,8 +1910,6 @@
 !              set by command TABLE/BLOCK
 ! JRSXC  [  1] QC scattering within array COMPDA
 !              set by command TABLE/BLOCK
-! JRESPL [  1] response length within array COMPDA,
-!              set by command BREAK NKD ...
 ! JSETUP [  1] setup values within array COMPDA
 ! JSTP   [  5] steepness within array COMPDA
 ! JTAUW  [  1] TauW within array COMPDA,
@@ -1926,7 +1925,7 @@
 ! JTSXS  [  1] sigma-propagation within array COMPDA
 !              set by command TABLE/BLOCK
 ! JUBOT  [  3] bottom orbital velocity within array COMPDA
-! JURSEL [ 27] Ursell number as used in Triad computation
+! JURSEL [ 27] Ursell number as used in triad computation
 ! JUSTAR [  1] friction velocity within array COMPDA,
 !              set by command WCAP JANS ...
 ! JVX1   [  9] x of old current velocity within array COMPDA
@@ -1944,10 +1943,10 @@
 ! JWY3   [ 19] y of last read wind velocity within array COMPDA
 ! JZEL   [  1] roughness within array COMPDA,
 !              set by command WCAP JANS ...
-! MCMVAR [ 28] within array COMPDA,
+! MCMVAR [ 29] within array COMPDA,
 !              =MCMVAR+2, for command READ FR ... (add JFRC2, JFRC3)
 !              =MCMVAR+4, for command WCAP JANS ... (add JCDRAG, JTAUW, JUSTAR, JZEL)
-!              =MCMVAR+2, for command BREA NKD ... (add JGAMMA, JRESPL)
+!              =MCMVAR+1, for command BREAKING BKD (add JGAMMA)
 !              =MCMVAR+1, for command TABLE/BLOCK TMBOT (add JPBOT)
 !              =MCMVAR+1, for command TABLE/BLOCK DISB (add JDSXB)
 !              =MCMVAR+1, for command TABLE/BLOCK DISSU (add JDSXS)
@@ -1974,7 +1973,7 @@
 ! MTSVAR  [ 15] within array TESTDA
 !
       INTEGER             JABIN,       JABLK,       JAOLD
-      INTEGER             JASTD2,      JASTD3,      JGAMMA,      JRESPL
+      INTEGER             JASTD2,      JASTD3,      JGAMMA
       INTEGER             JCDRAG,      JDHS,        JDIS0
       INTEGER             JDIS1,       JDISS,       JDPSAV,      JDP1
       INTEGER             JDP2
@@ -2005,6 +2004,7 @@
       INTEGER             JWX2,        JWX3
       INTEGER             JWY2,        JWY3,        JZEL  ,      JPBOT
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
+      INTEGER             JBIPH                                           41.97
       INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
       INTEGER             JPSWEL
       INTEGER             JAICE2,      JAICE3,      JHICE2,      JHICE3   41.75
@@ -2157,6 +2157,10 @@
 !                 (set by command BOUNshape ..)
 ! HSRERR [   0.1] The error margin allowed between pre-scribed and calculated Hs
 !                 at the up-wave boundary. If exceeded a warning is produced
+! IBIPH  [     1] indicates estimating biphase:
+!                 =1; based on Eldeberky (1996)
+!                 =2; based on Saprykina et al. (2017)
+!                 =3; based on De Wit (2022)
 ! IBOT   [     0] indicator bottom friction:
 !                 =0; no bottom friction dissipation
 !                 =1; set by command FRIC JON  ..., Jonswap bottom friction model
@@ -2295,6 +2299,7 @@
 !                 according to Battjes & Janssen (1978)
 !                 =5; for command WCAP KBJ ..., not documented in manual,
 !                 combined formulation of Komen (1) and Battjes & Janssen (4)
+! IWCCUR [     0] indicates enhanced whitecapping in counter current
 ! IWIND  [     0] indicates presence of wind, and type of source term used:
 !                 =0; no wind
 !                 =1; for command GEN1 ..., if wind is made active,
@@ -2320,6 +2325,7 @@
 !                     a nest file
 ! LSPNAR [.fals.] indicates whether directional spread is too narrow or not
 ! LSRFB  [.fals.] indicates whether surfbeat computation should be performed
+! MODGAM [.true.] if true modify breaker index for BKD during iteration process
 ! MXITST [    50] max. number of iterations in stationary computations
 ! MXITNS [     1] max. number of iterations in nonstationary computations
 ! NCOR   [     1] not used
@@ -2460,6 +2466,8 @@
 !                 =0. no limiter
 !                 =1. ctheta will be limited
 !  (36)   [  0.5] =upper limit of CFL restriction for ctheta
+!  (37)   [ 95. ] = required fraction of wet grid points with which modification
+!                   of BKD-computed breaker index stops
 ! PQUAD(MQUAD)    coefficients for quadruplet interaction
 !  ( 1)  [  0.25] lambda in eq. B29 of user manual
 !  ( 2)  [  3.E7] coefficient of interactions
@@ -2508,7 +2516,7 @@
 !  ( 3)  [  10.0] controls above which Ursell number the quadruplets (and
 !                 thus the limiter) are switched off
 !                 =ursell; set by command LIM ... [ursell]
-!  ( 4)  [   0.2] critical Ursell number appearing in the biphase expression
+!  ( 4)  [  0.63] critical Ursell number appearing in the biphase expression
 !                 =urcrit; set by command TRIAD ... [urcrit]
 !  ( 5)  [  0.01] controls below which Ursell number the triads are switched off
 !                 =urslim; set by command TRIAD ... [urslim]
@@ -2669,11 +2677,12 @@
       INTEGER             IBOT,        ICOR,        ICUR
       INTEGER             IDBR,        IDIF,        IGEN,        IINC
       INTEGER             IPRE,        IQUAD,       IREFR,       ISURF
-      INTEGER             ITERMX,      ITFRE,       ITRIAD
+      INTEGER             ITERMX,      ITFRE,       ITRIAD,      IBIPH
       INTEGER             IWCAP,       IWIND,       LSETUP,      IDRAG
       INTEGER             MXITST,      MXITNS,                   NCOR
       INTEGER             NSTATC,      NSTATM,      NUMOBS,      NCOMPT   40.41
       INTEGER             IDIFFR                                          40.21
+      INTEGER             IWCCUR                                          42.04
       INTEGER             IMUD                                            40.59
       INTEGER             IVEG                                            40.55
       INTEGER             ITURBV                                          40.35
@@ -2709,6 +2718,7 @@
       LOGICAL             LSPNAR
       LOGICAL             LSRFB                                           41.85
       LOGICAL, SAVE ::    RUNMADE = .FALSE.                               41.79
+      LOGICAL, SAVE ::    MODGAM = .TRUE.                                 41.96
 ! parameters for Babanin physics and swell, see Rogers et al (JTECH, 2012)
       REAL                A1SDS, A2SDS, P1SDS, P2SDS, CDSV, FESWELL       40.88
       REAL                RDCOEF, B1Z, WNDSCL, CDFAC                      40.88
@@ -2755,7 +2765,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -2907,7 +2917,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by

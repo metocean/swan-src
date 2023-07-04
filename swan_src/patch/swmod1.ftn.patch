@@ -1,0 +1,381 @@
+--- /source/swan-src/swan_src/ftn_stock/swmod1.ftn	2023-07-04 17:40:44.213185177 +1200
++++ /source/swan-src/swan_src/ftn_msl/swmod1.ftn	2023-07-04 17:40:44.197185103 +1200
+@@ -688,30 +688,37 @@
+ !  (66) [ 'PROPX']
+ !  (67) [ 'PROPT']
+ !  (68) [ 'PROPS']
+ !  (69) [  'RADS']
+ !  (70) [   'NPL']
+ !  (71) [ 'LWAVP']
+ !  (72) [  'DISTU']
+ !  (73) [  'TURB']
+ !  (74) [  'DISM']
+ !  (75) [ 'DISSL']
+ !  (76) ['DISICE']
+ !  (77) [  'AICE']
+ !  (78) [  'HICE']
+ !  (79) [  'REDB']
+ !  (80) [  'REDC']
++!  (85) [   'DPM']                                                         MSL
++!  (86) ['DPMSEA']                                                         MSL
++!  (87) ['DPMSWE']                                                         MSL
++!  (88) ['TPSSEA']                                                         MSL
++!  (89) ['TPSSWE']                                                         MSL
++!  (90) [  'HSEA']                                                         MSL
++!  (91) [   'SWE']                                                         MSL
+ ! OVSNAM(NMOVAR)   short name of output quantity
+ !  ( 1) [    'Xp']
+ !  ( 2) [    'Yp']
+ !  ( 3) [  'Dist']
+ !  ( 4) [ 'Depth']
+ !  ( 5) [   'Vel']
+ !  ( 6) [  'Ubot']
+ !  ( 7) ['Dissip']
+ !  ( 8) [    'Qb']
+ !  ( 9) [  'Leak']
+ !  (10) [    'Hs']
+ !  (11) [  'Tm01']
+ !  (12) [ 'Tpeak']
+ !  (13) [   'Dir']
+ !  (14) [ 'PkDir']
+@@ -764,30 +771,37 @@
+ !  (66) ['Propxy']
+ !  (67) ['Propth']
+ !  (68) ['Propsi']
+ !  (69) ['Radstr']
+ !  (70) ['Nplant']
+ !  (71) [ 'Lwavp']
+ !  (72) [  'Stur']
+ !  (73) [  'Turb']
+ !  (74) [  'Smud']
+ !  (75) ['Sswell']
+ !  (76) [  'Sice']
+ !  (77) ['  aice']
+ !  (78) ['  hice']
+ !  (79) ['Sbragg']
+ !  (80) [   'Sqc']
++!  (85) [   'dpm']                                                         MSL
++!  (86) ['dpmsea']                                                         MSL
++!  (87) ['dpmswe']                                                         MSL
++!  (88) ['tpssea']                                                         MSL
++!  (89) ['tpsswe']                                                         MSL
++!  (90) [  'hsea']                                                         MSL
++!  (91) [   'swe']                                                         MSL
+ ! OVLNAM(NMOVAR)   long name of output quantity
+ !  ( 1) [                        'X user coordinate']
+ !  ( 2) [                        'Y user coordinate']
+ !  ( 3) [              'distance along output curve']
+ !  ( 4) [                                    'Depth']
+ !  ( 5) [                         'Current velocity']
+ !  ( 6) [           'Orbital velocity at the bottom']
+ !  ( 7) [                       'Energy dissipation']
+ !  ( 8) [                  'Fraction breaking waves']
+ !  ( 9) [     'Energy leak over spectral boundaries']
+ !  (10) [                  'Significant wave height']
+ !  (11) [             'Average absolute wave period']
+ !  (12) [                              'Peak period']
+ !  (13) [                   'Average wave direction']
+ !  (14) [    'direction of the peak of the spectrum']
+@@ -840,30 +854,37 @@
+ !  (66) [                           'xy-propagation']
+ !  (67) [                        'theta-propagation']
+ !  (68) [                        'sigma-propagation']
+ !  (69) [                         'Radiation stress']
+ !  (70) [                            'Plants per m2']
+ !  (71) [                         'Peak wave length']
+ !  (72) [                    'Turbulent dissipation']
+ !  (73) [                      'Turbulent viscosity']
+ !  (74) [                    'Fluid mud dissipation']
+ !  (75) [                        'Swell dissipation']
+ !  (76) [                      'Sea ice dissipation']
+ !  (77) [             'ice concentration (fraction)']
+ !  (78) [                            'ice thickness']
+ !  (79) [          'Total absolute Bragg scattering']
+ !  (80) [             'Total absolute QC scattering']
++!  (85) [      'Mean direction at the spectral peak']                      MSL
++!  (86) [  'Mean sea direction at the spectral peak']                      MSL
++!  (87) ['Mean swell direction at the spectral peak']                      MSL
++!  (88) [    'Smooth peak wave period of wind waves']                      MSL
++!  (89) [   'Smooth peak wave period of swell waves']                      MSL
++!  (90) [         'significant height of wind waves']                      MSL
++!  (91) [                       'Spectral bandwidth']                      MSL
+ ! OVUNIT(NMOVAR)   unit of of output quantity
+ !  ( 1) [CALCULAT] =UL
+ !  ( 2) [CALCULAT] =UL
+ !  ( 3) [CALCULAT] =UL
+ !  ( 4) [CALCULAT] =UH
+ !  ( 5) [CALCULAT] =UV
+ !  ( 6) [CALCULAT] =UV
+ !  ( 7) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  ( 8) [     ' ']
+ !  ( 9) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (10) [CALCULAT] =UH
+ !  (11) [CALCULAT] =UT
+ !  (12) [CALCULAT] =UT
+ !  (13) [CALCULAT] =UDI
+ !  (14) [CALCULAT] =UDI
+@@ -916,30 +937,36 @@
+ !  (66) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (67) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (68) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (69) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (70) [  '1/m2']
+ !  (71) [CALCULAT] =UL
+ !  (72) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (73) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (74) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (75) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (76) [  'm2/s'] changes to 'W/m2' if INRHOG=1
+ !  (77) [     ' ']
+ !  (78) [     'm']
+ !  (79) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+ !  (80) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
++!  (85) [CALCULAT] =UDI                                                    MSL
++!  (86) [CALCULAT] =UDI                                                    MSL
++!  (87) [CALCULAT] =UDI                                                    MSL
++!  (88) [CALCULAT] =UT                                                     MSL
++!  (89) [CALCULAT] =UT                                                     MSL
++!  (90) [CALCULAT] =UH                                                     MSL
+ ! SNAME [        ] name of output point set
+ ! UAP   [  'W/m2'] unit of dissipation
+ ! UD    [        ] not used
+ ! UDI   [  'degr'] unit of direction
+ ! UDL   [  'm2/s'] unit of dissipation
+ ! UET   [  'm3/s'] unit of energy transport, and wave force
+ ! UF    [  'N/m2'] unit of pressure or shear stress (force per area)
+ ! UH    [     'm'] unit of vertical length
+ ! UL    [     'm'] unit of horizontal length
+ ! UP    [   'W/m'] unit of energy flux density
+ ! UST   [ 'm2/s2'] not used
+ ! UT    [   'sec'] unit of time (change to s ???)
+ ! UV    [   'm/s'] unit of velocity
+ !
+       CHARACTER*20 CHTIME
+@@ -1037,30 +1064,37 @@
+ !  (66)  [  1]   Propxy
+ !  (67)  [  1]   Propth
+ !  (68)  [  1]   Propsi
+ !  (69)  [  1]   Radstr
+ !  (70)  [  1]   Nplant
+ !  (71)  [  1]   Lwavp
+ !  (72)  [  1]   Stur
+ !  (73)  [  1]   Turb
+ !  (74)  [  1]   Smud
+ !  (75)  [  1]   Sswell
+ !  (76)  [  1]   Sice
+ !  (77)  [  1]   aice
+ !  (78)  [  1]   hice
+ !  (79)  [  1]   Sbragg
+ !  (80)  [  1]   Sqc
++!  (85)  [  1]   Dpm                                                       MSL
++!  (86)  [  1]   Dpmsea                                                    MSL
++!  (87)  [  1]   Dpmswe                                                    MSL
++!  (88)  [  1]   Tpssea                                                    MSL
++!  (89)  [  1]   Tpsswe                                                    MSL
++!  (90)  [  1]   Hsea                                                      MSL
++!  (91)  [  1]   Swe                                                       MSL
+ ! OVEXCV(NMOVAR)   exception value for output quantity
+ !  ( 1)  [ -1.E10] Xp
+ !  ( 2)  [ -1.E10] Yp
+ !  ( 3)  [  -999.] Dist
+ !  ( 4)  [   -99.] Depth
+ !  ( 5)  [     0.] Vel
+ !  ( 6)  [   -10.] Ubot
+ !  ( 7)  [   -10.] Dissip
+ !  ( 8)  [    -1.] Qb
+ !  ( 9)  [   -10.] Leak
+ !  (10)  [   -10.] Hs
+ !  (11)  [   -10.] Tm01
+ !  (12)  [   -10.] Tpeak
+ !  (13)  [  -999.] Dir
+ !  (14)  [  -999.] PkDir
+@@ -1111,30 +1145,37 @@
+ !  (66)  [    -9.] Propxy
+ !  (67)  [    -9.] Propth
+ !  (68)  [    -9.] Propsi
+ !  (69)  [    -9.] Radstr
+ !  (70)  [    -9.] Nplant
+ !  (71)  [    -9.] Lwavp
+ !  (72)  [    -9.] Stur
+ !  (73)  [   -99.] Turb
+ !  (74)  [    -9.] Smud
+ !  (75)  [    -9.] Sswell
+ !  (76)  [    -9.] Sice
+ !  (77)  [    -9.] aice
+ !  (78)  [    -9.] hice
+ !  (79)  [    -9.] Sbragg
+ !  (80)  [    -9.] Sqc
++!  (85)  [   -999] Dpm                                                     MSL
++!  (86)  [   -999] Dpmsea                                                  MSL
++!  (87)  [   -999] Dpmswe                                                  MSL
++!  (88)  [     -9] Tpssea                                                  MSL
++!  (89)  [     -9] Tpsswe                                                  MSL
++!  (90)  [     -9] Hsea                                                    MSL
++!  (91)  [     -9] Swe                                                     MSL
+ ! OVLEXP(NMOVAR)   lower expected limit of output quantity
+ !  ( 1)  [ -1.E10] Xp
+ !  ( 2)  [ -1.E10] Yp
+ !  ( 3)  [     0.] Dist
+ !  ( 4)  [  -100.] Depth
+ !  ( 5)  [    -2.] Vel
+ !  ( 6)  [     0.] Ubot
+ !  ( 7)  [     0.] Dissip
+ !  ( 8)  [     0.] Qb
+ !  ( 9)  [     0.] Leak
+ !  (10)  [     0.] Hs
+ !  (11)  [     0.] Tm01
+ !  (12)  [     0.] Tpeak
+ !  (13)  [     0.] Dir
+ !  (14)  [     0.] PkDir
+@@ -1185,30 +1226,37 @@
+ !  (66)  [     0.] Propxy
+ !  (67)  [     0.] Propth
+ !  (68)  [     0.] Propsi
+ !  (69)  [     0.] Radstr
+ !  (70)  [     0.] Nplant
+ !  (71)  [     0.] Lwavp
+ !  (72)  [     0.] Stur
+ !  (73)  [     0.] Turb
+ !  (74)  [     0.] Smud
+ !  (75)  [     0.] Sswell
+ !  (76)  [     0.] Sice
+ !  (77)  [     0.] aice
+ !  (78)  [     0.] hice
+ !  (79)  [     0.] Sbragg
+ !  (80)  [     0.] Sqc
++!  (85)  [     0.] Dpm                                                     MSL
++!  (86)  [     0.] Dpmsea                                                  MSL
++!  (87)  [     0.] Dpmswe                                                  MSL
++!  (88)  [     0.] Tpssea                                                  MSL
++!  (89)  [     0.] Tpsswe                                                  MSL
++!  (90)  [     0.] Hsea                                                    MSL
++!  (91)  [     0.] Swe                                                     MSL
+ ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
+ !  ( 1)  [ -1.E10] Xp
+ !  ( 2)  [ -1.E10] Yp
+ !  ( 3)  [     0.] Dist
+ !  ( 4)  [  -1.E4] Depth
+ !  ( 5)  [  -100.] Vel
+ !  ( 6)  [     0.] Ubot
+ !  ( 7)  [     0.] Dissip
+ !  ( 8)  [     0.] Qb
+ !  ( 9)  [     0.] Leak
+ !  (10)  [     0.] Hs
+ !  (11)  [     0.] Tm01
+ !  (12)  [     0.] Tpeak
+ !  (13)  [     0.] Dir
+ !  (14)  [     0.] PkDir
+@@ -1259,30 +1307,37 @@
+ !  (66)  [     0.] Propxy
+ !  (67)  [     0.] Propth
+ !  (68)  [     0.] Propsi
+ !  (69)  [     0.] Radstr
+ !  (70)  [     0.] Nplant
+ !  (71)  [     0.] Lwavp
+ !  (72)  [     0.] Stur
+ !  (73)  [     0.] Turb
+ !  (74)  [     0.] Smud
+ !  (75)  [     0.] Sswell
+ !  (76)  [     0.] Sice
+ !  (77)  [     0.] aice
+ !  (78)  [     0.] hice
+ !  (79)  [     0.] Sbragg
+ !  (80)  [     0.] Sqc
++!  (85)  [     0.] Dpm                                                     MSL
++!  (86)  [     0.] Dpmsea                                                  MSL
++!  (87)  [     0.] Dpmswe                                                  MSL
++!  (88)  [     0.] Tpssea                                                  MSL
++!  (89)  [     0.] Tpsswe                                                  MSL
++!  (90)  [     0.] Hsea                                                    MSL
++!  (91)  [     0.] Swe                                                     MSL
+ ! OVHEXP(NMOVAR)   upper expected limit of output quantity
+ !  ( 1)  [  1.E10] Xp
+ !  ( 2)  [  1.E10] Yp
+ !  ( 3)  [  1.E10] Dist
+ !  ( 4)  [   100.] Depth
+ !  ( 5)  [     2.] Vel
+ !  ( 6)  [     1.] Ubot
+ !  ( 7)  [   100.] Dissip
+ !  ( 8)  [   100.] Qb
+ !  ( 9)  [   100.] Leak
+ !  (10)  [    10.] Hs
+ !  (11)  [   100.] Tm01
+ !  (12)  [   100.] Tpeak
+ !  (13)  [   360.] Dir
+ !  (14)  [   360.] PkDir
+@@ -1333,30 +1388,37 @@
+ !  (66)  [    0.1] Propxy
+ !  (67)  [    0.1] Propth
+ !  (68)  [    0.1] Propsi
+ !  (69)  [    0.1] Radstr
+ !  (70)  [   100.] Nplant
+ !  (71)  [   200.] Lwavp
+ !  (72)  [    0.1] Stur
+ !  (73)  [   100.] Turb
+ !  (74)  [    0.1] Smud
+ !  (75)  [    0.1] Sswell
+ !  (76)  [    0.1] Sice
+ !  (77)  [    1.0] aice
+ !  (78)  [    10.] hice
+ !  (79)  [    0.1] Sbragg
+ !  (80)  [    0.1] Sqc
++!  (85)  [   360.] Dpm                                                     MSL
++!  (86)  [   360.] Dpmsea                                                  MSL
++!  (87)  [   360.] Dpmswe                                                  MSL
++!  (88)  [   100.] Tpssea                                                  MSL
++!  (89)  [   100.] Tpsswe                                                  MSL
++!  (90)  [   100.] Hsea                                                    MSL
++!  (91)  [     1.] Swe                                                     MSL
+ ! OVULIM(NMOVAR)   upper limit of validity
+ !  ( 1)  [  1.E10] Xp
+ !  ( 2)  [  1.E10] Yp
+ !  ( 3)  [  1.E10] Dist
+ !  ( 4)  [   1.E4] Depth
+ !  ( 5)  [   100.] Vel
+ !  ( 6)  [    10.] Ubot
+ !  ( 7)  [  1000.] Dissip
+ !  ( 8)  [     1.] Qb
+ !  ( 9)  [  1000.] Leak
+ !  (10)  [   100.] Hs
+ !  (11)  [  1000.] Tm01
+ !  (12)  [  1000.] Tpeak
+ !  (13)  [   360.] Dir
+ !  (14)  [   360.] PkDir
+@@ -1407,30 +1469,37 @@
+ !  (66)  [  1000.] Propxy
+ !  (67)  [  1000.] Propth
+ !  (68)  [  1000.] Propsi
+ !  (69)  [  1000.] Radstr
+ !  (70)  [  1000.] Nplant
+ !  (71)  [  1000.] Lwavp
+ !  (72)  [  1000.] Stur
+ !  (73)  [    10.] Turb
+ !  (74)  [  1000.] Smud
+ !  (75)  [  1000.] Sswell
+ !  (76)  [  1000.] Sice
+ !  (77)  [    1.0] aice
+ !  (78)  [   100.] hice
+ !  (79)  [  1000.] Sbragg
+ !  (80)  [  1000.] Sqc
++!  (85)  [   360.] Dpm                                                     MSL
++!  (86)  [   360.] Dpmsea                                                  MSL
++!  (87)  [   360.] Dpmswe                                                  MSL
++!  (88)  [  1000.] Tpssea                                                  MSL
++!  (89)  [  1000.] Tpsswe                                                  MSL
++!  (90)  [   100.] Hsea                                                    MSL
++!  (91)  [     1.] Swe                                                     MSL
+ ! SINCQ  [       ] sin of ALCQ
+ ! SINPQ  [       ] sin of ALPQ
+ ! SPCPOW [      1] power in expression for computation of average frequency
+ !                  =power; set by command SET ... [power] ... (not documented)
+ ! XQLEN  [       ] length of x-side of output frame
+ ! XQP    [       ] x-coordinate (user coord.) of origin of output frame
+ ! YQLEN  [       ] length of y-side of output frame
+ ! YQP    [       ] y-coordinate (user coord.) of origin of output frame
+ !
+       INTEGER ERRPTS
+       INTEGER INRHOG,         IUBOTR
+       INTEGER OVSVTY(NMOVAR), SPCPOW
+       REAL    AKPOWR,         ALCQ,        ALPQ,          COSCQ
+       REAL    COSPQ,          DXK,         DYK
+       REAL    OVEXCV(NMOVAR),              OVLEXP(NMOVAR)

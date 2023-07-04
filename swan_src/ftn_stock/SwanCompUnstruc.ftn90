@@ -11,7 +11,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -339,7 +339,7 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
     !
     ! print all the settings used in SWAN run
     !
-    if ( it == 1 .and. ITEST > 0 ) call SWPRSET (spcsig)
+    if ( it == 1 .and. ITEST > 0 ) call SWPRSET (spcsig,spcdir)
     !
     ! print test points
     !
@@ -584,6 +584,16 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
 !TIMG    call SWTSTO(135)
     !$omp end single
     !
+    ! store frequency- and space-dependent data for LTA/DCTA
+    !
+    !$omp single
+!TIMG    call SWTSTA(134)
+    if ( ITRIAD > 0 .and. ITRIAD /= 2 ) then
+       if ( it == 1 .or. DYNDEP ) call FAC3WW ( compda(1,JDP2), spcsig )
+    endif
+!TIMG    call SWTSTO(134)
+    !$omp end single
+    !
     if ( IQUAD > 0 ) then
        allocate(  ue(MSC4MI:MSC4MA,MDC4MI:MDC4MA))
        allocate( sa1(MSC4MI:MSC4MA,MDC4MI:MDC4MA))
@@ -657,7 +667,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        if ( IWIND == 8 ) memsinb(1:MDC,1:MSC,1:nverts) = 0.
        if ( ISURF > 0 .and. IGEN == 4 ) memqcb(1:MDC,1:MSC,1:nverts) = 0.
        if ( ITRIAD > 0 &
-                       ) compda(1:nverts,JURSEL) = 0.
+            .or. ISURF == 7 &
+                       ) then
+          compda(1:nverts,JURSEL) = 0.
+          compda(1:nverts,JBIPH ) = 0.
+       endif
        !
        compda(1:nverts,JDISS) = 0.
        compda(1:nverts,JLEAK) = 0.
@@ -751,6 +765,11 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
        ! calculate diffraction parameter and its derivatives
        !
        if ( IDIFFR /= 0 ) call SwanDiffPar ( ac2, compda(1,JDP2), spcsig )
+       !
+       ! spatially filter the De Wit's biphase to prevent abrupt changes
+       ! note: just copy the unfiltered one to array BIPHAS
+       !
+       if ( IBIPH == 3 ) call SWBIPM ( compda(1,JBIPH), compda(1,JDP2), compda(1,JHSIBC) )
        !
        ! all vertices are set untagged except non-active ones
        !
@@ -990,9 +1009,10 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                       !
 !TIMG                      call SWTSTA(116)
                       call SINTGRL (spcdir          , kwave           , ac2  , compda(1,JDP2), qbloc , compda(1,JURSEL), &
+                                    compda(1,JBIPH) ,                                                                    &
                                     rdx             , rdy             , dummy, etot          , abrbot, compda(1,JUBOT) , &
                                     hs              , compda(1,JQB)   , hm   , kmespc        , smebrk, kteta           , &
-                                    compda(1,JPBOT) , compda(1,JBOTLV), compda(1,JGAMMA), compda(1,JRESPL)     , swpnr , &
+                                    compda(1,JPBOT) , compda(1,JBOTLV), compda(1,JGAMMA)                       , swpnr , &
                                     urmstop         ,                                                                    &
                                     iddlow          , iddtop          )
 !TIMG                      call SWTSTO(116)
@@ -1109,13 +1129,15 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                        wwawg               , wwswg               , cgo                 , compda(1,JUSTAR)    , &
                                        compda(1,JZEL)      , spcdir              , anywnd              , dmw                 , &
                                        fbd                 , membrg              ,                                             &
+                                       cas                 ,                                                                   &
                                        memsina             , memsinb             ,                                             &
                                        disc0               ,                                                                   &
                                        disc1               , genc0               , genc1               , redc0               , &
                                        redc1               , xis                 , compda(1,JFRC2)     , it                  , &
                                        compda(1,JNPLA2)    , compda(1,JTURB2)    , compda(1,JMUDL2)    ,                       &
                                        compda(1,JAICE2)    , compda(1,JHICE2)    ,                                             &
-                                       compda(1,JURSEL)    , anybin              , reflso              , compda(1,JTAUW)       &
+                                       compda(1,JURSEL)    , anybin              , reflso              , compda(1,JTAUW)     , &
+                                       compda(1,JBIPH)                                                                         &
                                       ,urmstop                                                                                 &
                                                                                                                              )
                          endif
@@ -1132,7 +1154,8 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
                                          spcdir(1,2)        , spcdir(1,3)         , etot                , hm                 , &
                                          qbloc              , smebrk              , kteta               , kmespc             , &
                                          cft                , rft                 , sft                 , wft                , &
-                                         wsave              , cfd                 , wfd                 , wsavd              )
+                                         wsave              , cfd                 , wfd                 , wsavd                &
+                                                                                                                             )
                          endif
 !TIMG                         call SWTSTO(117)
                          !

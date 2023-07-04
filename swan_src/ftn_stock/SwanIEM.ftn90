@@ -13,7 +13,7 @@ module SwanIEM
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -88,7 +88,7 @@ subroutine SwanIEMinitig
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -334,7 +334,7 @@ subroutine SwanIEMmeanwav ( AC2, HSIBC, SPCSIG, KGRPNT, HS )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -498,7 +498,7 @@ subroutine SwanIEMncalc
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -689,7 +689,7 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -768,17 +768,17 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
     integer              :: jfl          ! infragravity frequency index
     integer              :: k            ! loop counter
     !
-    real                 :: biph         ! bi-phase
+    real                 :: biph         ! biphase
     real                 :: c1           ! phase velocity of first wave component
     real                 :: c2           ! phase velocity of second wave component
     real                 :: cgdx         ! x-derivative of group velocity divided by cosine of bound wave direction
     real                 :: ci1          ! phase velocity of first wave component at offshore boundary
     real                 :: ci2          ! phase velocity of second wave component at offshore boundary
-    real                 :: cosbp        ! cosine of bi-phase
+    real                 :: cosbp        ! cosine of biphase
     real                 :: costm        ! cosine of mean sea-swell direction
     real                 :: ct1          ! cosine of theta1
     real                 :: ct2          ! cosine of theta2
-    real                 :: cphi         ! contributions to the evolution equation for bi-phase
+    real                 :: cphi         ! contributions to the evolution equation for biphase
     real                 :: deltaf       ! difference frequency related to sea-swell spectrum
     real                 :: deploc       ! local water depth
     real                 :: df           ! increment in frequency space
@@ -809,7 +809,7 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
     real                 :: Shatxx       ! x-component of radiation stress in x-direction with respect to slowly modulated forcing
     real                 :: Shatxy       ! cross component of radiation stress in x/y-direction with respect to slowly modulated forcing
     real                 :: Shatyy       ! y-component of radiation stress in y-direction with respect to slowly modulated forcing
-    real                 :: sinbp        ! sine of bi-phase
+    real                 :: sinbp        ! sine of biphase
     real                 :: sinth1       ! sine of direction of first short wave component
     real                 :: sinth2       ! sine of direction of second short wave component
     real                 :: sintm        ! sine of mean sea-swell direction
@@ -817,12 +817,12 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
     real                 :: st2          ! sine of theta2
     real, dimension(MSC) :: sum0         ! integration term for calculating zeroth moment
     real, dimension(MSC) :: sum1         ! integration term for calculating minus first moment
-    real                 :: T1           ! contribution to the bi-phase eq
-    real                 :: T2           ! contribution to the bi-phase eq
-    real                 :: T3           ! contribution to the bi-phase eq
-    real                 :: T4           ! contribution to the bi-phase eq
-    real                 :: T5           ! contribution to the bi-phase eq
-    real                 :: T6           ! contribution to the bi-phase eq
+    real                 :: T1           ! contribution to the biphase eq
+    real                 :: T2           ! contribution to the biphase eq
+    real                 :: T3           ! contribution to the biphase eq
+    real                 :: T4           ! contribution to the biphase eq
+    real                 :: T5           ! contribution to the biphase eq
+    real                 :: T6           ! contribution to the biphase eq
     real                 :: theta1       ! wave incidence angle of first wave component
     real                 :: theta2       ! wave incidence angle of second wave component
     real                 :: thetam       ! mean sea-swell direction
@@ -1068,7 +1068,7 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
                 enddo
              enddo
              !
-             ! compute ig energy and bi-phase through evolution equations (eqs. 15 and 16)
+             ! compute ig energy and biphase through evolution equations (eqs. 15 and 16)
              !
              do iy = 1, MYC
                 !
@@ -1084,13 +1084,13 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
                 Ut(indf) = cg(indf) * Z(indf) / deploc
                 fluxb    = 0.5 * rho * cgx(indf) * deploc * Ut(indf)*Ut(indf)
                 !
-                ! determine offshore boundary condition of evolution equation for bi-phase
+                ! determine offshore boundary condition of evolution equation for biphase
                 !
                 biph  = 0.
                 sinbp = 0.
                 cosbp = 1.
                 !
-                ! sweep through rows in computational domain to update energy flux and bi-phase
+                ! sweep through rows in computational domain to update energy flux and biphase
                 !
                 do ix = 2, MXC
                    !
@@ -1127,7 +1127,7 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
                       !
                       mu = 1. - ( w_l*w_l - GRAV*deploc*kbly*kbly ) / ( GRAV*deploc*kblx(ind)*kblx(ind) )
                       !
-                      ! compute contributions to the evolution equation for bi-phase (eq. 16)
+                      ! compute contributions to the evolution equation for biphase (eq. 16)
                       !
                       T1   = -0.5 * kblx(ind) * mu
                       !
@@ -1150,7 +1150,7 @@ subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
                       !
                       cphi = T1 + T2 * ( kblx(ind) * cosbp - T3 * sinbp ) + T4 * ( kbly * cosbp - T5 * sinbp ) - T6 * ( kbly*kbly / kblx(ind) * sinbp )
                       !
-                      ! update bi-phase
+                      ! update biphase
                       !
                       biph  = biph + DX * cphi
                       sinbp = sin(biph)
