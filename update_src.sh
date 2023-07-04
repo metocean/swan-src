@@ -42,6 +42,12 @@ done
 # rm -rf $BASEDIR/ftn_stock
 # mv $BASEDIR/ftn_new $BASEDIR/ftn_stock
 # rm -rf $BASEDIR/ftn_msl_old
+# # recopy macros options to stock and link as it is also used
+# rm $BASEDIR/ftn_stock/macros.inc
+# mkdir $BASEDIR/ftn_stock/macros
+# cp $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_stock/macros/
+# cp $BASEDIR/ftn_msl/macros/gfortran_static_macros.inc $BASEDIR/ftn_stock/macros/
+# ln -s $BASEDIR/ftn_stock/macros/nvidia_static.macros.inc $BASEDIR/ftn_stock/macros.inc
 # # for the latest versions, 41.41 and 41.45, after fixing swanmain.ftn we also cleanup:
 # rm $BASEDIR/ftn_msl/*.ftn.orig
 # rm $BASEDIR/ftn_msl/swanmain.ftn.rej
