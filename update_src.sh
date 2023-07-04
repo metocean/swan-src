@@ -22,12 +22,14 @@ echo
 echo "Replacing ftn_msl with new files from ftn_new"
 cp -a $BASEDIR/ftn_msl $BASEDIR/ftn_msl_old # save old msl for tmp backup
 rm -rf $BASEDIR/ftn_msl/*
-cp -a $BASEDIR/ftn_msl_old/macros/ $BASEDIR/ftn_msl/ # readd macros options
-ln -s $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_msl/macros.inc
 for f in $(ls $BASEDIR/ftn_new/*); do
     fname=$(basename $f)
     cp $BASEDIR/ftn_new/$fname $BASEDIR/ftn_msl/$fname
 done
+# reset macro to nvidia (current compiler used - this can be an env variable)
+cp -a $BASEDIR/ftn_msl_old/macros/ $BASEDIR/ftn_msl/ # readd macros options
+rm $BASEDIR/ftn_msl/macros.inc
+ln -s $BASEDIR/ftn_msl/macros/nvidia_static_macros.inc $BASEDIR/ftn_msl/macros.inc
 
 echo
 echo "Applying patch of MSL vs previous stock to new files"
