@@ -39,6 +39,8 @@ done
 
 # # NOTE: after the above step it might be necessary to fix patch conflixts
 # # that's why we do not remove/cleanup any directories. Otherwise:
+# echo
+# echo "Cleaning up"
 # rm -rf $BASEDIR/ftn_stock
 # mv $BASEDIR/ftn_new $BASEDIR/ftn_stock
 # rm -rf $BASEDIR/ftn_msl_old
