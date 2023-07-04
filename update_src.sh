@@ -40,7 +40,10 @@ for f in $(ls $BASEDIR/patch/*ftn*.patch); do
 done
 
 # NOTE: after the above step it might be necessary to fix patch conflixts
-# that's why we do not remove/cleanup any directories
+# that's why we do not remove/cleanup any directories. Otherwise:
+# rm -rf $BASEDIR/ftn_stock
+# mv $BASEDIR/ftn_new $BASEDIR/ftn_stock
+# rm -rf $BASEDIR/ftn_msl_old
 
 echo
 git status
