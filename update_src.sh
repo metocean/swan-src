@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 # create new branch for src update
 SWAN_VERSION=4145
 git checkout -b "version_update_$SWAN_VERSION"
