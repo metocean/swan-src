@@ -80,7 +80,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -935,7 +935,7 @@
       DATA IENT/0/
       IF (LTRACE) CALL STRACE (IENT,'SWCOMP')
 !
-      IF (IT .EQ. 1 .AND. ITEST.GE.1) CALL SWPRSET (SPCSIG)               40.80
+      IF (IT .EQ. 1 .AND. ITEST.GE.1) CALL SWPRSET (SPCSIG,SPCDIR)        42.01 40.80
 !
 !     *** print test points ***
 !
@@ -955,6 +955,13 @@
      &                DAL1  ,DAL2  ,DAL3  ,SPCSIG,                        40.41
      &                WWINT ,WWAWG ,WWSWG )                               40.41
 !TIMG      CALL SWTSTO(135)                                                    40.41
+!
+!     --- store frequency- and space-dependent data for LTA/DCTA          42.01
+!TIMG      CALL SWTSTA(134)                                                    42.01
+      IF ( ITRIAD.GT.0 .AND. ITRIAD.NE.2 ) THEN                           42.01
+         IF (IT.EQ.1 .OR. DYNDEP) CALL FAC3WW ( COMPDA(1,JDP2), SPCSIG )  42.01
+      ENDIF                                                               42.01
+!TIMG      CALL SWTSTO(134)                                                    42.01
 !                                                                         40.22
 ! *** Indexing and bounds for SWMAT arrays                                40.22
 !                                                                         40.22
@@ -1483,13 +1490,15 @@
 !ESMF          IF (SAVE_SINBAC) SINBAC(:,:,IP) = 0.
         ENDDO
 !
-!       initialise Ursell number to 0 for each iteration                  40.03
+!       initialise Ursell number and biphase to 0 for each iteration      41.97 40.03
 !       this is done in parallel within OpenMP environment                40.31
 !
         IF (ITRIAD.GT.0
+     &      .OR. ISURF.EQ.7                                               41.97
      &                 ) THEN
            DO IP = I1GRD,I2GRD                                            40.31
             COMPDA(IP,JURSEL) = 0.
+            COMPDA(IP,JBIPH ) = 0.                                        41.97
           ENDDO
         ENDIF
 !                                                                         40.31
@@ -1637,6 +1646,10 @@
      &     CALL DIFPAR( AC2   , SPCSIG, KGRPNT, COMPDA(1,JDP2),           40.21
      &                  CROSS , XCGRID, YCGRID, XYTST  )                  40.21
 !TIMG        CALL SWTSTO(137)                                                  40.41
+!
+!       --- spatially filter the De Wit's biphase to prevent abrupt changes
+        IF (IBIPH.EQ.3) CALL SWBIPM ( COMPDA(1,JBIPH ), COMPDA(1,JDP2),   41.97
+     &                                COMPDA(1,JHSIBC)                )   41.97
 
 !----------------------------------------------------------------------   40.22
 !     End master thread region.                                           40.22
@@ -2303,6 +2316,9 @@
 !----------------------------------------------------------------------   40.22
 !$OMP BARRIER                                                             40.22
 !
+!       --- check if breaker index for BKD needs to be modified           41.96
+        IF (MODGAM .AND. ACCUR.GE.PNUMS(37)) MODGAM = .FALSE.             41.96
+!
 !       *** if accuracy has been reached then the iteration ***
 !       *** can be terminated ---> goto 470                 ***
 !
@@ -2498,7 +2514,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -3408,14 +3424,14 @@
 !TIMG        CALL SWTSTA(116)                                                  40.23
         CALL SINTGRL  (SPCDIR  ,KWAVE   ,AC2     ,                        40.02
      &                 COMPDA(1,JDP2)   ,QBLOC   ,COMPDA(1,JURSEL),       40.02
-     &                 RDX     ,RDY     ,                                 40.02
+     &                 COMPDA(1,JBIPH)  ,RDX     ,RDY     ,               41.97 40.02
      &                 AC2TOT  ,ETOT    ,                                 40.02
      &                 ABRBOT  ,COMPDA(1,JUBOT)  ,HS      ,               40.02
      &                 COMPDA(1,JQB)    ,                                 40.02
      &                 HM      ,KMESPC  ,SMEBRK  ,KTETA   ,               41.47 40.02
      &                 COMPDA(1,JPBOT)  ,                                 40.51
      &                 COMPDA(1,JBOTLV) ,COMPDA(1,JGAMMA) ,               41.38
-     &                 COMPDA(1,JRESPL) ,SWPDIR           ,               41.38 40.16
+     &                 SWPDIR           ,                                 40.16
      &                 URMSTOP          ,                                 40.88
      &                 IDDLOW           ,IDDTOP           )               41.38
 !TIMG        CALL SWTSTO(116)                                                  40.23
@@ -3505,6 +3521,7 @@
      &  WWSWG               ,CGO                 ,COMPDA(1,JUSTAR)    ,
      &  COMPDA(1,JZEL)      ,SPCDIR              ,ANYWND              ,
      &  DMW                 ,FBD                 ,MEMBRG              ,   41.80 40.59
+     &  CAS                 ,                                             41.11
      &  MEMSINA             ,MEMSINB             ,                        40.88
      &  SWMATR(1,1,JDIS0)   ,SWMATR(1,1,JDIS1)   ,
      &  SWMATR(1,1,JGEN0)   ,SWMATR(1,1,JGEN1)   ,                        40.85
@@ -3513,7 +3530,7 @@
      &  COMPDA(1,JNPLA2)    ,COMPDA(1,JTURB2)    ,COMPDA(1,JMUDL2)    ,   40.59 40.35 40.55
      &  COMPDA(1,JAICE2)    ,COMPDA(1,JHICE2)    ,                        41.75
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO              ,   40.41 40.03
-     &  COMPDA(1,JTAUW)
+     &  COMPDA(1,JTAUW)     ,COMPDA(1,JBIPH)                              41.97
      & ,URMSTOP                                                           40.88
      &                                                                )   30.21
         ENDIF
@@ -3534,7 +3551,8 @@
      &  SMEBRK              , KTETA               , KMESPC            ,
      &  CFT                 , RFT                 , SFT               ,
      &  WFT                 , WSAVE               , CFD               ,
-     &  WFD                 , WSAVD               )
+     &  WFD                 , WSAVD
+     &                                                                )
         ENDIF
 !TIMG        CALL SWTSTO(117)                                                  40.23
 !
@@ -3769,7 +3787,7 @@
       END
 !****************************************************************
 !
-      SUBROUTINE SWPRSET (SPCSIG)
+      SUBROUTINE SWPRSET (SPCSIG,SPCDIR)
 !
 !****************************************************************
 !
@@ -3778,6 +3796,7 @@
       USE SWCOMM3
       USE SWCOMM4
       USE SwanIEM, only: ntf, dfiem, sflog
+      USE M_SNL3, ONLY: TCOLL
 !
       IMPLICIT NONE
 !
@@ -3793,7 +3812,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -3823,9 +3842,15 @@
 !
 !  4. Argument variables
 !
-!     SPCSIG      Relative frequencies in computational domain in sigma-space
+!     SPCDIR: (*,1); spectral directions (radians)
+!             (*,2); cosine of spectral directions
+!             (*,3); sine of spectral directions
+!             (*,4); cosine^2 of spectral directions
+!             (*,5); cosine*sine of spectral directions
+!             (*,6); sine^2 of spectral directions
+!     SPCSIG: Relative frequencies in computational domain in sigma-space
 !
-      REAL SPCSIG(MSC)
+      REAL SPCSIG(MSC), SPCDIR(MDC,6)
 !
 !  6. Local variables
 !
@@ -3981,17 +4006,73 @@
          WRITE (PRINTF, *) 'Quadruplets is off'
       ENDIF                                                               40.41
       IF (ITRIAD.GT.0) THEN                                               40.41
-         WRITE(PRINTF,9413) ITRIAD, PTRIAD(1)
- 9413    FORMAT(' Triads               : ITRIAD ',I12  ,
+         WRITE(PRINTF,9412) ITRIAD, PTRIAD(1)
+ 9412    FORMAT(' Triads               : ITRIAD ',I12  ,
      &                                 ' TRFAC ',E12.4)
-         WRITE(PRINTF,9414) PTRIAD(2), PTRIAD(4)                          40.41
- 9414    FORMAT('                      : CUTFR  ',E12.4,                  40.41
-     &                                 ' URCRI ',E12.4)                   40.41
-         WRITE(PRINTF,9415) PTRIAD(5)                                     40.41
- 9415    FORMAT(' Minimum Ursell nr for Snl3 :  ',E12.4)                  40.41
+         IF (IBIPH.EQ.1) THEN
+            IF (ITRIAD.EQ.1 .OR. ITRIAD.EQ.11) THEN                       42.01
+               WRITE(PRINTF,9413) PTRIAD(2), PTRIAD(4)                    41.97 40.41
+            ELSEIF (ITRIAD.EQ.5) THEN                                     42.01
+               WRITE(PRINTF,9414) PTRIAD(2), PTRIAD(4)                    42.01
+            ENDIF                                                         42.01
+ 9413       FORMAT('                      : CUTFR  ',E12.4,               41.97 40.41
+     &                                    ' URCRI ',E12.4)                41.97 40.41
+ 9414       FORMAT('                      : POWER  ',E12.4,               42.01
+     &                                    ' URCRI ',E12.4)                42.01
+         ELSE IF (IBIPH.EQ.3) THEN                                        42.01
+            IF (ITRIAD.EQ.1 .OR. ITRIAD.EQ.11) THEN                       42.01
+               WRITE(PRINTF,9513) PTRIAD(2), PTRIAD(9)                    42.01
+            ELSEIF (ITRIAD.EQ.5) THEN                                     42.01
+               WRITE(PRINTF,9514) PTRIAD(2), PTRIAD(9)                    42.01
+            ENDIF                                                         42.01
+ 9513       FORMAT('                      : CUTFR  ',E12.4,               42.01
+     &                                    ' LPAR  ',E12.4)                42.01
+ 9514       FORMAT('                      : POWER  ',E12.4,               42.01
+     &                                    ' LPAR  ',E12.4)                42.01
+         ELSE                                                             41.97
+            IF (ITRIAD.EQ.1 .OR. ITRIAD.EQ.11) THEN                       42.01
+               WRITE(PRINTF,9415) PTRIAD(2)                               41.97
+            ELSEIF (ITRIAD.EQ.5) THEN                                     42.01
+               WRITE(PRINTF,9416) PTRIAD(2)                               42.01
+            ENDIF                                                         42.01
+ 9415       FORMAT('                      : CUTFR  ',E12.4)               41.97
+ 9416       FORMAT('                      : POWER  ',E12.4)               41.97
+         ENDIF                                                            41.97
+         WRITE(PRINTF,9417) PTRIAD(5)                                     40.41
+ 9417    FORMAT(' Minimum Ursell nr for Snl3 :  ',E12.4)                  40.41
+         IF (ITRIAD.EQ.1 .OR. ITRIAD.EQ.11) THEN                          42.01
+            WRITE (PRINTF,*) 'LTA (Eldeberky, 1996) is employed'          42.01
+         ELSE IF (ITRIAD.EQ.2) THEN                                       42.01
+            WRITE (PRINTF,*) 'SPB (Becq-Girard et al, 1999) is employed'  42.01
+         ELSE IF (ITRIAD.EQ.5) THEN                                       42.01
+            WRITE (PRINTF,*) 'DCTA (Booij et al, 2009) is employed'       42.01
+         ENDIF                                                            42.01
+         IF (ITRIAD.NE.5) THEN                                            42.01
+            IF (.NOT.PTRIAD(8).NE.-1.) THEN                               42.01
+               IF (FULCIR) THEN                                           42.01
+                  WRITE(PRINTF,9418) 360.                                 42.01
+               ELSE                                                       42.01
+                  WRITE(PRINTF,9418) (SPCDIR(MDC,1)-SPCDIR(1,1))/DEGRAD   42.01
+               ENDIF                                                      42.01
+            ELSEIF (PTRIAD(8).NE.0.) THEN                                 42.01
+               WRITE(PRINTF,9418) PTRIAD(8)                               42.01
+            ELSE                                                          42.01
+               WRITE(PRINTF,*)'Original collinear approximation is used'  42.01
+            ENDIF                                                         42.01
+ 9418       FORMAT(' Directional integration width:',E12.4)               42.01
+         ELSE IF (.NOT.TCOLL) THEN                                        42.01
+            WRITE(PRINTF,*) 'Noncollinear effects are included'           42.01
+         ENDIF                                                            42.01
       ELSE
          WRITE (PRINTF, *) 'Triads is off'
       ENDIF                                                               40.41
+      IF (IBIPH.EQ.1) THEN                                                41.97
+         WRITE (PRINTF,*) 'Biphase based on Eldeberky (1996)'
+      ELSEIF (IBIPH.EQ.2) THEN
+         WRITE (PRINTF,*) 'Biphase based on Saprykina et al. (2017)'
+      ELSEIF (IBIPH.EQ.3) THEN
+         WRITE (PRINTF,*) 'Biphase based on De Wit (2022)'
+      ENDIF
       IF (IBRAG.GT.0) THEN                                                41.80
          WRITE(PRINTF,7019) IBRAG, PBRAG(2)
  7019    FORMAT(' Bragg scattering     : IBRAG  ',I12  ,
@@ -4119,11 +4200,12 @@
  6137    FORMAT('                      : KCONV  ',E12.4)
       ELSEIF (IWCAP.EQ.7) THEN                                            40.53
          WRITE(PRINTF,6139) PWCAP(1), PWCAP(12)                           40.53
-         WRITE(PRINTF,6140) PWCAP(9), PWCAP(11)                           40.53
+         IF (IWCCUR.EQ.1) THEN                                            42.04
+            WRITE(PRINTF,6140) PWCAP(14)                                  42.04
+         ENDIF                                                            42.04
  6139    FORMAT(' W-cap Alves-Banner   : CDS2   ',                        40.53
      &          E12.4,' BR    ',E12.4)                                    40.53
- 6140    FORMAT('                      : POWST  ',                        40.53
-     &          E12.4,' POWK  ',E12.4)                                    40.53
+ 6140    FORMAT(' current-induced W-cap: CDS3   ',E12.4)                  42.04
       ELSEIF (IWCAP.EQ.8) THEN
          WRITE(PRINTF,6141) A1SDS    , A2SDS                              40.88
          WRITE(PRINTF,6142) P1SDS    , P2SDS                              40.88
@@ -4207,6 +4289,12 @@
      &          ' A2    ',E12.4)
          WRITE(PRINTF,7222) PSURF(7)
  7222    FORMAT('                        A3     ',E12.4)
+      ELSEIF (ISURF.EQ.7) THEN                                            41.97
+         WRITE(PRINTF,7226) PSURF(1), PSURF(4)
+ 7226    FORMAT(' Surf asymmetry       : ALPHA  ',E12.4,
+     &          ' GAMMA0',E12.4)
+         WRITE(PRINTF,7227) PSURF(5)
+ 7227    FORMAT('                        A      ',E12.4)
       ELSE
          WRITE (PRINTF, *) 'Surf breaking is off'
       ENDIF
@@ -4301,7 +4389,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -4766,7 +4854,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -4986,7 +5074,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5350,12 +5438,12 @@
 !****************************************************************
 !
       SUBROUTINE SINTGRL(SPCDIR  ,KWAVE   ,AC2     ,                      40.02
-     &                   DEP2    ,QB_LOC  ,URSELL  ,                      40.02
+     &                   DEP2    ,QB_LOC  ,URSELL  ,BIPHAS  ,             41.97 40.02
      &                   RDX     ,RDY     ,                               40.02
      &                   AC2TOT  ,ETOT    ,                               40.02
      &                   ABRBOT  ,UBOT    ,HS      ,QB      ,             40.02
      &                   HM      ,KMESPC  ,SMEBRK  ,KTETA   ,             41.47 40.02
-     &                   TMBOT   ,BOTLV   ,GAMBR   ,RESPL   ,             41.38 40.51 40.16
+     &                   TMBOT   ,BOTLV   ,GAMBR   ,                      41.38 40.51 40.16
      &                   SWPDIR  ,                                        41.38
      &                   URMSTOP ,                                        40.88
      &                   IDDLOW  ,IDDTOP  )                               41.38
@@ -5367,6 +5455,7 @@
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE M_WCAP
+      USE M_SNL3, ONLY: BPHTMP                                            41.97
 !
       IMPLICIT NONE
 !
@@ -5383,7 +5472,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5409,6 +5498,8 @@
 !     40.41: Marcel Zijlema
 !     40.51: Marcel Zijlema
 !     41.38: James Salmon
+!     41.96: Marcel Zijlema
+!     41.97: Marcel Zijlema
 !
 !  1. Updates
 !
@@ -5427,6 +5518,8 @@
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.51, Feb. 05: near bottom wave period added
 !     41.38, Apr. 12: extension to nkd scaling
+!     41.96, Aug. 22: store BKD-computed breaker index (e.g. for output)
+!     41.97, Sep. 22: add alternative biphase formulations
 !
 !  2. Purpose
 !
@@ -5439,9 +5532,9 @@
 !     ETOT = Integrate [ AC2(theta,sigma) sigma dsigma dtheta ]
 !
 !     To avoid too high dissipation by breaking, ETOT is maximised by a maximum
-!     total energy EMAX based on the maximum wave heigth HM:
+!     total energy EMAX based on the maximum wave height HM:
 !
-!     HM    = PSURF(2) depth
+!     HM    = PSURF(2) * depth
 !
 !                      2
 !     EMAX  = 0.25 * HM
@@ -5494,6 +5587,7 @@
 !     ABRBOT: Near bottom excursion
 !     AC2   : Action density as function of ID, IS, IX and IY
 !     AC2TOT: Total action density per gridpoint
+!     BIPHAS: biphase as function of IX and IY                            41.97
 !     BOTLV : Bottom depth
 !     DEP2  : Water depth
 !     ETOT  : Total wave energy density
@@ -5505,18 +5599,17 @@
 !     KWAVE : Wavenumber
 !     QB    : Fraction of breaking waves
 !     QB_LOC: Fraction of breaking waves at current grid-point
-!     RESPL : response length
 !     SMEBRK: Mean frequency according to first order moment
 !     SWPDIR: Number of current sweep direction                           40.16
+!     TMBOT : near bottom wave period                                     40.51
 !     UBOT  : Near bottom velocity as function of IX and IY
 !     URSELL: Ursell number as function of IX and IY
-!     TMBOT : near bottom wave period                                     40.51
 
       INTEGER, INTENT(IN)  :: SWPDIR                                      40.16
       INTEGER, INTENT(IN)  :: IDDLOW, IDDTOP                              41.38
 
       REAL, INTENT(IN)     :: DEP2(MCGRD), BOTLV(MCGRD)
-      REAL, INTENT(INOUT)  :: GAMBR(MCGRD), RESPL(MCGRD)                  41.38
+      REAL, INTENT(INOUT)  :: GAMBR(MCGRD)                                41.38
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL, INTENT(IN)     :: KWAVE(MSC,MICMAX)                           40.22
       REAL, INTENT(IN)     :: RDX(MICMAX), RDY(MICMAX)                    40.08
@@ -5527,6 +5620,7 @@
       REAL, INTENT(IN OUT) :: UBOT(MCGRD)
       REAL, INTENT(IN OUT) :: URMSTOP(MCGRD)                              40.88
       REAL, INTENT(IN OUT) :: URSELL(MCGRD)
+      REAL, INTENT(IN OUT) :: BIPHAS(MCGRD)                               41.97
       REAL, INTENT(IN OUT) :: TMBOT(MCGRD)                                40.51
 !
       REAL, INTENT(OUT)    :: ABRBOT, ETOT, HM, HS, QB_LOC
@@ -5542,6 +5636,7 @@
 !     AB2                : Sum of E_DSHKD2_DS_DD
 !     ACTOT_DSIG         : Integration term for calculating ACTOT
 !     ARR                : auxiliary array
+!     BIPH               : parameterized biphase of the spectrum
 !     EDRKTOT_SWELL      : Swell-part of EDRKTOT
 !     EMAX               : Maximum energy according calculated HM
 !     ETOT_DRK_DSIG      : Integration term for calculating EDRKTOT
@@ -5562,9 +5657,11 @@
 !
       REAL              :: AB2, EMAX, UB2, ETOT_2, KLOC(1), ARR(1)
       REAL              :: WH
+      REAL              :: BIPH
       REAL              :: FRINTF_X_DDIR
       REAL              :: BRCOEF   ! variable breaking coefficient (calc. in BRKPAR)  40.22
       REAL              :: UT2                                            40.88
+      REAL              :: DELL ! delta l for estimating biphase          41.97
 !
       REAL              :: ETOT_DSIG(MSC)                                 40.22
       REAL              :: ACTOT_DSIG(MSC), ETOT_DSHKD2_DSIG(MSC)         40.22
@@ -5604,7 +5701,7 @@
 !
       IF (LTRACE) CALL STRACE (IENT,'SINTGRL')
 !
-!     Initialisation
+!     --- initialisation
 !
       KM_WAM  = 10.
       KM01    = 10.
@@ -5621,14 +5718,14 @@
       URMSTOP(KCGRD(1)) = 0.
       TMBOT(KCGRD(1))= 0.
 !
-!     Calculate total spectral energy
+!     --- calculate total spectral energy
 !
       FRINTF_X_DDIR = FRINTF * DDIR
       ETOT_DSIG(:)  = SUM(AC2(:,:,KCGRD(1)),DIM=1) * SIGPOW(:,2) *
      &                FRINTF_X_DDIR
       ETOT          = SUM(ETOT_DSIG)
 !
-!     *** add high frequency tail ***
+!     --- add high frequency tail
 !
       ETOT = ETOT + ETOT_DSIG(MSC) * PWTAIL(6) / FRINTF
 !
@@ -5646,7 +5743,7 @@
      &      WRITE (PRTEST,7) DEP2(KCGRD(1)), EMAX, ETOT
    7     FORMAT (' energy is reduced in SINTGRL', 4(1x, e12.4))
 !
-!        Correct value for ETOT
+!        --- correct value for ETOT
 !
          ETOT = EMAX
 !
@@ -5654,8 +5751,7 @@
 !
       IF ( ETOT .GT. 0. ) THEN
 !
-!     Calculate all other integrals
-!
+!       --- calculate all other integrals
 !
         SINH_K_X_DEP_2(:)   = SINH(MIN(30.,
      &                             KWAVE(:,1)*DEP2(KCGRD(1)))
@@ -5686,7 +5782,7 @@
         UT2           = SUM(ETOT_SIG2_DTHKD2_DSIG)
         AB2           = SUM(ETOT_DSHKD2_DSIG)
 !
-!     Add high frequency tails
+!       --- add high frequency tails
 !
         ACTOT       = ACTOT + PWTAIL(5) * ACTOT_DSIG(MSC) / FRINTF
         ETOT1       = ETOT1 + PWTAIL(7) * ETOT_DSIG(MSC) *
@@ -5698,8 +5794,8 @@
         EKTOT       = EKTOT + PWTAIL(8) * ETOT_DSIG(MSC) *
      &                KWAVE(MSC,1) / FRINTF
 !
-!     Calculate the mean frequencies SIGM01 and SIGM_10,
-!     mean wavenumbers KM_WAM, KM01 and significant waveheight HS
+!       --- calculate the mean frequencies SIGM01 and SIGM_10,
+!           mean wavenumbers KM_WAM, KM01 and significant waveheight HS
 !
         IF (ETOT1  .GT. 0.) SIGM01  = ETOT1 / ETOT
         IF (EKTOT  .GT. 0.) KM01    = EKTOT / ETOT
@@ -5712,8 +5808,8 @@
           HS       = 4. * SQRT (ETOT)
         END IF
 !
-!     Calculate the orbital velocity UBOT, orbital excursion ABRBOT and
-!     near bottom wave period TMBOT                                       40.51
+!       --- calculate the orbital velocity UBOT, orbital excursion ABRBOT
+!           and near bottom wave period TMBOT                             40.51
 !
         IF ( UB2 .GT. 0.) UBOT(KCGRD(1)) = SQRT ( UB2 )
         IF ( AB2 .GT. 0.) ABRBOT = SQRT (2. *  AB2)
@@ -5723,18 +5819,95 @@
 !
       ENDIF
 !
+!     --- calculate Ursell number and biphase                             41.97
+!     --- update only for first encounter in a sweep                      40.16
+!
+      IF ( ITRIAD.GT.0                                                    40.41
+     &     .OR. ISURF.EQ.7                                                41.97
+     &                 ) THEN                                             40.41
+         IF (( SWPDIR .EQ. 1) .OR.                                        40.16
+     &       ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.                 40.16
+     &       ( SWPDIR .EQ. 3 .AND. IYCGRD(1) .EQ. 1) .OR.                 40.16
+     &       ( SWPDIR .EQ. 4 .AND.                                        40.16
+     &           (IXCGRD(1).EQ.MXC .AND. IYCGRD(1).EQ.1) )) THEN          40.16
+!          --- Ursell number
+           URSELL(KCGRD(1)) = (GRAV*HS) /
+     &                         (2.*SQRT(2.)*SIGM01**2*DEP2(KCGRD(1))**2)
+!          --- biphase                                                    41.97
+           IF ( IBIPH.EQ.1 ) THEN                                         41.97
+!             Eldeberky (1996)                                            41.97
+              BIPHAS(KCGRD(1)) = 0.5*PI *                                 41.97
+     &                             (TANH(PTRIAD(4)/URSELL(KCGRD(1)))-1.)  41.97
+           ELSEIF ( IBIPH.EQ.2 ) THEN                                     41.97
+!             Saprykina et al. (2017)                                     41.97
+              CALL PEREXC ( DELL, DEP2, AC2, SIGPOW(:,1), RDX, RDY,       41.97
+     &                      BOTLV )                                       41.97
+              BIPHAS(KCGRD(1)) = 0.5*PI * (MIN(1.,DELL/PTRIAD(9)) - 1.)   41.97
+           ELSEIF ( IBIPH.EQ.3 ) THEN                                     41.97
+!             De Wit (2022)                                               41.97
+              CALL SWBIDW ( BIPH, AC2, SIGPOW(:,1), RDX, RDY, BOTLV,      41.97
+     &                      SPCDIR(1,2), SPCDIR(1,3) )                    41.97
+!             --- scale biphase                                           41.97
+              BIPH = SQRT(TANH(URSELL(KCGRD(1)))) * BIPH                  41.97
+!             --- in between -90 and 90 deg                               41.97
+              BPHTMP(KCGRD(1)) = MIN( 0.5*PI, MAX( -0.5*PI, BIPH ) )      41.97
+!             note: this biphase will be spatially averaged at the        41.97
+!                   start of next iteration (see routine SWCOMP)          41.97
+           ENDIF                                                          41.97
+         ENDIF                                                            40.16
+      ELSE                                                                40.41
+        URSELL(KCGRD(1)) = 0.                                             40.41
+        BIPHAS(KCGRD(1)) = 0.                                             41.97
+      END IF                                                              40.41
+!
 !     --- compute actual maximum wave height based on breaking model
-!         include wave directionality, if appropriate                     41.47
 !
       IF ( ISURF.GT.0 ) THEN
 !        compute some parameters for breaker models
          CALL BRKPAR (BRCOEF, SPCDIR(1,2), SPCDIR(1,3), AC2,
-     &                SIGPOW(:,1), DEP2, BOTLV, GAMBR, RESPL,             41.38
+     &                SIGPOW(:,1), DEP2, BOTLV,
      &                RDX, RDY, KWAVE, IDDLOW, IDDTOP, SPCDIR(1,1),       41.38 41.03 40.22
      &                KTETA )                                             41.47
-         HM = BRCOEF * DEP2(KCGRD(1))                                     40.22
+!
+         IF (ISURF.EQ.6) THEN
+!           in case of BKD store breaker index                            41.96
+            IF (MODGAM) THEN
+               IF (( SWPDIR .EQ. 1) .OR.
+     &             ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.
+     &             ( SWPDIR .EQ. 3 .AND. IYCGRD(1) .EQ. 1) .OR.
+     &             ( SWPDIR .EQ. 4 .AND.
+     &               (IXCGRD(1).EQ.MXC .AND. IYCGRD(1).EQ.1) )) THEN
+                  GAMBR(KCGRD(1)) = BRCOEF
+               ENDIF
+            ENDIF
+            HM = GAMBR(KCGRD(1)) * DEP2(KCGRD(1))
+!
+         ELSEIF ( ISURF.EQ.7 ) THEN
+!           compute breaker index based on the asymmetry                  41.97
+!           of breaking waves (Saprykina et al., 2017)                    41.97
+            IF (( SWPDIR .EQ. 1) .OR.
+     &          ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.
+     &          ( SWPDIR .EQ. 3 .AND. IYCGRD(1) .EQ. 1) .OR.
+     &          ( SWPDIR .EQ. 4 .AND.
+     &            (IXCGRD(1).EQ.MXC .AND. IYCGRD(1).EQ.1) )) THEN
+!              see also routine BRKPAR
+               IF ( BRCOEF.LT.0. ) THEN
+                  BIPH = BIPHAS(KCGRD(1))
+                  IF ( BIPH.LT.0. ) THEN
+                     BRCOEF = PSURF(4) - 0.3 * PSURF(5) * BIPH
+                  ELSE
+!                    local bed slope negative, no surf breaking
+                     BRCOEF = 0.
+                  ENDIF
+               ENDIF
+               GAMBR(KCGRD(1)) = BRCOEF
+            ENDIF
+            HM = GAMBR(KCGRD(1)) * DEP2(KCGRD(1))
+         ELSE
+            HM = BRCOEF * DEP2(KCGRD(1))                                  40.22
+         ENDIF
       ELSE
-!       breaking disabled, assign very high value to HM
+!        breaking disabled, assign very high value to Hmax
          HM = 100.                                                        40.22
       ENDIF
 !
@@ -5742,13 +5915,13 @@
 !
       IF ( ETOT .GT. 0. ) THEN
 !
-!       --- calculate Qb when Battjes/Janssen breaking is activated
+!       --- calculate Qb when BJ78 breaker is activated
 !
         IF ( ISURF.NE.4                                                   41.38
      &                  ) THEN
            CALL FRABRE (HM, ETOT, QB(KCGRD(1)), KTETA)                    41.47
 !
-!       --- calculate Qb when Thornton/Guza breaking is activated         41.03
+!       --- calculate Qb when TG83 breaker is activated                   41.03
 !
         ELSEIF (ISURF.EQ.4) THEN
            WH = (2.*SQRT(2.*ETOT)/HM)**PSURF(5)
@@ -5757,23 +5930,6 @@
         ENDIF
 !
       ENDIF
-!
-!     *** calculate Ursell number ***
-!     *** update only for first encounter in a sweep                      40.16
-!
-      IF ( ITRIAD.GT.0                                                    40.41
-     &                 ) THEN                                             40.41
-         IF (( SWPDIR .EQ. 1) .OR.                                        40.16
-     &       ( SWPDIR .EQ. 2 .AND. IXCGRD(1) .EQ. 1) .OR.                 40.16
-     &       ( SWPDIR .EQ. 3 .AND. IYCGRD(1) .EQ. 1) .OR.                 40.16
-     &       ( SWPDIR .EQ. 4 .AND.                                        40.16
-     &           (IXCGRD(1).EQ.MXC .AND. IYCGRD(1).EQ.1) )) THEN          40.16
-           URSELL(KCGRD(1)) = (GRAV*HS) /
-     &                     (2.*SQRT(2.)*SIGM01**2*DEP2(KCGRD(1))**2)
-         ENDIF                                                            40.16
-      ELSE                                                                40.41
-        URSELL(KCGRD(1)) = 0.                                             40.41
-      END IF                                                              40.41
 !
       QB_LOC = QB(KCGRD(1))
 !
@@ -5827,7 +5983,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6045,7 +6201,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6289,7 +6445,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6615,6 +6771,7 @@
      &                     WWSWG      ,CGO        ,USTAR      ,
      &                     ZELEN      ,SPCDIR     ,ANYWND     ,
      &                     DMW        ,FBD        ,MEMBRG     ,           41.80 40.59
+     &                     CAS        ,                                   41.11
      &                     MEMSINA    ,MEMSINB    ,                       40.88
      &                     DISSC0     ,DISSC1     ,GENC0      ,           40.85
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
@@ -6622,7 +6779,7 @@
      &                     NPLA2      ,TURBV2     ,MUDL2      ,           40.59 40.35 40.55
      &                     AICE2      ,HICE2      ,                       41.75
      &                     URSELL     ,ANYBIN     ,REFLSO     ,           40.41 40.03
-     &                     TAUWV
+     &                     TAUWV      ,BIPHAS                             41.97
      &                    ,URMSTOP                                        40.88
      &                                                        )           30.21
 !
@@ -6637,6 +6794,7 @@
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE M_SNL4                                                          40.17
+      USE M_SNL3                                                          42.01
       USE SdsBabanin                                                      40.88
       USE SwanBraggScat                                                   41.80
 
@@ -6654,7 +6812,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -7016,6 +7174,7 @@
       REAL  :: WWAWG(*)
       REAL  :: WWSWG(*)
       REAL  :: CGO(MSC,MICMAX)                                            40.22
+      REAL  :: CAS(MDC,MSC,MICMAX)                                        41.11
       REAL  :: USTAR(MCGRD)
       REAL  :: ZELEN(MCGRD)
       REAL  :: TAUWV(MCGRD)
@@ -7026,6 +7185,7 @@
       REAL  :: REDC0 (1:MDC,1:MSC,1:MREDS)                                40.85
       REAL  :: REDC1 (1:MDC,1:MSC,1:MREDS)                                40.85
       REAL  :: URSELL(MCGRD)                                              40.03
+      REAL  :: BIPHAS(MCGRD)                                              41.97
       REAL  :: FRCOEF(MCGRD)                                              20.68
       REAL  :: NPLA2(MCGRD)                                               40.55
       REAL  :: TURBV2(MCGRD)                                              40.35
@@ -7142,7 +7302,7 @@
       END IF                                                              40.35
 !TIMG      CALL SWTSTO(143)                                                    40.35
 !
-!TIMG      CALL SWTSTA(144)                                               41.75
+!TIMG      CALL SWTSTA(144)                                                    41.75
       IF ( IICE.GT.2 ) THEN                                               41.75
 !                                                                         41.75
 !        *** dissipation by sea ice ***                                   41.75
@@ -7153,7 +7313,7 @@
      &               )                                                    41.75
 !                                                                         41.75
       END IF                                                              41.75
-!TIMG      CALL SWTSTO(144)                                               41.75
+!TIMG      CALL SWTSTO(144)                                                    41.75
 !
 !TIMG      CALL SWTSTA(131)                                                    40.23
       IF (ISURF .GE. 1) THEN
@@ -7268,7 +7428,7 @@
       IF (IWCAP.LE.7) CALL SWCAP (SPCDIR  ,SPCSIG  ,KWAVE   ,AC2     ,    40.02
      &                            IDCMIN  ,IDCMAX  ,ISSTOP  ,             40.02
      &                            ETOT    ,IMATDA  ,IMATRA  ,PLWCAP  ,    40.02
-     &                            CGO     ,UFRIC   ,                      40.53
+     &                            CGO     ,UFRIC   ,CAS     ,             41.11 40.53
      &                            DEP2    ,DISSC1  ,DISSC0  )             40.67 40.61 40.12
       IF (IWCAP.EQ.8) CALL SWCAP8 (SPCDIR  ,SPCSIG  ,KWAVE   ,AC2 ,
      &                             IDCMIN  ,IDCMAX  ,ISSTOP  ,
@@ -7315,10 +7475,10 @@
 !
            IF (ITRIAD.EQ.1.OR.ITRIAD.EQ.11) THEN
 !             LTA
-              CALL SWLTA ( AC2   , DEP2  , CGO   , SPCSIG,                40.56
-     &                     KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,        40.85
+              CALL SWLTA ( AC2   , DEP2  , SPCSIG,                        40.56
+     &                     IMATRA, IMATDA, REDC0 , REDC1 ,                40.85
      &                     IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
-     &                     HS    , SMEBRK, PLTRI , URSELL )
+     &                     SMEBRK, PLTRI , URSELL, BIPHAS )
            ELSEIF (ITRIAD.EQ.2) THEN
 !             SPB
               CALL SWSPB (AC2   , DEP2  , CGO   , SPCSIG,
@@ -7327,10 +7487,17 @@
      &                    PLTRI )
            ELSEIF (ITRIAD.EQ.5) THEN
 !             DCTA
-              CALL STRICL (AC2(1,1,KCGRD(1)) ,DEP2(KCGRD(1)),
-     &                     SPCSIG ,KWAVE ,
-     &                     IDDLOW,IDDTOP,ANYBIN,IMATDA,IMATRA,
-     &                     CGO     ,KMESPC  ,ETOT     ,SMEBRK)
+              IF ( TCOLL ) THEN
+                 CALL SWDCTA ( AC2   , DEP2  , CGO   , SPCSIG,
+     &                         IMATRA, IMATDA, REDC0 , REDC1 ,
+     &                         IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
+     &                         SMEBRK, PLTRI , URSELL, BIPHAS )
+              ELSE
+                 CALL SWDNCTA ( AC2   , DEP2  , CGO   , SPCSIG, SPCDIR,
+     &                          KWAVE , IMATRA, IMATDA, REDC0 , REDC1 ,
+     &                          IDDLOW, IDDTOP, ISSTOP, IDCMIN, IDCMAX,
+     &                          ETOT  , SMEBRK, PLTRI , URSELL, BIPHAS )
+              ENDIF
            ENDIF
 !
         ENDIF
@@ -7339,7 +7506,6 @@
 !TIMG      CALL SWTSTO(134)                                                    40.23
 !
 !     --- compute quadruplet interactions if Ursell number < Urmax        40.41
-!         (usually, Urmax = 0.1, but here Urmax = 10)                     40.41
 !
 !TIMG      CALL SWTSTA(135)                                                    40.23
       IF (URSELL(KCGRD(1)).LT.PTRIAD(3)) THEN                             40.03
@@ -7628,7 +7794,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -7777,7 +7943,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -7919,7 +8085,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -8106,7 +8272,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -8715,7 +8881,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -9222,7 +9388,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -9338,7 +9504,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -9624,8 +9790,8 @@
                END IF
 
                IF ( IQCM.EQ.0 ) THEN                                      41.90
-                  LCONV = ( HSCURV.LE.PNUMS(15) .AND.
-     &                     (HSREL.LE.PNUMS(1) .OR. HSABS.LE.PNUMS(2)) )   40.93
+                  LCONV = ( HSABS.LE.PNUMS(2) .OR.                        42.02
+     &                     (HSREL.LE.PNUMS(1).AND.HSCURV.LE.PNUMS(15)) )  42.02 40.93
      &                    .AND.                                           40.93
      &                    ( TMCURV.LE.PNUMS(16) .AND.                     40.93
      &                     (TMREL.LE.PNUMS(1) .OR. TMABS.LE.PNUMS(3)) )   40.93
@@ -9720,7 +9886,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -10273,7 +10439,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by

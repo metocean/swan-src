@@ -90,27 +90,27 @@
 !
 !   GEN2  [cf10] [cf20] [cf30] [cf40] [cf50] [cf60] [edmlpm] [cdrag] [umin]
 !
-!         |    JANSsen [cds1] [delta]                |                     |
-!         |                                          |                     |
-!         | -> KOMen   [cds2] [stpm]                 |        |   WU    |  |
-!         |                                           > DRAG < -> FIT    > |
-!         |    YAN                                   |        |   SWELL |  |
-!         |                                          |                     |
-!         |    WESTH [cds2] [br] [p0] [powst] [powk] |                     |
-!         |                                                                |
-!         |    BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [cdsv]    &         |
-!         |                  | -> UP |                                     |
-!   GEN3 <        [feswell] <         > VECTAU  TRUE10                      > &
-!         |                  | DOWN  |                                     |
-!         |                                                                |
-!         |    ST6     [a1sds] [a2sds] [p1sds] [p2sds]           &         |
-!         |        | -> UP |    | -> HWANG |                               |
-!         |       <         >  <     FAN    >  VECTAU|SCATAU     &         |
-!         |        | DOWN  |    |    ECMWF |                               |
-!         |                                                                |
-!         |        |    TRUE10                 |                           |
-!         |       <                             >  DEBias [cdfac]          |
-!         |        | -> U10Proxy [windscaling] |                           |
+!         |    JANSsen [cds1] [delta]      |                             |
+!         |                                |                             |
+!         |    KOMen   [cds2] [stpm]       |        |-> WU    |          |
+!         |                                 > DRAG <    FIT    >         |
+!         |    YAN                         |        |   SWELL |          |
+!         |                                |                             |
+!         | -> WESTH [cds2] [br]           |                             |
+!         |                                                              |
+!         |    BABANIN [a1sds] [a2sds] [p1sds] [p2sds] [cdsv]    &       |
+!         |                  | -> UP |                                   |
+!   GEN3 <        [feswell] <         > VECTAU  TRUE10                    > &
+!         |                  | DOWN  |                                   |
+!         |                                                              |
+!         |    ST6     [a1sds] [a2sds] [p1sds] [p2sds]           &       |
+!         |        | -> UP |    | -> HWANG |                             |
+!         |       <         >  <     FAN    >  VECTAU|SCATAU     &       |
+!         |        | DOWN  |    |    ECMWF |                             |
+!         |                                                              |
+!         |        |    TRUE10                 |                         |
+!         |       <                             >  DEBias [cdfac]        |
+!         |        | -> U10Proxy [windscaling] |                         |
 !
 !       (AGROW [a])
 !
@@ -122,17 +122,18 @@
 !   NEGatinp  [rdcoef]
 !
 !
-!         | -> KOMen   [cds2] [stpm] [powst] [delta] [powk]
+!         |    KOMen   [cds2] [stpm] [powst] [delta] [powk]
 !         |
-!         |   JANSsen  [cds1]  [delta] [pwtail]
+!         |    JANSsen [cds1]  [delta] [pwtail]
 !         |
-!         |   LHIG     [cflhig]
+!         |    LHIG    [cflhig]
 !         |
-!   WCAP <    BJ       [bjstp] [bjalf]
+!   WCAP <     BJ      [bjstp] [bjalf]
 !         |
-!         |   KBJ      [bjstp] [bjalf] [kconv]
+!         |    KBJ     [bjstp] [bjalf] [kconv]
 !         |
-!         |   AB       [cds2] [br] [p0] [powst] [powk]
+!         | -> AB      [cds2] [br]  CURrent [cds3]
+!
 !
 !   QUADrupl [iquad] [lambda] [cnl4] [csh1] [csh2] [csh3]
 !
@@ -146,7 +147,7 @@
 !        |                                                             |
 !   BRE <     RUE [alpha] [a] [b]                                       >   &
 !        |                                                             |
-!        |    BKD [alpha] [gamma0] [a1] [a2] [a3]                      |
+!        |    BKD [alpha] [gamma0] [a1] [a2] [a3] [npnts]              |
 !        |                                                             |
 !        |    TG  [alpha] [gamma] [pown]                               |
 !
@@ -165,7 +166,17 @@
 !              |
 !              |    RIPples [S] [D]
 !
-!   TRIad [itriad] [trfac] [cutfr] [a] [b] [p] [urcrit] [urslim]
+!
+!          |                       / -> COLL
+!          | -> DCTA [trfac] [p]   \    NONC
+!          |                                           | -> ELDeberky [urcrit]
+!   TRIad <     LTA [trfac] [cutfr] [dint]    BIPHase <
+!          |                                           | WIT [lpar]
+!          |    SPB [trfac] [a] [b] [dint]
+!
+!
+!   TRIad [itriad] [trfac] [cutfr] [dint] [a] [b] [p] [urcrit] [urslim]
+!
 !
 !   BRAGg [ibrag] [nreg] [cutoff]                                           &
 !
@@ -281,7 +292,7 @@
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
 !             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
 !             GENE|GENW|REDI|REDQ|REDT|REDB|REDC|PROPA|PROPX|PROPT|PROPS|   &
-!             RADS|LWAVP|HBIG|DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|      &
+!             RADS|LWAVP|HBIG|GAMMA|DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|&
 !             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP|PARTIT >    &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
@@ -291,7 +302,7 @@
 !             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
 !             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
 !             GENE|GENW|REDI|REDQ|REDT|REDB|REDC|PROPA|PROPX|PROPT|PROPS|   &
-!             RADS|LWAVP|HBIG|DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|      &
+!             RADS|LWAVP|HBIG|GAMMA|DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|&
 !             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP >           &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
 !

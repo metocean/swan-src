@@ -1,0 +1,216 @@
+--- /source/swan-src/swan_src/ftn_stock/swn_outnc.ftn90	2023-07-04 17:40:44.213185177 +1200
++++ /source/swan-src/swan_src/ftn_msl/swn_outnc.ftn90	2023-07-04 17:40:44.197185103 +1200
+@@ -1511,30 +1511,31 @@ contains
+                 recordaxe(irq)%nstatm     = .false.
+             end if
+ 
+             if (myk == 1) then
+                 ! unstructured mesh is a pointlist. TABLE output also uses this section
+                 pntgrid%npoints = mxk
+                 allocate (pntgrid%longitude(mxk))
+                 allocate (pntgrid%latitude(mxk))
+                 pntgrid%latitude  = ygrdgl(:,1)
+                 pntgrid%longitude = xgrdgl(:,1)
+                 if ( KSPHER == 0 ) pntgrid%lunit = 'meter'
+ 
+                 ! Definition mode
+                 call create_ncfile(ncfile, ncid, recordaxe(irq), pntgrid=pntgrid, nautical=BNAUT)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'project', PROJID) )
++                call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'model',   VERTXT) )                                    !MSL (add model version)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'run', PROJNR) )
+                 call create_variables(ncid, ivtyp, ovlnam, .false.)
+ 
+                 ! write mode, e.g, fill dimension variables. Note that record dimension
+                 ! variable is updated by open_ncfile
+                 call close_ncfile(ncid)
+                 call open_ncfile( ncfile, "write", ncid, recordaxe(irq), monthly)
+                 call agnc_set_pntgrid (ncid, pntgrid)
+             else
+                 ! Regular mesh. Depending on the angle of the computational grid,
+                 ! longitude and latitude can be a vector or a matrix
+                 ! curvilinear grids always have multi-dimension coordinate fields
+ 
+                 ! Definition mode
+                 if ( abs(ALPC) < epsilon(1.) .and. OPTG == 1 ) then
+@@ -1562,30 +1563,31 @@ contains
+                 end if
+                 ! curvilinear grids may contain the EXCEPTION value of the bottom
+                 ! Replace with the hardcoded float _FillValue
+                 where ( abs(mapgrid%longitude - EXCFLD(1)) < epsilon(1.) ) &
+                     mapgrid%longitude = NF90_FILL_FLOAT
+                 where ( abs(mapgrid%latitude - EXCFLD(1)) < epsilon(1.) ) &
+                     mapgrid%latitude = NF90_FILL_FLOAT
+ 
+                 mapgrid%nx   = mxk
+                 mapgrid%ny   = myk
+                 mapgrid%alpc = ALPC
+                 if ( KSPHER == 0 ) mapgrid%lunit = 'meter'
+ 
+                 call create_ncfile(ncfile, ncid, recordaxe(irq), mapgrid=mapgrid, nautical=BNAUT)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'project', PROJID) )
++                call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'model',   VERTXT) )                                    !MSL (add model version)
+                 call nccheck ( nf90_put_att( ncid, NF90_GLOBAL, 'run', PROJNR) )
+                 call create_variables(ncid, ivtyp, ovlnam, .true.)
+ 
+                 ! write mode, e.g, fill dimension variables. Note that record dimension
+                 ! variable is updated by open_ncfile
+                 call close_ncfile(ncid)
+                 call open_ncfile( ncfile, "write", ncid, recordaxe(irq), monthly)
+                 call agnc_set_mapgrid (ncid, mapgrid)
+             end if
+ 
+             ! close the freshly created file so all buffers are emptied
+             call close_ncfile(ncid)
+         end if
+ 
+         call open_ncfile( ncfile, "write", ncid, recordaxe(irq))
+@@ -1646,80 +1648,99 @@ contains
+                     if ( spc_as_map ) then
+                         call agnc_define_mapvariable( ncid, stname)
+                    else
+                         call agnc_define_pntvariable( ncid, stname)
+                     end if
+                 end if
+             else
+                 ! See list at the end of the source file
+                 if ( ivtyp(i) > 3) call MSGERR(1, "Field '"//trim(ovlnam(ivtyp(i)))//"' not supported (yet).")
+             end if
+         end do
+ 
+     end subroutine create_variables
+ 
+     subroutine stnames_init()
+-        STNAMES(  4, 1) = 'depth'
+-        STNAMES(  5, 1) = 'xcur'
+-        STNAMES(  5, 2) = 'ycur'
+-        STNAMES(  6, 1) = 'ubot'
+-        STNAMES( 10, 1) = 'hs'
+-        STNAMES( 11, 1) = 'tm01'
+-        STNAMES( 12, 1) = 'tp'
+-        STNAMES( 13, 1) = 'theta0'
+-        STNAMES( 14, 1) = 'thetap'
+-        STNAMES( 16, 1) = 'spread'
+-        STNAMES( 17, 1) = 'L'
+-        STNAMES( 26, 1) = 'xwnd'
+-        STNAMES( 26, 2) = 'ywnd'
+-        STNAMES( 28, 1) = 'rtm01'
+-        STNAMES( 30, 1) = 'dhs'
+-        STNAMES( 31, 1) = 'dtm'
+-        STNAMES( 32, 1) = 'tm02'
+-        STNAMES( 34, 1) = 'urms'
+-        STNAMES( 35, 1) = 'ustar'
+-        STNAMES( 38, 1) = 'cdrag'
+-        STNAMES( 44, 1) = 'hswe'
+-        STNAMES( 47, 1) = 'tmm10'
+-        STNAMES( 48, 1) = 'rtmm10'
+-        STNAMES( 51, 1) = 'ssh'
+-        STNAMES( 52, 1) = 'botl'
+-        STNAMES( 53, 1) = 'tps'
+-        STNAMES(100, 1) = 'phs0'
+-        STNAMES(101, 1) = 'phs1'
+-        STNAMES(102, 1) = 'phs2'
+-        STNAMES(103, 1) = 'phs3'
+-        STNAMES(104, 1) = 'phs4'
+-        STNAMES(105, 1) = 'phs5'
+-        STNAMES(110, 1) = 'ptp0'
+-        STNAMES(111, 1) = 'ptp1'
+-        STNAMES(112, 1) = 'ptp2'
+-        STNAMES(113, 1) = 'ptp3'
+-        STNAMES(114, 1) = 'ptp4'
+-        STNAMES(115, 1) = 'ptp5'
+-        STNAMES(130, 1) = 'pdir0'
+-        STNAMES(131, 1) = 'pdir1'
+-        STNAMES(132, 1) = 'pdir2'
+-        STNAMES(133, 1) = 'pdir3'
+-        STNAMES(134, 1) = 'pdir4'
+-        STNAMES(135, 1) = 'pdir5'
+-        STNAMES(140, 1) = 'pspr0'
+-        STNAMES(141, 1) = 'pspr1'
+-        STNAMES(142, 1) = 'pspr2'
+-        STNAMES(143, 1) = 'pspr3'
+-        STNAMES(144, 1) = 'pspr4'
+-        STNAMES(145, 1) = 'pspr5'
++        STNAMES( 4, 1) = 'depth'
++        STNAMES( 5, 1) = 'xcur'
++        STNAMES( 5, 2) = 'ycur'
++        STNAMES( 6, 1) = 'ubot'
++        STNAMES( 7, 1) = 'dissip'          !MSL (added)
++        STNAMES( 8, 1) = 'qb'              !MSL (added)
++        STNAMES(10, 1) = 'hs'
++        STNAMES(11, 1) = 'tm01'
++        STNAMES(12, 1) = 'tpr'             !MSL (changed name)
++        STNAMES(13, 1) = 'thetam'          !MSL (changed name)
++        STNAMES(14, 1) = 'thetap'
++        STNAMES(16, 1) = 'dspr'            !MSL (changed name)
++        STNAMES(17, 1) = 'wlenm'           !MSL (changed name)
++        STNAMES(18, 1) = 'steepn'          !MSL (added)
++        STNAMES(26, 1) = 'xwnd'
++        STNAMES(26, 2) = 'ywnd'
++        STNAMES(28, 1) = 'rtm01'
++        STNAMES(30, 1) = 'dhs'
++        STNAMES(31, 1) = 'dtm'
++        STNAMES(32, 1) = 'tm02'
++        STNAMES(33, 1) = 'fspr'            !MSL (added)
++        STNAMES(34, 1) = 'urms'
++        STNAMES(35, 1) = 'ustar'
++        STNAMES(38, 1) = 'cdrag'
++        STNAMES(39, 1) = 'setup'           !MSL (added)
++        STNAMES(42, 1) = 'tm'              !MSL (added)
++        STNAMES(43, 1) = 'rtm'             !MSL (added)
++        STNAMES(44, 1) = 'hswe'
++        STNAMES(47, 1) = 'tmm10'
++        STNAMES(48, 1) = 'rtmm10'
++        STNAMES(51, 1) = 'ssh'
++        STNAMES(52, 1) = 'botl'
++        STNAMES(53, 1) = 'tps'
++        STNAMES(54, 1) = 'disbot'          !MSL (added)
++        STNAMES(55, 1) = 'dissurf'         !MSL (added)
++        STNAMES(56, 1) = 'diswcap'         !MSL (added)
++        STNAMES(57, 1) = 'disveg'          !MSL (added)
++        STNAMES(69, 1) = 'radstr'          !MSL (added)
++        STNAMES(71, 1) = 'wlenp'           !MSL (added)
++        STNAMES(85, 1) = 'dpm'             !MSL (not in official SWAN)
++        STNAMES(86, 1) = 'dpmsea'          !MSL (not in official SWAN)
++        STNAMES(87, 1) = 'dpmswe'          !MSL (not in official SWAN)
++        STNAMES(88, 1) = 'tpssea'          !MSL (not in official SWAN)
++        STNAMES(89, 1) = 'tpsswe'          !MSL (not in official SWAN)
++        STNAMES(90, 1) = 'hsea'            !MSL (not in official SWAN)
++        STNAMES(100, 1) = 'phs0'           !MSL (not in official SWAN)
++        STNAMES(101, 1) = 'phs1'           !MSL (not in official SWAN)
++        STNAMES(102, 1) = 'phs2'           !MSL (not in official SWAN)
++        STNAMES(103, 1) = 'phs3'           !MSL (not in official SWAN)
++        STNAMES(104, 1) = 'phs4'           !MSL (not in official SWAN)
++        STNAMES(105, 1) = 'phs5'           !MSL (not in official SWAN)
++        STNAMES(110, 1) = 'ptp0'           !MSL (not in official SWAN)
++        STNAMES(111, 1) = 'ptp1'           !MSL (not in official SWAN)
++        STNAMES(112, 1) = 'ptp2'           !MSL (not in official SWAN)
++        STNAMES(113, 1) = 'ptp3'           !MSL (not in official SWAN)
++        STNAMES(114, 1) = 'ptp4'           !MSL (not in official SWAN)
++        STNAMES(115, 1) = 'ptp5'           !MSL (not in official SWAN)
++        STNAMES(130, 1) = 'pdir0'          !MSL (not in official SWAN)
++        STNAMES(131, 1) = 'pdir1'          !MSL (not in official SWAN)
++        STNAMES(132, 1) = 'pdir2'          !MSL (not in official SWAN)
++        STNAMES(133, 1) = 'pdir3'          !MSL (not in official SWAN)
++        STNAMES(134, 1) = 'pdir4'          !MSL (not in official SWAN)
++        STNAMES(135, 1) = 'pdir5'          !MSL (not in official SWAN)
++        STNAMES(140, 1) = 'pspr0'          !MSL (not in official SWAN)
++        STNAMES(141, 1) = 'pspr1'          !MSL (not in official SWAN)
++        STNAMES(142, 1) = 'pspr2'          !MSL (not in official SWAN)
++        STNAMES(143, 1) = 'pspr3'          !MSL (not in official SWAN)
++        STNAMES(144, 1) = 'pspr4'          !MSL (not in official SWAN)
++        STNAMES(145, 1) = 'pspr5'          !MSL (not in official SWAN)         
+         stnames_initialized = .true.
+ 
+     end subroutine stnames_init
+ 
+     function string_is_int(str) result (is_int)
+         character(len=*),  intent( in)  :: str
+         logical                         :: is_int
+         character(len=10)               :: nums = "0123456789"
+         is_int = .true.
+         if (  verify(str, nums) > 0 ) is_int = .false.
+     end function string_is_int
+ 
+ end module swn_outnc
+ 
+                 !  ( 3) [              'distance along output curve']

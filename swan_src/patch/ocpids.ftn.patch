@@ -1,0 +1,49 @@
+--- /source/swan-src/swan_src/ftn_stock/ocpids.ftn	2023-07-04 17:40:44.201185121 +1200
++++ /source/swan-src/swan_src/ftn_msl/ocpids.ftn	2023-07-04 17:40:44.177185011 +1200
+@@ -292,36 +292,40 @@
+ !/SGI     &    RECL=2000,                                                      30.82
+      &    ERR=920)                                                        30.82
+ !       WRITE (*,*) ' Print file opened ', PRINTF, OUTFIL
+         CALL DTTIST (ITMOPT, TIMSTR, PRCTIM)
+         WRITE (PRINTF, 12) TIMSTR
+    12   FORMAT ('1',//,20X, 'Execution started at ',A, //)
+       ENDIF
+       IF (PRTEST.NE.PRINTF) THEN
+          OPEN (UNIT=PRTEST, FILE=TSTFIL, ERR=922)
+       ENDIF
+       IF (SCREEN.NE.6) THEN
+          SCRFIL = 'screen'
+          OPEN (UNIT=SCREEN, FILE=SCRFIL, ERR=960)                         34.01
+       ENDIF
+       IF (LREAD) THEN
+-         IF (INPFIL.NE.'    ') THEN
+-            OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                 40.41
+-!CVIS     &            SHARED,                                                 40.41
+-     &            ERR=910)                                                40.41
+-         ENDIF
+-         CALL RDINIT
++        IF (INPFIL.NE.'    ') THEN                                        MSL
++          IF (IARGC().GT.0) THEN                                          MSL
++            CALL GETARG(1, INPFIL)                                        MSL
++          ENDIF                                                           MSL
++          PRINT*, 'Opening ', INPFIL                                      MSL
++          OPEN (UNIT=INPUTF, FILE=INPFIL, STATUS='OLD',                   MSL
++!CVIS     &        SHARED,                                                     40.41
++     &          ERR=910)                                                  MSL
++        ENDIF                                                             MSL
++        CALL RDINIT
+       ENDIF
+ !
+       RETURN
+ !
+   910 CALL MSGERR(4,'Input file missing')                                 34.01
+       RETURN                                                              34.01
+ !
+   920 INERR=920                                                           34.01
+       IF ( IAMMASTER )                                                    40.95 40.31
+      &   WRITE(*,*) 'Cannot open PRINT file '                             40.31
+       RETURN                                                              34.01
+ !
+   922 CALL MSGERR(4,'Cannot open test file: '//TSTFIL)                    34.01
+       RETURN
+ !

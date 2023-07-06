@@ -11,7 +11,7 @@ subroutine SwanVTKPDataSets ( upvt, pstype, nvar, ivtyp, mxk, myk, vtkfile, upvd
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ subroutine SwanVTKPDataSets ( upvt, pstype, nvar, ivtyp, mxk, myk, vtkfile, upvd
     use ocpcomm2
     use ocpcomm4
     use swcomm1
+    use swcomm3
     use m_parall
     use outp_data
 !PUN    use SIZES, only: MNPROC
@@ -81,7 +82,7 @@ subroutine SwanVTKPDataSets ( upvt, pstype, nvar, ivtyp, mxk, myk, vtkfile, upvd
     integer           :: ivtype            ! type of output quantity
     integer           :: jvar              ! loop counter over output variables
     !
-    logical, save     :: nowarn  = .false. ! give no warning again
+    logical, save     :: nowarn  = .false. ! give no warning again (only nonstationary mode)
     logical           :: lc                ! indicates low characters in string
     !
     character(200)    :: extstr            ! string to pass grid extent
@@ -137,7 +138,7 @@ subroutine SwanVTKPDataSets ( upvt, pstype, nvar, ivtyp, mxk, myk, vtkfile, upvd
     vtkline = '    <PPointData> '
     write(upvt,'(a)') trim(vtkline)
     !
-    ! for each output variable determine the file offset and write to file
+    ! for each output variable write its short name to file
     !
     do jvar = 1, nvar
        !
@@ -248,7 +249,7 @@ subroutine SwanVTKPDataSets ( upvt, pstype, nvar, ivtyp, mxk, myk, vtkfile, upvd
           if ( (iarr(1,iproc-1) > iarr(2,iproc-1) .or. iarr(3,iproc-1) > iarr(4,iproc-1)) .and. .not.nowarn ) then
              write (msgstr, '(a,i3,a,a8)') 'empty subdomain of output grid is detected - node number is ',iproc,' and output frame is ',psname
              call msgerr ( 1, trim(msgstr) )
-             nowarn = .true.
+             if ( NSTATC /= 0 ) nowarn = .true.
           endif
           !
           if ( upvd > 0 ) then

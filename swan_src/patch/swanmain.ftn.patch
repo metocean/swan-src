@@ -1,0 +1,152 @@
+--- /source/swan-src/swan_src/ftn_stock/swanmain.ftn	2023-07-04 17:40:44.209185158 +1200
++++ /source/swan-src/swan_src/ftn_msl/swanmain.ftn	2023-07-04 17:40:44.189185066 +1200
+@@ -1257,31 +1257,31 @@
+ !     ***** initial values for common variables *****
+ !     ***** names *****
+       PROJID = 'SWAN'
+       PROJNR = BLANK
+       PROJT1 = BLANK
+       PROJT2 = BLANK
+       PROJT3 = BLANK
+       FNEST  = BLANK
+       FBCR   = BLANK
+       FBCL   = BLANK
+       UH     = 'm'
+       UV     = 'm/s'
+       UT     = 'sec'
+       UL     = 'm'
+       UET    = 'm3/s'
+-      UDI    = 'degr'
++      UDI    = 'degree'
+       UST    = 'm2/s2'
+       UF     = 'N/m2'
+       UP     = 'W/m'
+       UAP    = 'W/m2'
+       UDL    = 'm2/s'
+ !     ***** physical parameters *****
+       GRAV   = 9.81
+       WLEV   = 0.
+       CASTD  = 0.               ! const. air-sea temp diff                40.03
+       CDCAP  = 99999.
+       USCAP  = 99999.                                                     40.88
+       PI     = 4.*ATAN(1.)                                                40.31
+       PI2    = 2.*PI
+       UNDFLW = 1.E-15
+       DNORTH = 90.                                                        30.72
+@@ -2860,30 +2860,116 @@
+       OVHEXP(IVTYPE) = 0.1
+       OVEXCV(IVTYPE) = -9.
+ !
+       IVTYPE = 81
+       OVKEYW(IVTYPE) = 'HBIG'                                             41.85
+       OVSNAM(IVTYPE) = 'HBig'
+       OVLNAM(IVTYPE) = 'Bound ig wave height'
+       OVUNIT(IVTYPE) = UH
+       OVSVTY(IVTYPE) = 1
+       OVLLIM(IVTYPE) = 0.
+       OVULIM(IVTYPE) = 100.
+       OVLEXP(IVTYPE) = 0.
+       OVHEXP(IVTYPE) = 10.
+       OVEXCV(IVTYPE) = -9.
+ !
++!     IVTYPE 85-99 RESERVED FOR MSL OUTPUT
++!
++      IVTYPE = 85                                                         MSL
++      OVKEYW(IVTYPE) = 'DPM'                                              MSL
++      OVSNAM(IVTYPE) = 'dpm'                                              MSL
++      OVLNAM(IVTYPE) = 'Mean direction of spectral peak'                  MSL
++      OVUNIT(IVTYPE) = UDI                                                MSL
++      OVSVTY(IVTYPE) = 2                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 360.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 360.                                               MSL
++      OVEXCV(IVTYPE) = -999.                                              MSL
++!
++      IVTYPE = 86                                                         MSL
++      OVKEYW(IVTYPE) = 'DPMSEA'                                           MSL
++      OVSNAM(IVTYPE) = 'dpmsea'                                           MSL
++      OVLNAM(IVTYPE) = 'Mean direction of sea spectral peak'              MSL
++      OVUNIT(IVTYPE) = UDI                                                MSL
++      OVSVTY(IVTYPE) = 2                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 360.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 360.                                               MSL
++      OVEXCV(IVTYPE) = -999.                                              MSL
++!
++      IVTYPE = 87                                                         MSL
++      OVKEYW(IVTYPE) = 'DPMSWE'                                           MSL
++      OVSNAM(IVTYPE) = 'dpmswe'                                           MSL
++      OVLNAM(IVTYPE) = 'Mean direction of swell spectral peak'            MSL
++      OVUNIT(IVTYPE) = UDI                                                MSL
++      OVSVTY(IVTYPE) = 2                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 360.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 360.                                               MSL
++      OVEXCV(IVTYPE) = -999.                                              MSL
++!
++      IVTYPE = 88                                                         MSL
++      OVKEYW(IVTYPE) = 'TPSSEA'                                           MSL
++      OVSNAM(IVTYPE) = 'tpssea'                                           MSL
++      OVLNAM(IVTYPE) = 'Peak period of sea'                               MSL
++      OVUNIT(IVTYPE) = UT                                                 MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 1000.                                              MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 100.                                               MSL
++      OVEXCV(IVTYPE) = -9.                                                MSL
++!
++      IVTYPE = 89                                                         MSL
++      OVKEYW(IVTYPE) = 'TPSSWE'                                           MSL
++      OVSNAM(IVTYPE) = 'tpsswe'                                           MSL
++      OVLNAM(IVTYPE) = 'Peak period of swell'                             MSL
++      OVUNIT(IVTYPE) = UT                                                 MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 1000.                                              MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 100.                                               MSL
++      OVEXCV(IVTYPE) = -9.                                                MSL
++!
++      IVTYPE = 90                                                         MSL
++      OVKEYW(IVTYPE) = 'HSEA'                                             MSL
++      OVSNAM(IVTYPE) = 'hsea'                                             MSL
++      OVLNAM(IVTYPE) = 'Wave height of sea part'                          MSL
++      OVUNIT(IVTYPE) = UH                                                 MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 100.                                               MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 100.                                               MSL
++      OVEXCV(IVTYPE) = -9.                                                MSL
++!
++      IVTYPE = 91                                                         MSL
++      OVKEYW(IVTYPE) = 'SWE'                                              MSL
++      OVSNAM(IVTYPE) = 'swe'                                              MSL
++      OVLNAM(IVTYPE) = 'Spectral bandwidth'                               MSL
++      OVUNIT(IVTYPE) = ' '                                                MSL
++      OVSVTY(IVTYPE) = 1                                                  MSL
++      OVLLIM(IVTYPE) = 0.                                                 MSL
++      OVULIM(IVTYPE) = 1.                                                 MSL
++      OVLEXP(IVTYPE) = 0.                                                 MSL
++      OVHEXP(IVTYPE) = 1.                                                 MSL
++      OVEXCV(IVTYPE) = -9                                                 MSL
++!
+       IVTYPE = 100                                                        41.62
+       OVKEYW(IVTYPE) = 'PTHS'                                             41.62
+       OVSNAM(IVTYPE) = 'HsPT01'                                           41.62
+       OVLNAM(IVTYPE) = 'Wave height of partition 01'                      41.62
+       OVUNIT(IVTYPE) = UH                                                 41.62
+       OVSVTY(IVTYPE) = 1                                                  41.62
+       OVLLIM(IVTYPE) = 0.                                                 41.62
+       OVULIM(IVTYPE) = 100.                                               41.62
+       OVLEXP(IVTYPE) = 0.                                                 41.62
+       OVHEXP(IVTYPE) = 10.                                                41.62
+       OVEXCV(IVTYPE) = -9.                                                41.62
+ !
+       IVTYPE = 101                                                        41.62
+       OVKEYW(IVTYPE) = 'PT02HS'                                           41.62
+       OVSNAM(IVTYPE) = 'HsPT02'                                           41.62

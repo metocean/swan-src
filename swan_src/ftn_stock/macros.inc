@@ -1,1 +1,1 @@
-macros/nvidia_static_macros.inc
+/source/swan-src/swan_src/ftn_stock/macros/nvidia_static_macros.inc

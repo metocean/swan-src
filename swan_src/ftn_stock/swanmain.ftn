@@ -49,7 +49,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -187,7 +187,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1076,7 +1076,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -1122,7 +1122,7 @@
 !     40.80: Marcel Zijlema
 !     41.13: Nico Booij
 !     41.62: Andre van der Westhuysen
-!     41.75 : Erick Rogers
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -1235,7 +1235,7 @@
 ! 13. Source text
 !
       VERTXT = BLANK                                                      40.03
-      VERNUM = 41.41
+      VERNUM = 41.45
       WRITE (VERTXT, '(F5.2)') VERNUM                                     40.03
       !CALL BUGFIX ('A')
       !CALL BUGFIX ('B')
@@ -1376,14 +1376,15 @@
       ITFRE  = 1
       IWIND  = 0
 !     when coupled with ADCIRC, the default is to use ADCIRC drag formulation
-!NADC      IDRAG  = 2                                                          41.49 41.33
+!NADC      IDRAG  = 1                                                          42.00 41.49 41.33
 !ADC      IDRAG  = 0
       IGEN   = 3                                                          32.06
       IQUAD  = 2                                                          30.72
-      IWCAP  = 1                                                          21/MAY
+      IWCAP  = 7                                                          42.00
       ISURF  = 1
       IBOT   = 0
       ITRIAD = 0
+      IBIPH  = 0                                                          41.97
       IMUD   = 0                                                          40.59
       IVEG   = 0                                                          40.55
       ITURBV = 0                                                          40.35
@@ -1600,6 +1601,10 @@
       PNUMS(35) = 0.0                                                     41.35
       PNUMS(36) = 0.9                                                     41.35
 !
+!     --- parameter for BKD surf breaking
+!
+      PNUMS(37) = 95.                                                     41.96
+!
 !     *** (1) and (2): Komen et al. (1984) formulation ***
 !
       PWCAP(1)  = 2.36E-5
@@ -1624,6 +1629,19 @@
       PWCAP(6) = 0.88
       PWCAP(7) = 1.
       PWCAP(8) = 0.75
+!
+!     *** Alves and Banner formulation ***
+!
+      PWCAP( 1) = 5.0E-5
+      PWCAP(12) = 1.75E-3
+!
+!     flag for current-induced wave dissipation                           42.04
+!
+      IWCCUR = 0                                                          42.04
+!
+!     *** (14): coefficient for enhanced current-induced dissipation      42.04
+!
+      PWCAP(14) = 0.8                                                     42.04
 !
 !       parameters to be used for Babanin physics and swell               40.88
       A1SDS       = 2.8E-6
@@ -1686,11 +1704,11 @@
       PICE    = 0.                                                        41.81
 !
 !     triad interactions
-      PTRIAD(1)  = 0.05                                                   41.76 41.44 40.61 30.82
+      PTRIAD(1)  = 0.8                                                    41.97 41.76 41.44 40.61 30.82
       PTRIAD(2)  = 2.5                                                    40.61 40.56 30.82
       PTRIAD(3)  = 10.                                                    40.23
-      PTRIAD(4)  = 0.2                                                    40.13
-      PTRIAD(5)  = 0.01                                                   40.23
+      PTRIAD(4)  = 0.63                                                   41.97 40.13
+      PTRIAD(5)  = 0.1                                                    41.97 40.23
       PTRIAD(6)  = 0.95                                                   41.46
 !     original value of B=-0.75 in SPB appears to be reasonable
 !     for unidirectional laboratory cases
@@ -1699,7 +1717,7 @@
 !     thus, B = 0 (for now)
 !      PTRIAD(7)  = -0.75                                                  41.46
       PTRIAD(7)  = 0.                                                     41.46
-      PTRIAD(8)  = 0.                                                     41.46
+      PTRIAD(8)  = 60.                                                    42.01 41.46
 !
 !     quadruplet interactions
       PQUAD(1) = 0.25                                                     34.00
@@ -1775,7 +1793,8 @@
       JHS    = 26                                                         40.13
       JURSEL = 27                                                         40.13
       JBOTLV = 28                                                         41.38 40.65
-      MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
+      JBIPH  = 29                                                         41.97
+      MCMVAR = 29                                                         41.38 40.65 40.61 40.51 40.13
 !     subarray sequence number 1 is used only for unused subarrays        40.13
       JFRC2 = 1                                                           40.00
       JFRC3 = 1                                                           40.00
@@ -1796,8 +1815,8 @@
 !     added for turbulent viscosity                                       40.35
       JTURB2= 1                                                           40.35
       JTURB3= 1                                                           40.35
-      JGAMMA = 1                                                          41.38
-      JRESPL = 1                                                          41.38
+!     added for breaker index                                             41.96
+      JGAMMA= 1                                                           41.38
 !
 !     added for ice input fields                                          41.75
       JAICE2= 1                                                           41.75
@@ -2872,6 +2891,30 @@
       OVHEXP(IVTYPE) = 10.
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 82                                                         41.96
+      OVKEYW(IVTYPE) = 'GAMMA'
+      OVSNAM(IVTYPE) = 'Gamma'
+      OVLNAM(IVTYPE) = 'Breaker index'
+      OVUNIT(IVTYPE) = ' '
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
+      IVTYPE = 83                                                         41.97
+      OVKEYW(IVTYPE) = 'BIPH'
+      OVSNAM(IVTYPE) = 'Biph'
+      OVLNAM(IVTYPE) = 'Biphase'
+      OVUNIT(IVTYPE) = UDI
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 360.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 60.
+      OVEXCV(IVTYPE) = -999.
+!
       IVTYPE = 100                                                        41.62
       OVKEYW(IVTYPE) = 'PTHS'                                             41.62
       OVSNAM(IVTYPE) = 'HsPT01'                                           41.62
@@ -3777,6 +3820,7 @@
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE M_OBSTA                                                         41.71
+      USE M_SNL3                                                          42.01
       USE M_BNDSPEC                                                       40.31
       USE M_PARALL                                                        40.31
       USE M_DIFFR                                                         40.21
@@ -3795,7 +3839,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -3898,6 +3942,9 @@
       INTEGER, ALLOCATABLE :: CROSSGL(:,:)                                40.31
       INTEGER   IUNT(NUNT)
       REAL      FDN, FIGF                                                 41.82
+!
+      INTEGER   ISTAT, IF1, IL1                                           42.01
+      CHARACTER*20 NUMSTR, CHARS(1)                                       42.01
       CHARACTER(120) :: MSGSTR                                            41.85
 !
       TYPE(BSDAT) , POINTER :: CURRBS                                     40.31
@@ -4367,6 +4414,66 @@
          ENDIF
       ENDIF
 !
+!     --- preparation for triads                                          42.01
+!
+      IF ( ITRIAD.GT.0 .AND. ITRIAD.NE.2 ) THEN
+!        *** allocate frequency- and space-dependent data for LTA/DCTA
+         IF (ITRIAD.EQ.1 .OR. ITRIAD.EQ.11) THEN
+            ISTAT=0
+            IF (.NOT.ALLOCATED(QTRI1))
+     &                             ALLOCATE(QTRI1(MSC,MCGRD),STAT=ISTAT)
+            IF (.NOT.ALLOCATED(QTRI2)) ALLOCATE(QTRI2(0,0,0))
+         ELSE IF (ITRIAD.EQ.5) THEN
+            IF (TCOLL) THEN
+               MSC4D = MSC*(MSC-1)/2
+            ELSE
+               MSC4D = MSC*MSC
+            ENDIF
+            IF (.NOT.ALLOCATED(QTRI1)) ALLOCATE(QTRI1(MSC4D,2))
+            ISTAT=0
+            IF (.NOT.ALLOCATED(QTRI2))
+     &                         ALLOCATE(QTRI2(MSC4D,MCGRD,2),STAT=ISTAT)
+         ENDIF
+         IF ( ISTAT.NE.0 ) THEN
+            CHARS(1) = NUMSTR(ISTAT,RNAN,'(I6)')
+            CALL TXPBLA(CHARS(1),IF1,IL1)
+            MSGSTR =
+     &         'Allocation problem: array QTRI and return code is '//
+     &         CHARS(1)(IF1:IL1)
+            CALL MSGERR ( 4, MSGSTR )
+            RETURN
+         END IF
+      ELSE
+         IF (.NOT.ALLOCATED(QTRI1)) ALLOCATE(QTRI1(0,0)  )
+         IF (.NOT.ALLOCATED(QTRI2)) ALLOCATE(QTRI2(0,0,0))
+      ENDIF
+!
+      IF (IBIPH.EQ.3) THEN                                                42.01
+         IF (.NOT.ALLOCATED(BPHTMP)) ALLOCATE(BPHTMP(MCGRD))
+         BPHTMP = 0.
+      ENDIF
+!
+!     reset full directional integration parameter for CCA approach       42.01
+!
+      IF ( PTRIAD(8).NE.-1. ) THEN                                        42.01
+         PWDTH = PTRIAD(8) * PI/180.                                      42.01
+         MTH = MDC                                                        42.01
+         IF ( .NOT.FULCIR ) MTH = MDC - 1                                 42.01
+         IF ( .NOT.PWDTH.LT.FLOAT(MTH)*DDIR ) PTRIAD(8) = -1.             42.01
+!        maintain original definition zero bandwidth in case of SPB       42.01
+!        (see routine COAPP)                                              42.01
+         IF ( ITRIAD.EQ.2 .AND. .NOT.PWDTH.NE.0. ) PTRIAD(8) = -1.        42.01
+      ENDIF                                                               42.01
+!
+!     check biphase in case no triads                                     41.97
+!
+      IF ( ITRIAD.EQ.0 ) THEN
+         IF ( ISURF.EQ.7 ) THEN
+            IBIPH = 2
+            PTRIAD(9) = 1.
+         ENDIF
+      ENDIF
+!
       RETURN
 ! * end of subroutine SWPREP *
       END
@@ -4396,7 +4503,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -4788,7 +4895,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5382,11 +5489,8 @@
       COMPDA(:,JUBOT) = 0.                                                40.94
       IF (JPBOT.GT.1) COMPDA(:,JPBOT) = 0.                                40.94
 !
-!     --- initialize GAMBR and RESPL                                      41.38
-      IF (ISURF.EQ.6) THEN
-         COMPDA(:,JGAMMA) = PSURF( 2)
-         COMPDA(:,JRESPL) = PSURF(13)*COMPDA(:,JDP2)
-      ENDIF
+!     --- initialize GAMBR                                                41.97 41.96
+      IF (ISURF.EQ.6.OR.ISURF.EQ.7) COMPDA(:,JGAMMA) = PSURF(2)
 !
       RETURN
 ! * end of subroutine SWRBC *
@@ -5415,7 +5519,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5816,7 +5920,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -5943,7 +6047,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6071,7 +6175,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6244,7 +6348,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6341,7 +6445,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -6752,9 +6856,6 @@
      &                       IQUAD.EQ.53) ) THEN                          40.53
          IF (EQREAL(PWCAP( 1), 5.0E-5)) PWCAP( 1) = 5.0E-5                40.53
          IF (EQREAL(PWCAP(12),1.75E-3)) PWCAP(12) = 1.95E-3               40.53
-         IF (EQREAL(PWCAP(10),    4.0)) PWCAP(10) = 4.                    40.53
-         IF (EQREAL(PWCAP( 9),    0.0)) PWCAP( 9) = 0.                    40.53
-         IF (EQREAL(PWCAP(11),    0.0)) PWCAP(11) = 0.                    40.53
       END IF                                                              40.53
 !
 !     check stopping criterion in case of 4th generation model
@@ -6817,7 +6918,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -7549,7 +7650,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -8167,7 +8268,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -8275,7 +8376,7 @@
       REAL, ALLOCATABLE :: BAUX4(:)                                       40.31
 
       REAL      ETOT, ADEG, DD, ADIR, MS, CTOT, ACOS, CDIR
-      REAL      DSUM, DSPR
+      REAL      DSUM, DSPR, FAC
 !
 !     ETOT      energy integrated over directions
 !     ADEG      average direction in degr
@@ -8291,6 +8392,7 @@
 !     BAUX2     auxiliary array 2                                         40.31
 !     BAUX3     auxiliary array 3                                         40.31
 !     BAUX4     auxiliary array 4                                         40.31
+!     FAC       factor to correct directional spreading                   41.99
 !
 !  8. Subroutines used
 !
@@ -8384,10 +8486,17 @@
           ENDIF
 !
           IF (BFILED(19).EQ.1) THEN                                       40.00
+            IF (DD.GT.23.) THEN                                           41.99
+               FAC = 1.2                                                  41.99
+            ELSEIF (DD.GT.17.) THEN                                       41.99
+               FAC = 1.096                                                41.99
+            ELSE                                                          41.99
+               FAC = 1.01                                                 41.99
+            ENDIF                                                         41.99
 !           DSPR is directional spread in radians
             DSPR = PI * DD / 180.
             IF (DSPR.NE.0.) THEN                                          40.41
-               MS = MAX (DSPR**(-2) - 2., 1.)
+               MS = MAX (FAC*DSPR**(-2) - 2., 1.)                         41.99
             ELSE
                MS = 1000.                                                 40.41
             END IF
@@ -8406,7 +8515,7 @@
           IF (MS.GT.10.) THEN
             CTOT = SQRT(MS/(2.*PI)) * (1. + 0.25/MS)                      30.81 40.00
           ELSE
-            CTOT = 2.**MS * (GAMMAF(1.+0.5*MS))**2 / (PI*GAMMAF(1.+MS))   40.00
+            CTOT = GAMMAF(0.5*MS+1.) / (SQRT(PI) * GAMMAF(0.5*MS+0.5))    41.99 40.00
           ENDIF
           DSUM = 0.
           DO ID = 1, MDC
@@ -8607,7 +8716,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -8988,7 +9097,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -9264,6 +9373,7 @@
       USE M_WCAP
       USE OUTP_DATA                                                       41.78
       USE M_SNL4
+      USE M_SNL3                                                          42.01
       USE M_BNDSPEC                                                       41.78
       USE M_GENARR
       USE M_PARALL
@@ -9288,7 +9398,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2022  Delft University of Technology
+!     Copyright (C) 1993-2023  Delft University of Technology
 !
 !     This program is free software: you can redistribute it and/or modify
 !     it under the terms of the GNU General Public License as published by
@@ -9371,6 +9481,10 @@
       IF (ALLOCATED(TURBF ))   DEALLOCATE(TURBF )
       IF (ALLOCATED(HSSF  ))   DEALLOCATE(HSSF  )
       IF (ALLOCATED(TSSF  ))   DEALLOCATE(TSSF  )
+      IF (ALLOCATED(BPHTMP))   DEALLOCATE(BPHTMP)
+      IF (ALLOCATED(QTRI1 ))   DEALLOCATE(QTRI1 )
+      IF (ALLOCATED(QTRI2 ))   DEALLOCATE(QTRI2 )
+      IF (ALLOCATED(SA    ))   DEALLOCATE(SA    )
 !
       IF (ALLOCATED(xcugrd  )) DEALLOCATE(xcugrd  )
       IF (ALLOCATED(ycugrd  )) DEALLOCATE(ycugrd  )
