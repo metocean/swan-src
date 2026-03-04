@@ -299,6 +299,56 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "  swch = -unix -impi\n";
     print OUTFILE "endif\n";
   }
+  elsif ( $compiler eq "ifx" )
+  {
+    print OUTFILE "################################################################################\n";
+    print OUTFILE "# IA32_Intel/x86-64_Intel:	Intel Core/Xeon with Linux using Intel OneAPI ifx.\n";
+    print OUTFILE "################################################################################\n";
+    print OUTFILE "F90_SER = ifx\n";
+    print OUTFILE "F90_OMP = ifx\n";
+    print OUTFILE "F90_MPI = mpiifx\n";
+    print OUTFILE "FLAGS_OPT = -O2\n";
+    print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback -diag-disable 8290 -diag-disable 8291 -diag-disable 8293\n";
+    print OUTFILE "FLAGS90_MSC = \$(FLAGS_MSC)\n";
+    print OUTFILE "FLAGS_DYN = -fPIC\n";
+    print OUTFILE "FLAGS_SER =\n";
+    print OUTFILE "FLAGS_OMP = -qopenmp\n";
+    print OUTFILE "FLAGS_MPI =\n";
+    print OUTFILE "NETCDFROOT =\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  INCS_SER = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_OMP = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  INCS_MPI = -I\$(NETCDFROOT)/include\n";
+    print OUTFILE "  LIBS_SER = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_OMP = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  LIBS_MPI = -L\$(NETCDFROOT)/lib -lnetcdf -lnetcdff\n";
+    print OUTFILE "  NCF_OBJS = nctablemd.o agioncmd.o swn_outnc.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  INCS_SER =\n";
+    print OUTFILE "  INCS_OMP =\n";
+    print OUTFILE "  INCS_MPI =\n";
+    print OUTFILE "  LIBS_SER =\n";
+    print OUTFILE "  LIBS_OMP =\n";
+    print OUTFILE "  LIBS_MPI =\n";
+    print OUTFILE "  NCF_OBJS =\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "O_DIR = ../work/odir4/\n";
+    print OUTFILE "BOU_OBJ = \$(O_DIR)boundaries.o\n";
+    print OUTFILE "ifneq (\"\$(wildcard \$(BOU_OBJ))\",\"\")\n";
+    print OUTFILE "  MSG_OBJS = \$(O_DIR)mkdir.o \$(O_DIR)boundaries.o \$(O_DIR)sizes.o \$(O_DIR)global.o \$(O_DIR)global_3dvs.o \$(O_DIR)version.o \$(O_DIR)messenger.o\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  MSG_OBJS = \$(O_DIR)mkdir.o \$(O_DIR)sizes.o \$(O_DIR)global.o \$(O_DIR)global_3dvs.o \$(O_DIR)version.o \$(O_DIR)messenger.o\n";
+    print OUTFILE "endif\n";
+    print OUTFILE "OUT = -o \n";
+    print OUTFILE "EXTO = o\n";
+    print OUTFILE "MAKE = make\n";
+    print OUTFILE "RM = rm -f\n";
+    print OUTFILE "ifneq (\$(NETCDFROOT),)\n";
+    print OUTFILE "  swch = -unix -impi -netcdf\n";
+    print OUTFILE "else\n";
+    print OUTFILE "  swch = -unix -impi\n";
+    print OUTFILE "endif\n";
+  }
   elsif ( $compiler eq "ifc" )
   {
     print OUTFILE "##############################################################################\n";
@@ -883,7 +933,7 @@ sub getcmpl {
    my $compiler = $ENV{'FC'};
 
    unless ( $compiler ) {
-      foreach ('ifort','gfortran','f90','ifc','efc','pgf90','xlf90', 'lf95','g95','ifort.exe') {
+      foreach ('ifx','ifort','gfortran','f90','ifc','efc','pgf90','xlf90', 'lf95','g95','ifort.exe') {
          $compiler = $_;
          my $path  = `which $compiler`;
          last if $path;
